@@ -12,6 +12,9 @@
     <header>
         <h1>🎮 JiHye Mini-Game</h1>
         <p>냥냥?!</p>
+        <button id="refresh-btn" class="refresh-btn">
+            <i class="fas fa-sync-alt"></i> 페이지 새로고침
+        </button>
     </header>
 
     <main class="game-container">
@@ -20,7 +23,7 @@
                 <i class="fas fa-shapes"></i>
             </div>
             <h2>테트리스 (Tetris)</h2>
-            <p>블록을 맞춰서 한 줄을 지워보세요!</p>
+            <p>블록 맞춰서 잘 지워보던지!</p>
             <a href="Tetris.html" class="play-btn">게임 시작</a>
         </div>
 
@@ -29,7 +32,7 @@
                 <i class="fas fa-keyboard"></i>
             </div>
             <h2>타자 연습 (Typing)</h2>
-            <p>빠르고 정확한 타자 실력을 뽐내보세요.</p>
+            <p>대충 타자 실력 뽐내보던지!</p>
             <a href="typing.html" class="play-btn">게임 시작</a>
         </div>
 
@@ -43,8 +46,14 @@
     </main>
 
     <footer>
-        <p>&copy; 2026 My Mini-Game Hub. All rights reserved.</p>
+        <p>&copy; 2026 Jihye Mini-Game Hub. All rights reserved.</p>
     </footer>
+
+    <script>
+        document.getElementById('refresh-btn').addEventListener('click', function() {
+            location.reload(true); // 캐시를 무시하고 새로고침 시도
+        });
+    </script>
 
 </body>
 </html>

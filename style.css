@@ -1,28 +1,28 @@
-/* 기본 초기화 */
+/* 기본 스타일 초기화 */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Pretendard', sans-serif;
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
 }
 
 body {
-    background-color: #0f172a; /* 어두운 네이비 톤 */
+    background-color: #0f172a; /* 어두운 배경 */
     color: #f8fafc;
     display: flex;
     flex-direction: column;
     align-items: center;
     min-height: 100vh;
-    padding: 2rem;
+    padding: 3rem 1rem;
 }
 
 header {
     text-align: center;
-    margin-bottom: 3rem;
+    margin-bottom: 4rem;
 }
 
 header h1 {
-    font-size: 2.5rem;
+    font-size: 3rem;
     margin-bottom: 0.5rem;
     background: linear-gradient(to right, #38bdf8, #818cf8);
     -webkit-background-clip: text;
@@ -31,79 +31,108 @@ header h1 {
 
 header p {
     color: #94a3b8;
+    font-size: 1.2rem;
+    font-weight: bold;
 }
 
-/* 게임 카드 컨테이너 */
+/* 새로고침 버튼 스타일 */
+.refresh-btn {
+    margin-top: 20px;
+    background-color: #1e293b;
+    color: #94a3b8;
+    border: 1px solid #334155;
+    padding: 10px 20px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.refresh-btn:hover {
+    background-color: #334155;
+    color: #38bdf8;
+    border-color: #38bdf8;
+}
+
+.refresh-btn i {
+    margin-right: 6px;
+}
+
+/* 게임 카드 레이아웃 */
 .game-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 2rem;
     width: 100%;
-    max-width: 1000px;
+    max-width: 1100px;
 }
 
-/* 개별 카드 스타일 */
+/* 개별 카드 */
 .game-card {
     background: #1e293b;
-    border-radius: 20px;
-    padding: 2rem;
+    border-radius: 24px;
+    padding: 2.5rem;
     text-align: center;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
     border: 1px solid #334155;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    align-items: center;
 }
 
 .game-card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    transform: translateY(-15px);
     border-color: #38bdf8;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
 .icon-wrapper {
-    font-size: 3rem;
+    font-size: 3.5rem;
     color: #38bdf8;
     margin-bottom: 1.5rem;
 }
 
 .game-card h2 {
     margin-bottom: 1rem;
-    font-size: 1.5rem;
+    font-size: 1.6rem;
+    color: #f1f5f9;
 }
 
 .game-card p {
     color: #94a3b8;
-    font-size: 0.9rem;
-    line-height: 1.5;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
+    line-height: 1.6;
 }
 
 /* 플레이 버튼 */
 .play-btn {
-    display: inline-block;
+    text-decoration: none;
     background: #38bdf8;
     color: #0f172a;
-    padding: 0.8rem 1.5rem;
-    border-radius: 10px;
-    text-decoration: none;
-    font-weight: bold;
-    transition: background 0.2s;
+    padding: 12px 30px;
+    border-radius: 12px;
+    font-weight: 800;
+    transition: all 0.2s ease;
 }
 
 .play-btn:hover {
     background: #7dd3fc;
+    transform: scale(1.05);
 }
 
-/* 준비중 카드 스타일 */
+/* 준비중 카드 */
 .coming-soon {
-    opacity: 0.6;
+    opacity: 0.5;
     border-style: dashed;
+}
+
+.coming-soon:hover {
+    transform: none;
+    border-color: #334155;
 }
 
 footer {
     margin-top: auto;
-    padding-top: 3rem;
+    padding: 4rem 0 1rem 0;
     color: #475569;
-    font-size: 0.8rem;
 }

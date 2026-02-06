@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>코딩 파트너: 프리미엄 타자 연습 v6.2</title>
+    <title>프리미엄 타자 연습 v6.2</title>
     <style>
         :root { 
             --glass-bg: rgba(255, 255, 255, 0.1);
             --glass-border: rgba(255, 255, 255, 0.25);
+            --text-main: #ffffff;
             --text-dim: rgba(255, 255, 255, 0.6);
         }
 
@@ -35,8 +36,8 @@
         .cat-btn {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid var(--glass-border);
-            color: white; padding: 8px 18px; border-radius: 50px;
-            font-weight: 600; cursor: pointer; transition: 0.3s; font-size: 0.9rem;
+            color: white; padding: 10px 22px; border-radius: 50px;
+            font-weight: 600; cursor: pointer; transition: 0.3s;
         }
         .cat-btn.active { background: white; color: #0f172a; box-shadow: 0 0 15px rgba(255, 255, 255, 0.3); }
 
@@ -47,17 +48,17 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
         .stat-item { display: flex; flex-direction: column; }
-        .stat-label { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 4px; }
-        .stat-val { font-size: 1.6rem; font-weight: 800; font-family: 'Courier New', monospace; }
+        .stat-label { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 5px; }
+        .stat-val { font-size: 1.8rem; font-weight: 800; font-family: 'Courier New', monospace; }
         #accuracy { color: #00ff88; }
         #cpm { color: #00d2ff; }
         #lastCpm { color: #f1c40f; }
 
         .quote-display {
-            font-size: 1.6rem; line-height: 1.6; text-align: left; padding: 25px;
+            font-size: 1.7rem; line-height: 1.6; text-align: left; padding: 25px;
             background: rgba(0, 0, 0, 0.25); border-radius: 20px;
-            min-height: 120px; margin-bottom: 15px;
-            color: rgba(255, 255, 255, 0.3);
+            min-height: 140px; margin-bottom: 15px;
+            color: rgba(255, 255, 255, 0.4);
             white-space: pre-wrap; word-break: break-all;
             border: 1px solid rgba(255, 255, 255, 0.05);
             user-select: none; font-family: 'Courier New', Courier, monospace;
@@ -66,55 +67,48 @@
         .correct { color: #ffffff !important; text-shadow: 0 0 8px rgba(255,255,255,0.6); }
         .incorrect { color: #ff4d4d !important; background: rgba(255, 77, 77, 0.3); }
 
-        /* [수정] 입력창 크기 확대 */
+        /* 입력창 확대 및 가독성 최적화 */
         .quote-input {
-            width: 100%; 
-            height: 110px; /* 80px -> 110px로 확대 */
+            width: 100%; height: 110px;
             background: rgba(255, 255, 255, 0.07);
             border: 2px solid var(--glass-border);
-            border-radius: 15px; 
-            padding: 18px; /* 여백 조정 */
-            color: white; 
-            font-size: 1.4rem; 
-            line-height: 1.5;
-            outline: none;
-            resize: none; 
-            box-sizing: border-box; 
-            font-family: 'Courier New', monospace;
+            border-radius: 20px; padding: 20px;
+            color: white; font-size: 1.5rem; line-height: 1.5; outline: none;
+            resize: none; box-sizing: border-box; font-family: 'Courier New', monospace;
         }
 
         .keyboard {
             background: rgba(0, 0, 0, 0.3);
-            padding: 15px; border-radius: 25px;
-            display: flex; flex-direction: column; gap: 6px;
+            padding: 20px; border-radius: 30px;
+            display: flex; flex-direction: column; gap: 8px;
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
-        .row { display: flex; justify-content: center; gap: 6px; }
+        .row { display: flex; justify-content: center; gap: 8px; }
         .key {
-            width: 50px; height: 50px;
+            width: 52px; height: 52px;
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px; position: relative;
+            border-radius: 12px; position: relative;
             transition: all 0.05s ease;
         }
         .key span { position: absolute; font-weight: bold; color: rgba(255, 255, 255, 0.4); pointer-events: none; }
-        .key .eng { top: 5px; left: 7px; font-size: 0.7rem; }
-        .key .kor { bottom: 5px; right: 7px; font-size: 0.9rem; }
+        .key .eng { top: 6px; left: 8px; font-size: 0.8rem; }
+        .key .kor { bottom: 6px; right: 8px; font-size: 1.1rem; }
 
         .key.active {
             background: #fff !important;
-            box-shadow: 0 0 20px #fff;
-            transform: scale(0.9); border: none;
+            box-shadow: 0 0 25px #fff;
+            transform: scale(0.92); border: none;
             z-index: 10;
         }
         .key.active span { color: #000 !important; }
 
-        .key.backspace { width: 100px; } .key.tab { width: 80px; } 
-        .key.caps { width: 90px; } .key.enter { width: 110px; }
-        .key.shift { width: 130px; } .key.space { width: 340px; }
+        .key.backspace { width: 110px; } .key.tab { width: 85px; } 
+        .key.caps { width: 95px; } .key.enter { width: 120px; }
+        .key.shift { width: 135px; } .key.space { width: 350px; }
 
-        .footer { margin-top: 15px; display: flex; justify-content: space-between; align-items: center; color: var(--text-dim); }
-        .info-msg { background: rgba(255, 255, 255, 0.1); padding: 6px 15px; border-radius: 10px; color: #fff; font-size: 0.8rem; }
+        .footer { margin-top: 25px; display: flex; justify-content: space-between; align-items: center; color: var(--text-dim); }
+        .info-msg { background: rgba(255, 255, 255, 0.1); padding: 8px 18px; border-radius: 12px; color: #fff; font-size: 0.85rem; font-weight: bold; }
     </style>
 </head>
 <body oncontextmenu="return false">
@@ -134,7 +128,7 @@
     </div>
 
     <div class="quote-display" id="quoteDisplay" oncopy="return false"></div>
-    <textarea class="quote-input" id="quoteInput" placeholder="타이핑을 시작하세요..." autocomplete="off" spellcheck="false"></textarea>
+    <textarea class="quote-input" id="quoteInput" placeholder="이곳에 타이핑을 시작하세요..." autocomplete="off" spellcheck="false"></textarea>
 
     <div class="keyboard" id="visualKeyboard">
         <div class="row">
@@ -143,10 +137,10 @@
             <div class="key" id="Digit5"><span class="eng">5</span></div><div class="key" id="Digit6"><span class="eng">6</span></div>
             <div class="key" id="Digit7"><span class="eng">7</span></div><div class="key" id="Digit8"><span class="eng">8</span></div>
             <div class="key" id="Digit9"><span class="eng">9</span></div><div class="key" id="Digit0"><span class="eng">0</span></div>
-            <div class="key backspace" id="Backspace"><span class="eng" style="top:15px; left:25px">Back</span></div>
+            <div class="key backspace" id="Backspace"><span class="eng" style="top:18px; left:30px">Backspace</span></div>
         </div>
         <div class="row">
-            <div class="key tab" id="Tab"><span class="eng" style="top:15px; left:20px">Tab</span></div>
+            <div class="key tab" id="Tab"><span class="eng" style="top:18px; left:25px">Tab</span></div>
             <div class="key" id="KeyQ"><span class="eng">Q</span><span class="kor">ㅂ</span></div>
             <div class="key" id="KeyW"><span class="eng">W</span><span class="kor">ㅈ</span></div>
             <div class="key" id="KeyE"><span class="eng">E</span><span class="kor">ㄷ</span></div>
@@ -160,7 +154,7 @@
             <div class="key" id="BracketLeft"><span class="eng">[</span></div>
         </div>
         <div class="row">
-            <div class="key caps" id="CapsLock"><span class="eng" style="top:15px; left:15px">Caps</span></div>
+            <div class="key caps" id="CapsLock"><span class="eng" style="top:18px; left:20px">Caps</span></div>
             <div class="key" id="KeyA"><span class="eng">A</span><span class="kor">ㅁ</span></div>
             <div class="key" id="KeyS"><span class="eng">S</span><span class="kor">ㄴ</span></div>
             <div class="key" id="KeyD"><span class="eng">D</span><span class="kor">ㅇ</span></div>
@@ -170,10 +164,10 @@
             <div class="key" id="KeyJ"><span class="eng">J</span><span class="kor">ㅓ</span></div>
             <div class="key" id="KeyK"><span class="eng">K</span><span class="kor">ㅏ</span></div>
             <div class="key" id="KeyL"><span class="eng">L</span><span class="kor">ㅣ</span></div>
-            <div class="key enter" id="Enter"><span class="eng" style="top:15px; left:30px">Enter</span></div>
+            <div class="key enter" id="Enter"><span class="eng" style="top:18px; left:40px">Enter</span></div>
         </div>
         <div class="row">
-            <div class="key shift" id="ShiftLeft"><span class="eng" style="top:15px; left:25px">Shift</span></div>
+            <div class="key shift" id="ShiftLeft"><span class="eng" style="top:18px; left:30px">Shift</span></div>
             <div class="key" id="KeyZ"><span class="eng">Z</span><span class="kor">ㅋ</span></div>
             <div class="key" id="KeyX"><span class="eng">X</span><span class="kor">ㅌ</span></div>
             <div class="key" id="KeyC"><span class="eng">C</span><span class="kor">ㅊ</span></div>
@@ -181,7 +175,7 @@
             <div class="key" id="KeyB"><span class="eng">B</span><span class="kor">ㅠ</span></div>
             <div class="key" id="KeyN"><span class="eng">N</span><span class="kor">ㅜ</span></div>
             <div class="key" id="KeyM"><span class="eng">M</span><span class="kor">ㅡ</span></div>
-            <div class="key shift" id="ShiftRight"><span class="eng" style="top:15px; left:30px">Shift</span></div>
+            <div class="key shift" id="ShiftRight"><span class="eng" style="top:18px; left:40px">Shift</span></div>
         </div>
         <div class="row">
             <div class="key space" id="Space"></div>
@@ -190,13 +184,13 @@
 
     <div class="footer">
         <div>투명도: <input type="range" id="opacitySlider" min="0.3" max="1" step="0.1" value="1"></div>
-        <div class="info-msg">💡 입력창 확대 완료 | 무한 랜덤 추출</div>
+        <div class="info-msg">💡 Shift + Enter는 줄바꿈입니다.</div>
     </div>
 </div>
 
 <script>
     const typingData = {
-        proverbs: ["가는 말이 고와야 오는 말이 곱다.", "등잔 밑이 어둡다.", "세 살 버릇 여든까지 간다.", "고생 끝에 낙이 온다.", "원숭이도 나무에서 떨어진다.", "티끌 모아 태산.", "시작이 반이다."],
+        proverbs: ["가는 말이 고와야 오는 말이 곱다.", "등잔 밑이 어둡다.", "세 살 버릇 여든까지 간다.", "고생 끝에 낙이 온다.", "원숭이도 나무에서 떨어진다.", "시작이 반이다.", "공든 탑이 무너지랴.", "천 리 길도 한 걸음부터."],
         lyrics: ["동해 물과 백두산이 마르고 닳도록 하느님이 보우하사 우리나라 만세.", "멈추지 말고 꿈을 향해 달려가세요. 당신의 노력은 배신하지 않습니다.", "흔들리지 않고 피는 꽃이 어디 있으랴."],
         fairyTales: ["옛날 옛적 아주 먼 옛날, 숲속 작은 집에 일곱 난쟁이와 백설공주가 살고 있었어요.", "신데렐라는 밤 12시가 되기 전에 성을 빠져나와야 했어요."],
         english: ["Practice makes perfect.", "No pain, no gain.", "Better late than never.", "Action speaks louder than words."]
@@ -269,6 +263,7 @@
         quoteInput.focus();
     }
 
+    // 키보드 이벤트 (잔상 방지 로직 포함)
     window.addEventListener('keydown', (e) => {
         const key = document.getElementById(e.code);
         if (key) key.classList.add('active');
