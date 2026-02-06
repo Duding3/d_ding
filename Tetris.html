@@ -88,7 +88,7 @@
         #start-screen {
             position: absolute;
             top: 0;
-            left: var(--side-width);
+            left: calc(var(--side-width) + calc(var(--unit) * 0.6));
             width: var(--board-width);
             height: calc(var(--unit) * 20);
             background: rgba(0, 0, 0, 0.85);
@@ -285,10 +285,11 @@
         }
 
         .controls-info {
-            font-size: calc(var(--unit) * 0.4);
-            color: #666;
+            font-size: calc(var(--unit) * 0.5);
+            color: #aaa;
             text-align: center;
-            margin: calc(var(--unit) * 0.1) 0;
+            margin: calc(var(--unit) * 0.2) 0;
+            font-weight: 500;
         }
 
         .slider-area {
@@ -374,6 +375,7 @@
         </div>
 
         <div class="controls-section">
+            <div class="controls-info">키보드 조작 : ←→ 이동 | ↑ 회전 | ↓ 가속 | Space 하강</div>
             <div class="layout-row-top">
                 <div class="btn" id="ctrl-left">◀</div>
                 <div class="btn" id="ctrl-down">▼</div>
@@ -383,8 +385,6 @@
                 <div class="btn" style="background: rgba(78, 204, 163, 0.25);" id="ctrl-up">회전</div>
                 <div class="btn" style="background: rgba(255, 255, 255, 0.1);" id="ctrl-drop">스페이스바</div>
             </div>
-
-            <div class="controls-info">←→ 이동 | ↑ 회전 | ↓ 가속 | Space 하드드롭</div>
 
             <div class="slider-area">
                 <span class="slider-label">투명도</span>
