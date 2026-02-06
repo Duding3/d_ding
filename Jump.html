@@ -206,14 +206,20 @@
         ];
 
         function init() {
+            // 발판 먼저 생성
+            platforms = [];
+            generateInitialPlatforms();
+
+            // 플레이어를 시작 발판 위에 정확히 배치 (ground가 아닌 시작 발판)
+            const startPlatform = platforms[1]; // index 0은 ground, index 1이 시작 발판
             player = {
-                x: canvas.width / 2 - PLAYER_SIZE / 2,
-                y: canvas.height - 100,
+                x: startPlatform.x + startPlatform.width / 2 - PLAYER_SIZE / 2,
+                y: startPlatform.y - PLAYER_SIZE,
                 vx: 0,
                 vy: 0,
                 width: PLAYER_SIZE,
                 height: PLAYER_SIZE,
-                onGround: false
+                onGround: true
             };
 
             camera = { y: 0 };
@@ -221,25 +227,30 @@
             maxHeight = 0;
             chargeTime = 0;
             isCharging = false;
-
-            // 발판 생성
-            platforms = [];
-            generateInitialPlatforms();
         }
 
         function generateInitialPlatforms() {
-            // 시작 발판
+            // 바닥 발판 (화면 전체 너비)
             platforms.push({
-                x: canvas.width / 2 - 60,
-                y: canvas.height - 50,
-                width: 120,
+                x: 0,
+                y: canvas.height - 30,
+                width: canvas.width,
+                height: 30,
+                type: 'ground'
+            });
+
+            // 시작 발판 (바닥 바로 위)
+            platforms.push({
+                x: canvas.width / 2 - 80,
+                y: canvas.height - 80,
+                width: 160,
                 height: PLATFORM_HEIGHT,
                 type: 'static'
             });
 
             // 위로 올라가는 발판들
             for (let i = 1; i < 200; i++) {
-                addPlatform(i * 80 + 50);
+                addPlatform(i * 80 + 100);
             }
         }
 
@@ -546,66 +557,88 @@
         function updatePlayer() {
             if (!gameStarted || gameOver) return;
 
-            // 중력
-            player.vy += GRAVITY;
-
-            // 이동
-            player.x += player.vx;
-            player.y += player.vy;
-
-            // 좌우 벽 충돌
-            if (player.x < 0) player.x = 0;
-            if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
-
-            // 발판 충돌 체크
-            player.onGround = false;
+            // 이동 발판 먼저 업데이트
             platforms.forEach(p => {
-                // 이동 발판 업데이트
                 if (p.type === 'moving') {
                     p.x += p.moveSpeed;
                     if (p.x < 0 || p.x + p.width > canvas.width) {
                         p.moveSpeed *= -1;
                     }
                 }
+            });
 
-                // 충돌 체크 (위에서 아래로 떨어질 때만)
-                if (player.vy > 0) {
+            // 중력 적용
+            if (!player.onGround) {
+                player.vy += GRAVITY;
+            }
+
+            // 최대 낙하 속도 제한
+            if (player.vy > 15) player.vy = 15;
+
+            // 수평 이동
+            player.x += player.vx;
+
+            // 좌우 벽 충돌
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+
+            // 수직 이동 전 위치 저장
+            const prevY = player.y;
+            player.y += player.vy;
+
+            // 발판 충돌 체크
+            player.onGround = false;
+            let landedOnPlatform = null;
+
+            platforms.forEach(p => {
+                // 충돌 체크 (아래로 떨어질 때만 - vy >= 0)
+                if (player.vy >= 0) {
                     const playerBottom = player.y + player.height;
-                    const playerNextBottom = playerBottom + player.vy;
+                    const prevPlayerBottom = prevY + player.height;
+                    const platformTop = p.y;
 
-                    if (player.x + player.width > p.x && player.x < p.x + p.width) {
-                        if (playerBottom <= p.y && playerNextBottom >= p.y) {
-                            player.y = p.y - player.height;
-                            player.vy = 0;
-                            player.onGround = true;
+                    // 수평 범위 체크
+                    const horizontalOverlap = player.x + player.width > p.x + 5 && player.x < p.x + p.width - 5;
 
-                            // 이동 발판 위에 있으면 같이 이동
-                            if (p.type === 'moving') {
-                                player.x += p.moveSpeed;
-                            }
-                        }
+                    // 수직 충돌 체크: 이전 프레임에서는 발판 위에 있었고, 현재는 발판을 통과했거나 발판 위에 있음
+                    if (horizontalOverlap && prevPlayerBottom <= platformTop + 5 && playerBottom >= platformTop) {
+                        player.y = platformTop - player.height;
+                        player.vy = 0;
+                        player.onGround = true;
+                        landedOnPlatform = p;
                     }
                 }
             });
 
-            // 높이 계산 (카메라 기준)
-            const currentHeight = -player.y + canvas.height - 100;
+            // 이동 발판 위에 있으면 같이 이동
+            if (landedOnPlatform && landedOnPlatform.type === 'moving') {
+                player.x += landedOnPlatform.moveSpeed;
+            }
+
+            // 공중 마찰력 (점프 중 좌우 이동 감속)
+            if (!player.onGround && player.vx !== 0) {
+                player.vx *= 0.98;
+                if (Math.abs(player.vx) < 0.1) player.vx = 0;
+            }
+
+            // 높이 계산
+            const currentHeight = Math.max(0, -(player.y - (canvas.height - 80)));
             if (currentHeight > maxHeight) {
                 maxHeight = currentHeight;
             }
 
-            // 카메라 업데이트
-            const targetCameraY = -player.y + canvas.height / 2;
+            // 카메라 업데이트 - 플레이어가 화면 중앙보다 위로 올라가면 따라감
+            const targetCameraY = Math.max(0, -player.y + canvas.height * 0.6);
             if (targetCameraY > camera.y) {
-                camera.y = targetCameraY;
-            } else if (targetCameraY < camera.y - 100) {
-                // 플레이어가 내려가면 카메라도 따라감
-                camera.y = targetCameraY + 100;
+                camera.y += (targetCameraY - camera.y) * 0.1; // 부드러운 카메라
+            } else {
+                // 내려갈 때도 따라가되, 바닥 발판이 보이도록
+                camera.y += (targetCameraY - camera.y) * 0.05;
             }
+            if (camera.y < 0) camera.y = 0;
 
-            // 게임오버 체크 (맨 바닥으로 떨어짐)
-            const screenY = player.y + camera.y;
-            if (screenY > canvas.height + 100) {
+            // 게임오버 체크 - 바닥 발판 아래로 떨어지면
+            if (player.y > canvas.height) {
                 endGame();
             }
 
