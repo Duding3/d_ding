@@ -203,6 +203,7 @@
         let nextObstacleTime = 0;
         let gameTime = 0;
         let speed = 4;
+        let bgDistance = 0; // Cumulative distance for background scrolling
 
         bestEl.innerText = bestScore;
 
@@ -268,11 +269,14 @@
                 }
             }
 
+            // Decor scrolling distance
+            bgDistance += speed * 1.8;
+
             // Obstacles
             if (gameTime > nextObstacleTime) spawnObstacle();
 
             obstacles.forEach((obs, i) => {
-                obs.x -= speed;
+                obs.x -= speed * 0.7; // Slower obstacles
 
                 // Collision
                 const px = player.x + 5; const py = player.y + 5;
@@ -314,9 +318,9 @@
             ctx.beginPath(); ctx.moveTo(0, groundY); ctx.lineTo(canvas.width, groundY); ctx.stroke();
 
             // Decorative Floor Pattern
-            for (let i = 0; i < canvas.width; i += 40) {
+            for (let i = 0; i < canvas.width + 40; i += 40) {
                 ctx.fillStyle = (i / 40 % 2 === 0) ? 'rgba(255, 255, 255, 0.05)' : 'transparent';
-                ctx.fillRect(i - (gameTime / 10 % 40), groundY, 40, 40);
+                ctx.fillRect(i - (bgDistance % 40), groundY, 40, 40);
             }
 
             // Player (Bright Clown 🤡 with Neon Aura - Solidified)
@@ -345,7 +349,7 @@
 
                     // Small floating fire icons around hoop
                     ctx.font = '16px Arial';
-                    ctx.fillText('🔥', obs.x + obs.w / 2, obs.y + 10 + Math.sin(gameTime / 100) * 10);
+                    ctx.fillText('🔥', obs.x + obs.w / 2, obs.y + 10 + Math.sin(bgDistance / 50) * 10);
                 } else {
                     ctx.font = `${obs.h}px Arial`;
                     ctx.shadowBlur = 5; ctx.shadowColor = '#fff';
