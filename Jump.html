@@ -162,6 +162,51 @@
         SPACE 짧게 = 작은 점프 | SPACE 길게 차징 = 높은 점프
     </div>
 
+    <div class="slider-area">
+        <span class="slider-label">투명도</span>
+        <input type="range" id="opacitySlider" min="30" max="100" value="100">
+    </div>
+
+    <style>
+        .slider-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            padding: 10px 20px;
+            background: rgba(74, 222, 128, 0.1);
+            border: 2px solid #4ade80;
+            border-radius: 10px;
+            width: 300px;
+        }
+
+        .slider-label {
+            color: #4ade80;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        #opacitySlider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            background: rgba(74, 222, 128, 0.2);
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #opacitySlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4ade80;
+            cursor: pointer;
+        }
+    </style>
+
     <div id="startScreen">
         <h1 style="font-size: 2.5rem; margin-bottom: 30px;">🟢 슬라임 점프</h1>
         <p style="color: #aaa; margin-bottom: 20px;">스페이스바를 길게 눌러 차징하고<br>높이 점프하세요!</p>
@@ -194,6 +239,7 @@
         let gameStarted = false;
         let gameOver = false;
         let player, platforms, camera, score, maxHeight;
+        let highScore = 0; // 최고 스코어
         let isCharging = false;
         let chargeTime = 0;
 
@@ -527,31 +573,63 @@
             ctx.ellipse(centerX + 12, eyeY + 8, 4, 3, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            // 차징 이펙트
+            // 차징 이펙트 (바 형태로 슬라임 위에 표시)
             if (isCharging && player.onGround) {
                 const chargePercent = chargeTime / MAX_CHARGE;
+
+                // 차징바 배경
+                const barWidth = 50;
+                const barHeight = 8;
+                const barX = centerX - barWidth / 2;
+                const barY = screenY - 25;
+
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                ctx.fillRect(barX, barY, barWidth, barHeight);
+                ctx.strokeStyle = '#4ade80';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(barX, barY, barWidth, barHeight);
+
+                // 차징 진행바
+                const gradient = ctx.createLinearGradient(barX, barY, barX + barWidth * chargePercent, barY);
+                gradient.addColorStop(0, '#4ade80');
+                gradient.addColorStop(0.5, '#22c55e');
+                gradient.addColorStop(1, '#16a34a');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(barX + 1, barY + 1, (barWidth - 2) * chargePercent, barHeight - 2);
+
+                // 원형 이펙트도 유지
                 ctx.strokeStyle = `rgba(74, 222, 128, ${chargePercent})`;
-                ctx.lineWidth = 3;
+                ctx.lineWidth = 2;
                 ctx.beginPath();
-                ctx.arc(centerX, centerY, player.width / 2 + 10 + chargePercent * 10, 0, Math.PI * 2);
+                ctx.arc(centerX, centerY, player.width / 2 + 8 + chargePercent * 8, 0, Math.PI * 2);
                 ctx.stroke();
             }
         }
 
         function drawScore() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            ctx.fillRect(canvas.width - 110, 10, 100, 40);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            ctx.fillRect(canvas.width - 130, 10, 120, 70);
             ctx.strokeStyle = '#4ade80';
             ctx.lineWidth = 2;
-            ctx.strokeRect(canvas.width - 110, 10, 100, 40);
+            ctx.strokeRect(canvas.width - 130, 10, 120, 70);
 
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 14px Segoe UI';
             ctx.textAlign = 'right';
-            ctx.fillText('HEIGHT', canvas.width - 20, 28);
-            ctx.font = 'bold 18px Segoe UI';
+
+            // 현재 스코어
+            ctx.fillStyle = '#aaa';
+            ctx.font = 'bold 11px Segoe UI';
+            ctx.fillText('현재 스코어', canvas.width - 20, 28);
+            ctx.font = 'bold 16px Segoe UI';
+            ctx.fillStyle = '#fff';
+            ctx.fillText(Math.floor(maxHeight) + 'm', canvas.width - 20, 45);
+
+            // 최고 스코어
+            ctx.fillStyle = '#aaa';
+            ctx.font = 'bold 11px Segoe UI';
+            ctx.fillText('최고 스코어', canvas.width - 20, 60);
+            ctx.font = 'bold 16px Segoe UI';
             ctx.fillStyle = '#4ade80';
-            ctx.fillText(Math.floor(maxHeight) + 'm', canvas.width - 20, 46);
+            ctx.fillText(Math.floor(highScore) + 'm', canvas.width - 20, 77);
         }
 
         function updatePlayer() {
@@ -625,6 +703,9 @@
             const currentHeight = Math.max(0, -(player.y - (canvas.height - 80)));
             if (currentHeight > maxHeight) {
                 maxHeight = currentHeight;
+                if (maxHeight > highScore) {
+                    highScore = maxHeight;
+                }
             }
 
             // 카메라 업데이트 - 플레이어가 화면 중앙보다 위로 올라가면 따라감
@@ -751,6 +832,11 @@
                 jump();
                 isCharging = false;
             }
+        });
+
+        // 투명도 슬라이더
+        document.getElementById('opacitySlider').addEventListener('input', (e) => {
+            canvas.style.opacity = e.target.value / 100;
         });
 
         // 초기화 및 게임 루프 시작
