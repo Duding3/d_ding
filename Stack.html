@@ -298,7 +298,7 @@
         let cameraY = 0;
         let swingAngle = 0;
         let swingDir = 1;
-        let speed = 1.2;
+        let speed = 0.8;
 
         const BLOCK_HEIGHT = 40;
 
@@ -308,7 +308,7 @@
             blocks.push({ ...baseBlock });
             score = 0;
             cameraY = 0;
-            speed = 1.2;
+            speed = 0.8;
             newBlock();
         }
 
@@ -349,7 +349,7 @@
 
             score++;
             scoreEl.innerText = score;
-            speed = 1.2 + Math.floor(score / 8) * 0.3;
+            speed = 0.8 + Math.floor(score / 12) * 0.3;
 
             // Camera shift up
             if (blocks.length > 5) {
