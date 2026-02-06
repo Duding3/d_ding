@@ -233,41 +233,40 @@
         }
 
         let spawnTimer = 0;
-        function update(dt) {
-            // 조작 업데이트
-            if (moveLeft) player.x = Math.max(0, player.x - 7);
-            if (moveRight) player.x = Math.min(canvas.width - player.w, player.x + 7);
+        // 조작 업데이트 (느리게, 세세하게 조정 - 7 -> 4)
+        if (moveLeft) player.x = Math.max(0, player.x - 4);
+        if (moveRight) player.x = Math.min(canvas.width - player.w, player.x + 4);
 
-            spawnTimer += dt;
-            if (spawnTimer > 1000 - Math.min(score, 500)) {
-                spawnItem();
-                spawnTimer = 0;
+        spawnTimer += dt;
+        if (spawnTimer > 1000 - Math.min(score, 500)) {
+            spawnItem();
+            spawnTimer = 0;
+        }
+
+        items.forEach((item, i) => {
+            item.y += itemSpeed;
+
+            // Collision
+            if (item.y + item.h > canvas.height - 40 && item.y < canvas.height - 20) {
+                if (item.x + item.w > player.x && item.x < player.x + player.w) {
+                    if (item.type === 'gift') {
+                        score += 10;
+                        scoreEl.innerText = score;
+                        itemSpeed += 0.05;
+                        items.splice(i, 1);
+                    } else {
+                        gameOver();
+                    }
+                }
             }
 
-            items.forEach((item, i) => {
-                item.y += itemSpeed;
-
-                // Collision
-                if (item.y + item.h > canvas.height - 40 && item.y < canvas.height - 20) {
-                    if (item.x + item.w > player.x && item.x < player.x + player.w) {
-                        if (item.type === 'gift') {
-                            score += 10;
-                            scoreEl.innerText = score;
-                            itemSpeed += 0.05;
-                            items.splice(i, 1);
-                        } else {
-                            gameOver();
-                        }
-                    }
+            if (item.y > canvas.height) {
+                if (item.type === 'gift') {
+                    // score -= 5; // Penalty? Or just ignore.
                 }
-
-                if (item.y > canvas.height) {
-                    if (item.type === 'gift') {
-                        // score -= 5; // Penalty? Or just ignore.
-                    }
-                    items.splice(i, 1);
-                }
-            });
+                items.splice(i, 1);
+            }
+        });
         }
 
         function draw() {
@@ -287,6 +286,9 @@
             ctx.font = '24px Arial';
             ctx.textAlign = 'center';
             items.forEach(item => {
+                // 폭탄은 특정 높이(150) 이하에서만 보이도록 (급습 효과)
+                if (item.type === 'bomb' && item.y < 150) return;
+
                 ctx.fillText(item.emoji, item.x + item.w / 2, item.y + item.h / 2 + 10);
             });
         }
