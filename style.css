@@ -79,6 +79,7 @@ header h1 {
     font-weight: 800;
     letter-spacing: -0.05em;
     background: linear-gradient(to right, #fff, #94a3b8);
+    background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 0.5rem;
@@ -108,6 +109,8 @@ header p {
     display: inline-flex;
     align-items: center;
     gap: 8px;
+    appearance: none;
+    -webkit-appearance: none;
 }
 
 .update-refresh-btn:hover {
