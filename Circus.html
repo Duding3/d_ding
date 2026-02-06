@@ -230,20 +230,21 @@
         }
 
         function spawnObstacle() {
-            const types = ['hoop', 'ball'];
+            const types = ['hoop', 'ball', 'fire', 'cactus'];
             const type = types[Math.floor(Math.random() * types.length)];
             const obs = {
                 x: canvas.width + 50,
                 type: type,
-                w: type === 'hoop' ? 40 : 30,
-                h: type === 'hoop' ? 80 : 30,
-                passed: false
+                w: type === 'hoop' ? 40 : 35,
+                h: type === 'hoop' ? 85 : 35,
+                passed: false,
+                emoji: type === 'fire' ? '🔥' : (type === 'cactus' ? '🌵' : '⚽')
             };
-            if (type === 'hoop') obs.y = groundY - 90;
-            else obs.y = groundY - 30;
+            if (type === 'hoop') obs.y = groundY - 95;
+            else obs.y = groundY - 35;
 
             obstacles.push(obs);
-            nextObstacleTime = gameTime + (1000 + Math.random() * 2000) / (speed / 5);
+            nextObstacleTime = gameTime + (1200 + Math.random() * 2000) / (speed / 3.5);
         }
 
         function gameLoop(time) {
@@ -256,9 +257,9 @@
         }
 
         function update() {
-            // Gravity
+            // Gravity - Slowed down for floatier jump
             if (player.jumping) {
-                player.vy += 1.0; // Increased gravity for snappier jump
+                player.vy += 0.45; // Much slower than 1.0
                 player.y += player.vy;
                 if (player.y > groundY - player.h) {
                     player.y = groundY - player.h;
@@ -277,7 +278,7 @@
                 const px = player.x + 5; const py = player.y + 5;
                 const pw = player.w - 10; const ph = player.h - 10;
 
-                if (obs.type === 'ball') {
+                if (obs.type === 'ball' || obs.type === 'fire' || obs.type === 'cactus') {
                     if (px < obs.x + obs.w && px + pw > obs.x && py < obs.y + obs.h && py + ph > obs.y) {
                         gameOver();
                     }
@@ -318,30 +319,31 @@
                 ctx.fillRect(i - (gameTime / 10 % 40), groundY, 40, 40);
             }
 
-            // Player (Cute Lion 🦁 with Glow)
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = '#fff'; // White glow for visibility
-            ctx.font = `${player.h}px Arial`;
+            // Player (Bright Clown 🤡 with Neon Aura)
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#ffff00'; // Bright Yellow glow
+            ctx.font = `${player.h * 1.2}px Arial`;
             ctx.textAlign = 'center';
-            ctx.fillText('🦁', player.x + player.w / 2, player.y + player.h);
+            ctx.fillText('🤡', player.x + player.w / 2, player.y + player.h);
             ctx.shadowBlur = 0;
 
 
             // Obstacles
             obstacles.forEach(obs => {
-                if (obs.type === 'ball') {
-                    ctx.fillStyle = '#fbbf24';
-                    ctx.shadowColor = '#fbbf24';
-                    ctx.beginPath(); ctx.arc(obs.x + obs.w / 2, obs.y + obs.h / 2, obs.w / 2, 0, Math.PI * 2); ctx.fill();
-                } else {
+                if (obs.type === 'hoop') {
                     // Fire Hoop
                     ctx.strokeStyle = '#ff3e3e';
-                    ctx.shadowColor = '#ff3e3e';
+                    ctx.shadowBlur = 10; ctx.shadowColor = '#ff3e3e';
                     ctx.lineWidth = 4;
                     ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
-                    // Fire effect
-                    ctx.fillStyle = 'rgba(255, 62, 62, 0.3)';
-                    ctx.fillRect(obs.x - 5, obs.y + Math.sin(gameTime / 100) * 10, obs.w + 10, 10);
+
+                    // Small floating fire icons around hoop
+                    ctx.font = '16px Arial';
+                    ctx.fillText('🔥', obs.x + obs.w / 2, obs.y + 10 + Math.sin(gameTime / 100) * 10);
+                } else {
+                    ctx.font = `${obs.h}px Arial`;
+                    ctx.shadowBlur = 5; ctx.shadowColor = '#fff';
+                    ctx.fillText(obs.emoji, obs.x + obs.w / 2, obs.y + obs.h);
                 }
             });
             ctx.shadowBlur = 0;
@@ -361,7 +363,7 @@
         function jump() {
             if (!player.jumping && gameActive) {
                 player.jumping = true;
-                player.vy = -13; // Adjusted for new gravity and speed
+                player.vy = -9; // Slower jump power to match lower gravity
             }
         }
 
