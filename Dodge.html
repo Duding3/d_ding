@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>코스믹 닷지 (Cosmic Dodge) v1.1</title>
+    <style>
+        :root {
+            --unit: min(3.5vh, 2.8vw, 22px);
+            --main-color: #60a5fa;
+            --bg-color: #0f172a;
+            --card-bg: rgba(255, 255, 255, 0.03);
+        }
+
+        body {
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            color: #fff;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100dvh;
+            margin: 0;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #game-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: calc(var(--unit) * 0.8);
+            position: relative;
+        }
+
+        .game-header {
+            text-align: center;
+        }
+
+        h1 {
+            color: var(--main-color);
+            margin: 0;
+            font-size: calc(var(--unit) * 1.5);
+            text-shadow: 0 0 15px rgba(96, 165, 250, 0.4);
+        }
+
+        .version {
+            font-size: 0.9rem;
+            color: #aaa;
+            opacity: 0.5;
+            font-weight: normal;
+        }
+
+        .refresh-btn {
+            background: var(--main-color);
+            border: none;
+            color: #0f172a;
+            padding: 6px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.8rem;
+            margin-top: 5px;
+            transition: all 0.2s;
+        }
+
+        .stats {
+            display: flex;
+            gap: calc(var(--unit) * 1);
+            margin-top: calc(var(--unit) * 0.5);
+            justify-content: center;
+        }
+
+        .stat-box {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: calc(var(--unit) * 0.3) calc(var(--unit) * 0.8);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: calc(var(--unit) * 0.4);
+            color: var(--main-color);
+            font-weight: bold;
+        }
+
+        .stat-value {
+            font-size: calc(var(--unit) * 0.8);
+            font-weight: 800;
+        }
+
+        canvas {
+            border: 2px solid rgba(96, 165, 250, 0.3);
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.6);
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+            width: calc(var(--unit) * 15);
+            height: calc(var(--unit) * 15);
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            border-radius: 12px;
+        }
+
+        .start-btn {
+            padding: 12px 25px;
+            background: var(--main-color);
+            color: #0f172a;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 0 15px rgba(96, 165, 250, 0.4);
+        }
+
+        .start-btn:active {
+            transform: scale(0.95);
+        }
+
+        .controls {
+            display: grid;
+            grid-template-areas:
+                ". up ."
+                "left down right";
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .ctrl-btn {
+            width: calc(var(--unit) * 2.2);
+            height: calc(var(--unit) * 2.2);
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ccc;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .ctrl-btn:active {
+            background: var(--main-color);
+            color: #0f172a;
+            transform: scale(0.9);
+        }
+
+        #btn-up {
+            grid-area: up;
+        }
+
+        #btn-down {
+            grid-area: down;
+        }
+
+        #btn-left {
+            grid-area: left;
+        }
+
+        #btn-right {
+            grid-area: right;
+        }
+
+        .slider-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: rgba(96, 165, 250, 0.1);
+            border: 2px solid var(--main-color);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .slider-label {
+            color: var(--main-color);
+            font-weight: bold;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        #opacitySlider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: rgba(96, 165, 250, 0.2);
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        #opacitySlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--main-color);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(96, 165, 250, 0.5);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="game-wrapper">
+        <div class="game-header">
+            <h1>코스믹 닷지 <span class="version">v1.1</span></h1>
+            <button class="refresh-btn" onclick="location.reload(true)">새로고침(컨트롤+에프5)</button>
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-label">생존 시간</div>
+                    <div id="score" class="stat-value">0.0s</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">최고 기록</div>
+                    <div id="highScore" class="stat-value">0.0s</div>
+                </div>
+            </div>
+        </div>
+
+        <div style="position: relative;">
+            <canvas id="gameCanvas"></canvas>
+            <div id="overlay">
+                <h2 id="msg" style="margin-bottom: 20px; font-size: 1.8rem; display: none;">준비?</h2>
+                <p id="finalScore" style="margin-bottom: 20px; font-size: 1.2rem; display: none;"></p>
+                <button class="start-btn" onclick="startGame()">게임 시작</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="ctrl-btn" id="btn-up">▲</div>
+            <div class="ctrl-btn" id="btn-left">◀</div>
+            <div class="ctrl-btn" id="btn-down">▼</div>
+            <div class="ctrl-btn" id="btn-right">▶</div>
+        </div>
+        <div class="slider-area">
+            <span class="slider-label">투명도</span>
+            <input type="range" id="opacitySlider" min="30" max="100" value="100">
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const highScoreEl = document.getElementById('highScore');
+        const overlay = document.getElementById('overlay');
+        const msg = document.getElementById('msg');
+        const finalScore = document.getElementById('finalScore');
+
+        const GRID_SIZE = 400;
+        canvas.width = GRID_SIZE;
+        canvas.height = GRID_SIZE;
+
+        let gameActive = false;
+        let score = 0;
+        let highScore = localStorage.getItem('dodgeHighScore') || 0;
+        highScoreEl.innerText = parseFloat(highScore).toFixed(1) + 's';
+
+        let player = {
+            x: GRID_SIZE / 2,
+            y: GRID_SIZE / 2,
+            radius: 8,
+            speed: 4,
+            color: '#60a5fa'
+        };
+
+        let bullets = [];
+        let particles = [];
+        let stars = Array.from({ length: 50 }, () => ({
+            x: Math.random() * GRID_SIZE,
+            y: Math.random() * GRID_SIZE,
+            size: Math.random() * 2,
+            speed: Math.random() * 0.5 + 0.1
+        }));
+
+        let keys = {};
+
+        function spawnBullet() {
+            if (!gameActive) return;
+            const side = Math.floor(Math.random() * 4);
+            let x, y, vx, vy;
+            const speed = 1.5 + (score / 10); // Difficulty scaling
+
+            if (side === 0) { // Top
+                x = Math.random() * GRID_SIZE;
+                y = -20;
+                vx = (Math.random() - 0.5) * speed;
+                vy = speed;
+            } else if (side === 1) { // Bottom
+                x = Math.random() * GRID_SIZE;
+                y = GRID_SIZE + 20;
+                vx = (Math.random() - 0.5) * speed;
+                vy = -speed;
+            } else if (side === 2) { // Left
+                x = -20;
+                y = Math.random() * GRID_SIZE;
+                vx = speed;
+                vy = (Math.random() - 0.5) * speed;
+            } else { // Right
+                x = GRID_SIZE + 20;
+                y = Math.random() * GRID_SIZE;
+                vx = -speed;
+                vy = (Math.random() - 0.5) * speed;
+            }
+
+            bullets.push({ x, y, vx, vy, radius: 4 + Math.random() * 4 });
+        }
+
+        function startGame() {
+            gameActive = true;
+            score = 0;
+            player.x = GRID_SIZE / 2;
+            player.y = GRID_SIZE / 2;
+            bullets = [];
+            particles = [];
+            overlay.style.display = 'none';
+            requestAnimationFrame(update);
+        }
+
+        function gameOver() {
+            gameActive = false;
+            msg.innerText = "GAME OVER";
+            msg.style.display = 'block';
+            finalScore.innerText = `생존 시간: ${score.toFixed(1)}s`;
+            finalScore.style.display = 'block';
+            overlay.style.display = 'flex';
+
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('dodgeHighScore', highScore);
+                highScoreEl.innerText = highScore.toFixed(1) + 's';
+            }
+        }
+
+        function update(timestamp) {
+            if (!gameActive) return;
+
+            score += 1 / 60;
+            scoreEl.innerText = score.toFixed(1) + 's';
+
+            // Spawn bullets periodically
+            if (Math.random() < 0.05 + (score / 200)) {
+                spawnBullet();
+            }
+
+            // Move player
+            if (keys['ArrowUp'] || keys['up']) player.y -= player.speed;
+            if (keys['ArrowDown'] || keys['down']) player.y += player.speed;
+            if (keys['ArrowLeft'] || keys['left']) player.x -= player.speed;
+            if (keys['ArrowRight'] || keys['right']) player.x += player.speed;
+
+            // Bounds
+            player.x = Math.max(player.radius, Math.min(GRID_SIZE - player.radius, player.x));
+            player.y = Math.max(player.radius, Math.min(GRID_SIZE - player.radius, player.y));
+
+            // Move bullets
+            bullets.forEach((b, i) => {
+                b.x += b.vx;
+                b.y += b.vy;
+
+                // Collision
+                const dx = b.x - player.x;
+                const dy = b.y - player.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < b.radius + player.radius) {
+                    gameOver();
+                }
+
+                // Remove offscreen bullets
+                if (b.x < -50 || b.x > GRID_SIZE + 50 || b.y < -50 || b.y > GRID_SIZE + 50) {
+                    bullets.splice(i, 1);
+                }
+            });
+
+            draw();
+            requestAnimationFrame(update);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, GRID_SIZE, GRID_SIZE);
+
+            // Stars
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            stars.forEach(s => {
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+                ctx.fill();
+                s.y += s.speed;
+                if (s.y > GRID_SIZE) s.y = 0;
+            });
+
+            // Bullets (Meteors)
+            bullets.forEach(b => {
+                ctx.fillStyle = '#f87171';
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#f87171';
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Player
+            ctx.fillStyle = player.color;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = player.color;
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Bevel effect on player
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.beginPath();
+            ctx.arc(player.x - 2, player.y - 2, player.radius / 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.shadowBlur = 0;
+        }
+
+        // Input handling
+        window.onkeydown = (e) => keys[e.key] = true;
+        window.onkeyup = (e) => keys[e.key] = false;
+
+        function bindBtn(id, key) {
+            const el = document.getElementById(id);
+            el.ontouchstart = (e) => { e.preventDefault(); keys[key] = true; };
+            el.ontouchend = (e) => { e.preventDefault(); keys[key] = false; };
+            el.onmousedown = () => keys[key] = true;
+            el.onmouseup = () => keys[key] = false;
+            el.onmouseleave = () => keys[key] = false;
+        }
+
+        bindBtn('btn-up', 'up');
+        bindBtn('btn-down', 'down');
+        bindBtn('btn-left', 'left');
+        bindBtn('btn-right', 'right');
+
+        // Opacity
+        document.getElementById('opacitySlider').oninput = (e) => {
+            document.body.style.opacity = e.target.value / 100;
+        };
+
+        draw(); // Initial draw
+    </script>
+</body>
+
+</html>
