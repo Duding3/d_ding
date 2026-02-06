@@ -258,7 +258,7 @@
         function update() {
             // Gravity
             if (player.jumping) {
-                player.vy += 0.8;
+                player.vy += 1.0; // Increased gravity for snappier jump
                 player.y += player.vy;
                 if (player.y > groundY - player.h) {
                     player.y = groundY - player.h;
@@ -358,7 +358,7 @@
         function jump() {
             if (!player.jumping && gameActive) {
                 player.jumping = true;
-                player.vy = -12;
+                player.vy = -13; // Adjusted for new gravity and speed
             }
         }
 
