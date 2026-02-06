@@ -27,8 +27,8 @@
         .hud-container {
             position: absolute;
             top: 20px;
-            right: 20px;
-            /* Right aligned */
+            right: 10px;
+            /* Right aligned inside wrapper */
             left: auto;
             transform: none;
             display: flex;
@@ -47,7 +47,8 @@
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 8px 15px;
+            padding: 5px 10px;
+            /* Reduced padding */
             border-radius: 12px;
             color: #fff;
             text-align: right;
@@ -55,7 +56,8 @@
             display: flex;
             flex-direction: column;
             align-items: flex-end;
-            min-width: 120px;
+            min-width: 100px;
+            /* Reduced min-width */
         }
 
         .hud-label {
@@ -67,13 +69,15 @@
 
         /* Current Height - Large */
         #scoreHeight {
-            font-size: 2.2rem;
+            font-size: 1.5rem;
+            /* Reduced from 2.2rem */
             color: #4ade80;
         }
 
         /* Max Height - Smaller */
         #scoreMax {
-            font-size: 1.2rem;
+            font-size: 0.9rem;
+            /* Reduced from 1.2rem */
             color: #fbbf24;
             /* Yellowish for High Score */
         }
@@ -114,7 +118,7 @@
             border-radius: 12px;
             box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
             width: 100%;
-            max-width: 450px;
+            max-width: 400px;
             height: auto;
             aspect-ratio: 2/3;
             display: block;
@@ -182,6 +186,13 @@
             z-index: 100;
         }
 
+        .game-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
         .game-over-screen h2 {
             color: #ef4444;
             font-size: 3rem;
@@ -197,33 +208,42 @@
 </head>
 
 <body>
-    <div class="hud-container">
-        <div class="hud-box">
-            <div class="hud-label">현재 높이</div>
-            <div class="hud-value" id="scoreHeight">0m</div>
+    <div class="game-wrapper">
+        <div class="hud-container">
+            <div class="hud-box">
+                <div class="hud-label">현재 높이</div>
+                <div class="hud-value" id="scoreHeight">0m</div>
+            </div>
+            <div class="hud-box">
+                <div class="hud-label">최고 높이</div>
+                <div class="hud-value" id="scoreMax">0m</div>
+            </div>
         </div>
-        <div class="hud-box">
-            <div class="hud-label">최고 높이</div>
-            <div class="hud-value" id="scoreMax">0m</div>
+
+        <div class="game-header">
+            <h1>🟢 슬라임 점프 <span style="font-size: 0.8rem; color: #888; font-weight: normal;">v1.7</span></h1>
+            <button class="refresh-btn" onclick="location.reload(true)">새로고침</button>
+        </div>
+
+        <canvas id="gameCanvas" width="400" height="600"></canvas>
+
+        <div id="startScreen">
+            <h1 style="font-size: 2.5rem; margin-bottom: 10px;">🟢 슬라임 점프</h1>
+            <span style="color: #666; margin-bottom: 20px; font-size: 0.9rem;">Ver 1.5 - Hills Update</span>
+            <p style="color: #aaa; margin-bottom: 20px;">스페이스바를 길게 눌러 차징하고<br>높이 점프하세요 !</p><button class="start-btn"
+                onclick="startGame()">START</button>
+        </div>
+        <div class="game-over-screen" id="gameOverScreen">
+            <h2>GAME OVER</h2>
+            <p>최고 높이: <span id="finalScore">0</span>m</p><button class="start-btn" onclick="restartGame()">다시
+                시작</button>
         </div>
     </div>
-
-    <div class="game-header" style="display:none;">
-        <h1>🟢 슬라임 점프</h1>
-        <button class="refresh-btn" onclick="location.reload(true)">새로고침</button>
-    </div>
-
-    <canvas id="gameCanvas" width="400" height="600"></canvas>
 
 
 
     <div class="controls-info">
         SPACE 짧게 = 작은 점프 | SPACE 길게 차징 = 높은 점프
-    </div>
-
-    <div class="slider-area">
-        <span class="slider-label">투명도</span>
-        <input type="range" id="opacitySlider" min="30" max="100" value="100">
     </div>
 
     <div class="controls-area">
@@ -236,6 +256,11 @@
         </div>
     </div>
 
+    <div class="slider-area" style="margin-top: 20px; text-align: center; width: 100%;">
+        <span class="slider-label" style="color: #ccc; font-size: 0.9rem;">투명도 </span>
+        <input type="range" id="opacitySlider" min="30" max="100" value="100">
+    </div>
+
     <style>
         .slider-area {
             display: flex;
@@ -246,7 +271,10 @@
             background: rgba(74, 222, 128, 0.1);
             border: 2px solid #4ade80;
             border-radius: 10px;
-            width: 300px;
+            width: 100%;
+            /* Full width relative to parent */
+            max-width: 400px;
+            /* Match canvas max-width */
         }
 
         .slider-label {
@@ -328,15 +356,7 @@
             background: rgba(74, 222, 128, 0.2);
         }
     </style>
-    <div id="startScreen">
-        <h1 style="font-size: 2.5rem; margin-bottom: 30px;">🟢 슬라임 점프</h1>
-        <p style="color: #aaa; margin-bottom: 20px;">스페이스바를 길게 눌러 차징하고<br>높이 점프하세요 !</p><button class="start-btn"
-            onclick="startGame()">START</button>
-    </div>
-    <div class="game-over-screen" id="gameOverScreen">
-        <h2>GAME OVER</h2>
-        <p>최고 높이: <span id="finalScore">0</span>m</p><button class="start-btn" onclick="restartGame()">다시 시작</button>
-    </div>
+
     <script>const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         // const chargeBar = document.getElementById('chargeBar');
@@ -345,10 +365,12 @@
         const finalScoreEl = document.getElementById('finalScore');
 
         // 게임 상수 (속도 느리게 조정 - 더 자연스럽게)
-        const GRAVITY = 0.25; // 0.35 -> 0.25
+        // 게임 상수 (속도 느리게 조정 - 더 자연스럽게)
+        // Physics Re-tuning for Faster Gameplay (v1.7 Hyper)
+        const GRAVITY = 0.35; // 0.25 -> 0.35 (Hyper Fast)
         const MAX_CHARGE = 60;
-        const MIN_JUMP = -5; // -6 -> -5
-        const MAX_JUMP = -12; // -14 -> -12
+        const MIN_JUMP = -8; // -10 -> -8 (Lower base jump)
+        const MAX_JUMP = -12; // -16 -> -12 (Lower max jump - easier control)
         const PLAYER_SIZE = 30;
         const PLATFORM_HEIGHT = 15;
 
@@ -365,12 +387,18 @@
         let chargeTime = 0;
         let highestLandedY = 0; // 안전한 착지 지점 (카메라 제한용)
 
+        // Fixed Timestep Loop Variables
+        let lastTime = 0;
+        let accumulator = 0;
+        const step = 1000 / 60; // 60 FPS (16.67ms)
+
+        // 배경 구역 정의 (산 -> 물속 -> 하늘 -> 우주)
         // 배경 구역 정의 (산 -> 물속 -> 하늘 -> 우주)
         const ZONES = [
-            { name: 'mountain', minY: 0, maxY: 3000, colors: ['#a8e063', '#56ab2f'] }, // Green/Nature
-            { name: 'underwater', minY: 3000, maxY: 6000, colors: ['#2b5876', '#4e4376'] }, // Deep Blue/Ocean
-            { name: 'sky', minY: 6000, maxY: 9000, colors: ['#4facfe', '#00f2fe'] }, // Bright Sky
-            { name: 'space', minY: 9000, maxY: Infinity, colors: ['#0f2027', '#203a43', '#2c5364'] } // Space Dark
+            { name: 'mountain', minY: 0, maxY: 5000, colors: ['#87CEEB', '#E0F7FA'] }, // Blue Sky (Contrast with Green Mountains)
+            { name: 'underwater', minY: 5000, maxY: 8000, colors: ['#4fc3f7', '#0288d1'] }, // Lighter Ocean (Contrast with Seaweed)
+            { name: 'sky', minY: 8000, maxY: 11000, colors: ['#4facfe', '#00f2fe'] }, // Bright Sky
+            { name: 'space', minY: 11000, maxY: Infinity, colors: ['#0f2027', '#203a43', '#2c5364'] } // Space Dark
         ];
 
         function init() {
@@ -434,6 +462,25 @@
 
         function addPlatform(worldY) {
             const isMoving = Math.random() < 0.25; // 25% 확률로 이동 발판
+
+            // Special Types (Gated by Height - 5000m+)
+            let type = 'static';
+
+            // 특수 발판은 5000m 이상부터 등장
+            if (worldY > 5000) {
+                if (isMoving) type = 'moving';
+                else {
+                    const rand = Math.random();
+                    if (rand < 0.1) type = 'red'; // 10% Red (Vanish)
+                    else if (rand < 0.2) type = 'shiny'; // 10% Shiny (Trigger Move)
+                }
+            } else {
+                if (isMoving) type = 'moving'; // 움직이는 발판은 처음부터? Or also gated? 
+                // User asked "Block gimmicks add gradually after 5000m". 
+                // Assuming standard moving is okay, but user meant Red/Shiny. 
+                // Let's keep moving platforms, but gate the Red/Shiny.
+            }
+
             const width = 60 + Math.random() * 60;
             const x = Math.random() * (canvas.width - width);
 
@@ -442,9 +489,14 @@
                 y: canvas.height - worldY,
                 width: width,
                 height: PLATFORM_HEIGHT,
-                type: isMoving ? 'moving' : 'static',
-                moveSpeed: isMoving ? (0.3 + Math.random() * 0.7) * (Math.random() < 0.5 ? 1 : -1) : 0, // Slower platforms
-                originalX: x
+                height: PLATFORM_HEIGHT,
+                type: type,
+                type: type,
+                moveSpeed: (type === 'moving') ? (1.5 + Math.random() * 2.5) * (Math.random() < 0.5 ? 1 : -1) : 0, // 1.5 ~ 4.0
+                originalX: x,
+                decayTimer: 0,
+                maxDecay: 60, // 1 second approx
+                isTriggered: false // For Shiny
             });
         }
 
@@ -518,10 +570,10 @@
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // High quality vignette overlay
+            // High quality vignette overlay (Reduced opacity for clarity)
             const vignette = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, canvas.height / 3, canvas.width / 2, canvas.height / 2, canvas.height);
             vignette.addColorStop(0, 'rgba(0,0,0,0)');
-            vignette.addColorStop(1, 'rgba(0,0,0,0.4)');
+            vignette.addColorStop(1, 'rgba(0,0,0,0.2)'); // 0.4 -> 0.2
             ctx.fillStyle = vignette;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -544,101 +596,155 @@
         }
 
         function drawMountainDecorations() {
-            // 구름
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-            ctx.beginPath();
-            ctx.arc(50, 100, 30, 0, Math.PI * 2);
-            ctx.arc(80, 100, 40, 0, Math.PI * 2);
-            ctx.arc(120, 100, 30, 0, Math.PI * 2);
-            ctx.fill();
+            // ... Existing background ...
+            // ADD: Foreground Trees (Darker, closer) for "Tangible" feel
+            ctx.fillStyle = '#0f2f21'; // Almost black-green
+            for (let i = 0; i < 15; i++) {
+                const x = (i * 70 + 20) % canvas.width;
+                const y = canvas.height;
+                const h = 60 + (i % 3) * 20;
 
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + 15, y - h);
+                ctx.lineTo(x + 30, y);
+                ctx.fill();
+            }
+
+            // Base function from previous step (keep distant peaks)
+            const distantPeaks = [
+                { x: 0, y: 300 }, { x: 100, y: 250 }, { x: 200, y: 320 }, { x: 300, y: 280 }, { x: 400, y: 310 }
+            ];
+
+            ctx.fillStyle = '#4ade80';
+            ctx.globalAlpha = 0.5;
             ctx.beginPath();
-            ctx.arc(320, 200, 25, 0, Math.PI * 2);
-            ctx.arc(350, 200, 35, 0, Math.PI * 2);
-            ctx.arc(380, 200, 25, 0, Math.PI * 2);
+            ctx.moveTo(0, canvas.height);
+            distantPeaks.forEach(p => ctx.lineTo(p.x, canvas.height - p.y));
+            ctx.lineTo(canvas.width, canvas.height);
             ctx.fill();
+            ctx.globalAlpha = 1.0;
         }
 
         function drawOceanDecorations() {
-            // 파도 효과
+            // Seaweed (Tangible bottom)
+            ctx.fillStyle = '#064e3b';
+            for (let i = 0; i < 10; i++) {
+                const x = i * 40;
+                const h = 50 + Math.sin(Date.now() * 0.002 + i) * 10;
+                ctx.fillRect(x, canvas.height - h, 5, h);
+            }
+
+            // Bubbles
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
             ctx.lineWidth = 2;
-
             for (let i = 0; i < 3; i++) {
                 ctx.beginPath();
-
                 for (let x = 0; x < canvas.width; x += 10) {
                     const y = 100 + i * 80 + Math.sin((x + Date.now() * 0.001) * 0.05) * 10;
                     if (x === 0) ctx.moveTo(x, y);
                     else ctx.lineTo(x, y);
                 }
-
                 ctx.stroke();
             }
 
-            // 물고기
-            ctx.fillStyle = 'rgba(255, 200, 100, 0.5)';
-            const fishX = (Date.now() * 0.05) % (canvas.width + 50) - 25;
+            // Big Fish (Tangible)
+            ctx.fillStyle = '#fca5a5'; // Salmon
+            const fishX = (Date.now() * 0.1) % (canvas.width + 100) - 50;
+            const fishY = 400 + Math.sin(Date.now() * 0.002) * 20;
+
             ctx.beginPath();
-            ctx.ellipse(fishX, 300, 15, 8, 0, 0, Math.PI * 2);
+            ctx.ellipse(fishX, fishY, 30, 15, 0, 0, Math.PI * 2); // Body
             ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(fishX - 30, fishY);
+            ctx.lineTo(fishX - 45, fishY - 10);
+            ctx.lineTo(fishX - 45, fishY + 10);
+            ctx.fill(); // Tail
+
+            // Eye
+            ctx.fillStyle = '#000';
+            ctx.beginPath(); ctx.arc(fishX + 15, fishY - 5, 3, 0, Math.PI * 2); ctx.fill();
         }
 
         function drawSkyDecorations() {
-            // 큰 구름
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-
-            for (let i = 0; i < 5; i++) {
-                const x = (i * 100 + Date.now() * 0.01) % (canvas.width + 100) - 50;
+            // Clouds
+            const time = Date.now() * 0.0005;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            const clouds = [{ x: 50, y: 100, s: 1 }, { x: 250, y: 150, s: 0.8 }, { x: 150, y: 50, s: 1.2 }];
+            clouds.forEach(cloud => {
+                const offsetX = (cloud.x + time * 20 * cloud.s) % (canvas.width + 100) - 50;
+                const y = cloud.y;
                 ctx.beginPath();
-                ctx.arc(x, 80 + i * 50, 25 + i * 5, 0, Math.PI * 2);
-                ctx.arc(x + 30, 80 + i * 50, 30 + i * 5, 0, Math.PI * 2);
-                ctx.arc(x + 60, 80 + i * 50, 25 + i * 5, 0, Math.PI * 2);
+                ctx.arc(offsetX, y, 20, 0, Math.PI * 2);
+                ctx.arc(offsetX + 15, y - 10, 25, 0, Math.PI * 2);
+                ctx.arc(offsetX + 30, y, 20, 0, Math.PI * 2);
                 ctx.fill();
-            }
+            });
 
-            // 새
-            ctx.strokeStyle = '#fff';
+            // Birds (V Shape)
+            ctx.strokeStyle = '#000';
             ctx.lineWidth = 2;
+            const birdX = (Date.now() * 0.08) % (canvas.width + 50) - 25;
+            const birdY = 150 + Math.sin(Date.now() * 0.005) * 20;
 
-            for (let i = 0; i < 3; i++) {
-                const x = 100 + i * 100;
-                const y = 150 + i * 80;
-                ctx.beginPath();
-                ctx.moveTo(x - 10, y);
-                ctx.quadraticCurveTo(x, y - 10, x + 10, y);
-                ctx.stroke();
-            }
+            ctx.beginPath();
+            ctx.moveTo(birdX, birdY);
+            ctx.lineTo(birdX - 10, birdY - 5);
+            ctx.moveTo(birdX, birdY);
+            ctx.lineTo(birdX + 10, birdY - 5);
+            ctx.stroke();
         }
 
         function drawSpaceDecorations() {
-            // 별
+            // Stars
             ctx.fillStyle = '#fff';
-
             for (let i = 0; i < 50; i++) {
-                const x = (i * 37) % canvas.width;
-                const y = (i * 53) % canvas.height;
-                const size = 1 + (i % 3);
-                ctx.beginPath();
-                ctx.arc(x, y, size, 0, Math.PI * 2);
-                ctx.fill();
+                const x = (i * 123) % canvas.width;
+                const y = (i * 456) % canvas.height;
+                const alpha = Math.abs(Math.sin((Date.now() * 0.001) + i));
+                ctx.globalAlpha = alpha;
+                ctx.fillRect(x, y, 2, 2);
             }
+            ctx.globalAlpha = 1.0;
 
-            // 행성
-            const gradient = ctx.createRadialGradient(350, 150, 10, 350, 150, 40);
-            gradient.addColorStop(0, '#f472b6');
-            gradient.addColorStop(1, '#9333ea');
+            // Planet (Saturn-like) - Big
+            const centerX = 300;
+            const centerY = 150;
+
+            /* Planet Drawing Code SAME as before but verify */
+            // Rings (Behind)
+            ctx.strokeStyle = '#a78bfa';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.ellipse(centerX, centerY, 60, 15, -0.2, 0, Math.PI * 2);
+            ctx.stroke();
+            // Body
+            const gradient = ctx.createLinearGradient(centerX - 30, centerY - 30, centerX + 30, centerY + 30);
+            gradient.addColorStop(0, '#8b5cf6');
+            gradient.addColorStop(1, '#c4b5fd');
             ctx.fillStyle = gradient;
             ctx.beginPath();
-            ctx.arc(350, 150, 35, 0, Math.PI * 2);
+            ctx.arc(centerX, centerY, 30, 0, Math.PI * 2);
             ctx.fill();
-
-            // 토성 고리
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-            ctx.lineWidth = 3;
+            // Rings (Front)
+            ctx.strokeStyle = 'rgba(167, 139, 250, 0.5)';
             ctx.beginPath();
-            ctx.ellipse(350, 150, 55, 15, 0.3, 0, Math.PI * 2);
+            ctx.ellipse(centerX, centerY, 60, 15, -0.2, 0, Math.PI * 1); // Half ellipse
             ctx.stroke();
+
+            // Satellite
+            const satX = 100 + Math.cos(Date.now() * 0.002) * 80;
+            const satY = 100 + Math.sin(Date.now() * 0.002) * 20;
+
+            ctx.fillStyle = '#9ca3af'; // Grey
+            ctx.beginPath(); ctx.fillRect(satX - 10, satY, 20, 10); // Panel
+            ctx.fillRect(satX - 2, satY - 5, 4, 20); // Body
+
+            // Blink light
+            if (Math.floor(Date.now() / 500) % 2 === 0) ctx.fillStyle = 'red';
+            else ctx.fillStyle = '#333';
+            ctx.beginPath(); ctx.arc(satX, satY, 2, 0, Math.PI * 2); ctx.fill();
         }
 
         function drawPlatforms() {
@@ -674,14 +780,37 @@
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
                 ctx.fillRect(p.x + 3, screenY + 3, p.width, p.height);
 
-                // 발판 본체
-                const grad = ctx.createLinearGradient(p.x, screenY, p.x, screenY + p.height);
-                grad.addColorStop(0, platformColor);
-                grad.addColorStop(1, shadeColor(platformColor, -30));
-                ctx.fillStyle = grad;
+                // Main Platform Body
+                ctx.fillStyle = platformColor;
+                if (p.type === 'red') {
+                    if (p.decayTimer > 0 && Math.floor(p.decayTimer / 5) % 2 === 0) ctx.fillStyle = '#fca5a5';
+                    else ctx.fillStyle = '#ef4444';
+                } else if (p.type === 'shiny') {
+                    ctx.fillStyle = '#fef08a';
+                }
+
                 ctx.beginPath();
                 ctx.roundRect(p.x, screenY, p.width, p.height, 5);
                 ctx.fill();
+
+                // 3D Bevel - Highlight (Top)
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.beginPath();
+                ctx.roundRect(p.x, screenY, p.width, p.height / 2, 5);
+                ctx.fill();
+
+                // Shiny Glow
+                if (p.type === 'shiny') {
+                    ctx.shadowColor = '#facc15';
+                    ctx.shadowBlur = p.isTriggered ? 20 : 10;
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                }
+
+                /* Removed old fill logic to support 3D effect above */
+                ctx.shadowBlur = 0; // Reset
 
                 // 이동 발판 표시
                 if (p.type === 'moving') {
@@ -842,16 +971,7 @@
         function updatePlayer() {
             if (!gameStarted || gameOver) return;
 
-            // 이동 발판 먼저 업데이트
-            platforms.forEach(p => {
-                if (p.type === 'moving') {
-                    p.x += p.moveSpeed;
-
-                    if (p.x < 0 || p.x + p.width > canvas.width) {
-                        p.moveSpeed *= -1;
-                    }
-                }
-            });
+            // 이동 발판 업데이트는 아래에서 통합 처리됨
 
             // 중력 적용
             if (!player.onGround) {
@@ -894,18 +1014,60 @@
                         player.onGround = true;
                         landedOnPlatform = p;
 
-                        // 안전한 착지 높이 업데이트 (화면 좌표계에서 y는 아래로 갈수록 커짐. 즉, 더 높은 곳은 y가 작음)
-                        // 따라서 min 값을 찾아야 함
-                        if (p.y < highestLandedY) {
+                        // 안전한 착지 높이 업데이트
+                        // Red Platform doesn't count as safe? Maybe it does for a second.
+                        // But if it vanishes, it's unsafe. 
+                        // Let's only update highestLandedY if it's NOT red.
+                        if (p.type !== 'red' && p.y < highestLandedY) {
                             highestLandedY = p.y;
+                        }
+
+                        // Shiny Trigger
+                        if (p.type === 'shiny' && !p.isTriggered) {
+                            p.isTriggered = true;
+                            p.moveSpeed = (0.5 + Math.random() * 1.5) * (Math.random() < 0.5 ? 1 : -1);
+                        }
+
+                        // Red Trigger (Start Decay)
+                        if (p.type === 'red' && p.decayTimer === 0) {
+                            p.decayTimer = 1; // Start counting
                         }
                     }
                 }
             });
 
-            // 이동 발판 위에 있으면 같이 이동
-            if (landedOnPlatform && landedOnPlatform.type === 'moving') {
-                player.x += landedOnPlatform.moveSpeed;
+            // 이동 발판 (Moving & Shiny Triggered)
+            platforms.forEach((p, index) => {
+                if (p.type === 'moving' || (p.type === 'shiny' && p.isTriggered)) {
+                    p.x += p.moveSpeed;
+                    if (p.x < 0 || p.x + p.width > canvas.width) {
+                        p.moveSpeed *= -1;
+                    }
+
+                    // If player is on it, move player
+                    if (player.onGround && landedOnPlatform === p) {
+                        player.x += p.moveSpeed;
+                    }
+                }
+
+                // Red Decay
+                if (p.type === 'red' && p.decayTimer > 0) {
+                    p.decayTimer++;
+                    if (p.decayTimer > p.maxDecay) {
+                        // Remove platform!
+                        // Splice is dangerous inside forEach if not careful, but we are just iterating.
+                        // Better to mark for deletion and filter later.
+                        p.markedForDeletion = true;
+                    }
+                }
+            });
+
+            // Remove decayed platforms
+            platforms = platforms.filter(p => !p.markedForDeletion);
+            // Re-check landedOnPlatform validity
+            if (landedOnPlatform && landedOnPlatform.markedForDeletion) {
+                player.onGround = false;
+                landedOnPlatform = null;
             }
 
             // 공중 마찰력 (점프 중 좌우 이동 감속)
@@ -1092,10 +1254,22 @@
             document.getElementById('scoreMax').innerText = Math.floor(maxHeight) + "m";
         }
 
-        function gameLoop() {
-            if (gameStarted && !gameOver) {
-                update();
-                updateHUD();
+        function gameLoop(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            let deltaTime = timestamp - lastTime;
+            lastTime = timestamp;
+
+            // Limit deltaTime to prevent spiraling (e.g. tab backgrounded)
+            if (deltaTime > 100) deltaTime = 100;
+
+            accumulator += deltaTime;
+
+            while (accumulator >= step) {
+                if (gameStarted && !gameOver) {
+                    update();
+                    updateHUD();
+                }
+                accumulator -= step;
             }
 
             draw();
@@ -1155,8 +1329,8 @@
                 }
             }
 
-            if (e.code === 'ArrowLeft') player.vx = -3; // Slower horizontal
-            if (e.code === 'ArrowRight') player.vx = 3;
+            if (e.code === 'ArrowLeft') player.vx = -7; // 5 -> 7
+            if (e.code === 'ArrowRight') player.vx = 7;
         });
 
         document.addEventListener('keyup', (e) => {
@@ -1203,7 +1377,7 @@
         }
 
         btnLeft.addEventListener('touchstart', (e) => {
-            e.preventDefault(); player.vx = -3;
+            e.preventDefault(); player.vx = -7;
         });
 
         btnLeft.addEventListener('touchend', (e) => {
@@ -1211,7 +1385,7 @@
         });
 
         btnRight.addEventListener('touchstart', (e) => {
-            e.preventDefault(); player.vx = 3;
+            e.preventDefault(); player.vx = 7;
         });
 
         btnRight.addEventListener('touchend', (e) => {
@@ -1234,7 +1408,7 @@
 
         // Mouse support for testing on desktop
         btnLeft.addEventListener('mousedown', (e) => {
-            player.vx = -3;
+            player.vx = -7;
         });
 
         btnLeft.addEventListener('mouseup', (e) => {
@@ -1246,7 +1420,7 @@
         });
 
         btnRight.addEventListener('mousedown', (e) => {
-            player.vx = 3;
+            player.vx = 7;
         });
 
         btnRight.addEventListener('mouseup', (e) => {
@@ -1282,8 +1456,9 @@
         window.restartGame = restartGame;
 
         // 초기화 및 게임 루프 시작
+        // 초기화 및 게임 루프 시작
         init();
-        gameLoop();
+        requestAnimationFrame(gameLoop);
     </script>
 </body>
 
