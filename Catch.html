@@ -205,6 +205,7 @@
             gameActive = true;
             overlay.style.display = 'none';
             scoreEl.innerText = score;
+            lastTime = performance.now(); // Initialize lastTime to current time
             requestAnimationFrame(gameLoop);
         }
 
@@ -315,19 +316,31 @@
             if (e.key === 'ArrowRight') moveRight = false;
         });
 
-        // Mobile buttons
+        // Mobile buttons (Modern Pointer Events)
         const btnLeft = document.getElementById('btnLeft');
         const btnRight = document.getElementById('btnRight');
 
-        const bindBtn = (btn, isRight, val) => {
-            btn.addEventListener('touchstart', (e) => { e.preventDefault(); if (isRight) moveRight = val; else moveLeft = val; });
-            btn.addEventListener('touchend', (e) => { e.preventDefault(); if (isRight) moveRight = !val; else moveLeft = !val; });
-            btn.onmousedown = () => { if (isRight) moveRight = val; else moveLeft = val; };
-            btn.onmouseup = () => { if (isRight) moveRight = !val; else moveLeft = !val; };
+        const bindBtn = (btn, isRight) => {
+            const startMove = (e) => {
+                e.preventDefault();
+                if (isRight) moveRight = true;
+                else moveLeft = true;
+                btn.releasePointerCapture(e.pointerId); // Support multi-touch
+            };
+            const stopMove = (e) => {
+                e.preventDefault();
+                if (isRight) moveRight = false;
+                else moveLeft = false;
+            };
+
+            btn.addEventListener('pointerdown', startMove);
+            btn.addEventListener('pointerup', stopMove);
+            btn.addEventListener('pointerleave', stopMove);
+            btn.addEventListener('pointercancel', stopMove);
         };
 
-        bindBtn(btnLeft, false, true);
-        bindBtn(btnRight, true, true);
+        bindBtn(btnLeft, false);
+        bindBtn(btnRight, true);
 
         overlay.style.display = 'flex';
 
