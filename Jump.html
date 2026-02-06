@@ -1202,50 +1202,128 @@
         }
 
         function drawBackground() {
-            // Calculate current height based on player y or camera y
-            // camera.y increases as we go up.
-            // Let's use camera.y for smooth background transition.
-            const height = camera.y * 3; // Scale factor to match world coords roughly 
-            // OR use max height? 
-            // Better: use camera center as reference.
-            // 1 pixel = 1 unit? 
-            // Let's use maxHeight for zone tracking or just camera.y
-
-            const smoothedColor = getSmoothedBackgroundColor(Math.max(0, -player.y + (canvas.height / 2)));
-
-            // Draw gradient background
-            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            // Current color at top, slightly darker at bottom?
-            // Actually getSmoothedBackgroundColor gives a single RGB.
-            // Let's interpolate based on screen top and bottom?
-            // Too expensive. Just solid color or simple gradient.
-
-            const colorHex = rgbToHex(smoothedColor);
-            ctx.fillStyle = colorHex;
-            ctx.fillRect(0, 0, canvas.width, canvas.height); // Clear with background color
-
-            // Add Zone Specific Details
             const currentZone = getZoneForHeight(Math.max(0, -player.y));
 
-            if (currentZone.name === 'underwater') {
-                // Bubbles
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-                for (let i = 0; i < 5; i++) {
-                    const x = (Date.now() / 50 + i * 100) % canvas.width;
-                    const y = (Date.now() / 20 + i * 150) % canvas.height;
-                    ctx.beginPath();
-                    ctx.arc(x, y, 5 + i, 0, Math.PI * 2);
-                    ctx.fill();
+            // Dispatch to specific scene drawers
+            if (currentZone.name === 'mountain') drawMountainScene();
+            else if (currentZone.name === 'underwater') drawOceanScene();
+            else if (currentZone.name === 'sky') drawSkyScene();
+            else if (currentZone.name === 'space') drawSpaceScene();
+        }
+
+        function drawMountainScene() {
+            // Sky Gradient
+            const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            grad.addColorStop(0, '#87CEEB'); // Sky Blue
+            grad.addColorStop(1, '#E0F7FA'); // Light Blue
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Sun
+            ctx.fillStyle = '#FDB813';
+            ctx.beginPath();
+            ctx.arc(350, 80, 40, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Background Mountains (Distant)
+            ctx.fillStyle = '#A8D5BA'; // Pale Green
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height);
+            ctx.lineTo(100, canvas.height - 200);
+            ctx.lineTo(250, canvas.height);
+            ctx.lineTo(350, canvas.height - 150);
+            ctx.lineTo(canvas.width, canvas.height);
+            ctx.fill();
+
+            // Foreground Mountains (Closer)
+            ctx.fillStyle = '#4CAF50'; // Green
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height);
+            ctx.lineTo(50, canvas.height - 100);
+            ctx.lineTo(150, canvas.height);
+            ctx.lineTo(250, canvas.height - 120);
+            ctx.lineTo(400, canvas.height);
+            ctx.fill();
+
+            // Add existing decorations (Trees)
+            drawMountainDecorations();
+        }
+
+        function drawOceanScene() {
+            // Ocean Gradient
+            const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            grad.addColorStop(0, '#0288D1'); // Deep Blue
+            grad.addColorStop(1, '#B3E5FC'); // Lighter Surface
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Geometric Waves (Layers)
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            for (let j = 0; j < 3; j++) {
+                ctx.beginPath();
+                ctx.moveTo(0, canvas.height);
+                for (let i = 0; i <= canvas.width; i += 20) {
+                    const y = 200 + j * 150 + Math.sin(i * 0.02 + Date.now() * 0.002 + j) * 20;
+                    ctx.lineTo(i, y);
                 }
-            } else if (currentZone.name === 'space') {
-                // Stars
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-                for (let i = 0; i < 10; i++) {
-                    const x = (i * 123456 % canvas.width);
-                    const y = (i * 654321 % canvas.height);
-                    ctx.fillRect(x, y, 2, 2);
-                }
+                ctx.lineTo(canvas.width, canvas.height);
+                ctx.fill();
             }
+
+            // Add existing decorations (Seaweed, Fish)
+            drawOceanDecorations();
+        }
+
+        function drawSkyScene() {
+            // Sky Gradient
+            const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            grad.addColorStop(0, '#1976D2'); // High Altitude Blue
+            grad.addColorStop(1, '#64B5F6'); // Lighter
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Geometric Clouds (Big circles)
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            const time = Date.now() * 0.0005;
+
+            // Layer 1
+            for (let i = 0; i < 5; i++) {
+                const x = ((i * 150) + time * 20) % (canvas.width + 200) - 100;
+                const y = 100 + (i % 2) * 50;
+                ctx.beginPath();
+                ctx.arc(x, y, 40, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(x + 50, y + 10, 50, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Add existing decorations (Birds)
+            drawSkyDecorations();
+        }
+
+        function drawSpaceScene() {
+            // Space Gradient
+            const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            grad.addColorStop(0, '#000000'); // Black
+            grad.addColorStop(1, '#1A237E'); // Deep Navy
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Geometric Grid (Retro style)
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+            // Vertical lines
+            for (let x = 0; x < canvas.width; x += 40) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+            }
+            // Horizontal lines
+            for (let y = 0; y < canvas.height; y += 40) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+            }
+
+            // Add existing decorations (Planets, Stars)
+            drawSpaceDecorations();
         }
 
         function draw() {
