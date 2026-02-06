@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>루팡 - 다일러 테트리스 v4.4</title>
+    <title>루팡 - 다일러 테트리스 v5.0</title>
     <style>
         :root {
             --unit: 20px; 
             --main-color: #4ecca3;
             --bg-color: #1a1a2e;
             --board-width: calc(var(--unit) * 12);
-            --side-width: calc(var(--unit) * 4);
+            --side-width: calc(var(--unit) * 4.5);
         }
 
         body {
@@ -21,11 +21,12 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100dvh;
+            min-height: 100dvh;
             margin: 0;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
             touch-action: none;
-            padding: 1dvh 2dvw;
+            padding: 40px 10px;
             box-sizing: border-box;
         }
 
@@ -34,21 +35,21 @@
             flex-direction: column;
             align-items: center;
             transition: opacity 0.1s;
-            gap: calc(var(--unit) * 0.3);
+            gap: calc(var(--unit) * 0.5);
+            margin: auto;
         }
 
         .game-header {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: calc(var(--unit) * 0.15);
+            gap: calc(var(--unit) * 0.2);
             margin-bottom: calc(var(--unit) * 0.2);
         }
-
-        h1 { color: var(--main-color); letter-spacing: 3px; margin: 0; font-size: calc(var(--unit) * 1.3); }
+        h1 { color: var(--main-color); letter-spacing: 5px; margin: 0; font-size: calc(var(--unit) * 1.4); }
         .refresh-btn { 
             background: var(--main-color); border: none; color: #1a1a2e; 
-            padding: calc(var(--unit) * 0.15) calc(var(--unit) * 0.6); 
+            padding: calc(var(--unit) * 0.2) calc(var(--unit) * 0.8); 
             border-radius: 4px; cursor: pointer; 
             font-weight: bold; font-size: calc(var(--unit) * 0.5);
         }
@@ -59,13 +60,13 @@
             grid-template-columns: var(--side-width) var(--board-width) var(--side-width);
             align-items: start;
             justify-content: center;
-            gap: calc(var(--unit) * 0.4);
+            gap: calc(var(--unit) * 0.6);
         }
 
         canvas#tetris {
             grid-column: 2;
-            border: solid calc(var(--unit) * 0.1) var(--main-color);
-            box-shadow: 0 0 calc(var(--unit) * 0.8) rgba(78, 204, 163, 0.15);
+            border: solid calc(var(--unit) * 0.15) var(--main-color);
+            box-shadow: 0 0 calc(var(--unit) * 1) rgba(78, 204, 163, 0.2);
             background-color: #16213e;
             image-rendering: pixelated;
             width: var(--board-width);
@@ -76,24 +77,24 @@
             grid-column: 3;
             display: flex;
             flex-direction: column;
-            gap: calc(var(--unit) * 0.4);
+            gap: calc(var(--unit) * 0.5);
             width: var(--side-width);
         }
 
         .next-box {
-            border: solid calc(var(--unit) * 0.08) var(--main-color);
-            background: #16213e; padding: calc(var(--unit) * 0.2) 0;
+            border: solid calc(var(--unit) * 0.1) var(--main-color);
+            background: #16213e; padding: calc(var(--unit) * 0.3) 0;
             text-align: center; border-radius: 4px;
         }
 
         canvas#next { 
             background-color: #16213e; display: block; margin: 0 auto;
             image-rendering: pixelated;
-            width: calc(var(--unit) * 2.8); height: calc(var(--unit) * 16); 
+            width: calc(var(--unit) * 3); height: calc(var(--unit) * 15); 
         }
 
-        .stat-group { text-align: center; background: rgba(255,255,255,0.05); padding: calc(var(--unit) * 0.25); border-radius: 4px; }
-        .stat-label { font-size: calc(var(--unit) * 0.38); color: var(--main-color); font-weight: bold; }
+        .stat-group { text-align: center; background: rgba(255,255,255,0.05); padding: calc(var(--unit) * 0.3); border-radius: 4px; }
+        .stat-label { font-size: calc(var(--unit) * 0.4); color: var(--main-color); font-weight: bold; }
         .stat-value { font-size: calc(var(--unit) * 0.7); font-weight: bold; }
         
         .controls-section {
@@ -101,48 +102,43 @@
             flex-direction: column;
             align-items: center;
             width: var(--board-width);
-            gap: calc(var(--unit) * 0.3);
+            gap: calc(var(--unit) * 0.4);
         }
 
-        /* 🕹️ 🌟 모바일 조작부 재배치 (아케이드 스타일) */
-        .mobile-controls {
-            width: 100%; 
-            display: grid;
-            grid-template-areas: 
-                "up up up"
-                "left down right"
-                "drop drop drop";
-            gap: calc(var(--unit) * 0.25);
-        }
+        .layout-row-top { display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(var(--unit) * 0.3); width: 100%; margin-bottom: calc(var(--unit) * 0.3); }
+        .layout-row-bottom { display: grid; grid-template-columns: repeat(2, 1fr); gap: calc(var(--unit) * 0.3); width: 100%; }
 
         .btn {
-            background: rgba(78, 204, 163, 0.1); border: calc(var(--unit) * 0.08) solid var(--main-color);
-            color: var(--main-color); padding: calc(var(--unit) * 0.4); border-radius: 8px;
-            text-align: center; font-weight: bold; cursor: pointer; 
-            font-size: calc(var(--unit) * 0.6); -webkit-tap-highlight-color: transparent;
+            background: rgba(78, 204, 163, 0.1); border: calc(var(--unit) * 0.1) solid var(--main-color);
+            color: var(--main-color); height: calc(var(--unit) * 2);
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 8px; font-weight: bold; cursor: pointer; 
+            font-size: calc(var(--unit) * 0.55); -webkit-tap-highlight-color: transparent;
             user-select: none;
         }
         .btn:active { background: var(--main-color); color: #1a1a2e; }
 
-        /* 버튼 구역 할당 */
-        .btn-up { grid-area: up; padding: calc(var(--unit) * 0.5); background: rgba(78, 204, 163, 0.2); } /* 회전 강조 */
-        .btn-left { grid-area: left; }
-        .btn-down { grid-area: down; }
-        .btn-right { grid-area: right; }
-        .btn-drop { grid-area: drop; padding: calc(var(--unit) * 0.3); background: rgba(255, 255, 255, 0.05); color: #eee; } /* 하드드롭 */
-
         .controls-info { font-size: calc(var(--unit) * 0.4); color: #666; text-align: center; }
 
+        /* 🌟 🌟 투명도 슬라이더 너비 최적화 (보드 너비의 80%로 단축) */
         .slider-area { 
-            display: flex; align-items: center; justify-content: center;
-            gap: calc(var(--unit) * 0.4); width: 100%;
-            background: rgba(255,255,255,0.03); padding: calc(var(--unit) * 0.25);
-            border-radius: calc(var(--unit) * 0.4);
+            display: flex; 
+            flex-direction: row; 
+            align-items: center; 
+            justify-content: space-between;
+            gap: calc(var(--unit) * 0.6); 
+            /* 🚀 가로폭 단축 */
+            width: 80%; 
+            background: rgba(255,255,255,0.06); 
+            padding: calc(var(--unit) * 0.5); 
+            border-radius: calc(var(--unit) * 0.6); 
+            box-sizing: border-box;
+            margin-top: calc(var(--unit) * 0.2);
         }
-        .slider-label { font-size: calc(var(--unit) * 0.45); color: var(--main-color); font-weight: bold; }
-        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; cursor: pointer; }
-        input[type=range]::-webkit-slider-runnable-track { height: calc(var(--unit) * 0.25); background: rgba(78, 204, 163, 0.2); border-radius: 5px; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: calc(var(--unit) * 0.7); width: calc(var(--unit) * 0.7); border-radius: 50%; background: var(--main-color); margin-top: calc(var(--unit) * -0.22); }
+        .slider-label { font-size: calc(var(--unit) * 0.6); color: var(--main-color); font-weight: bold; white-space: nowrap; }
+        input[type=range] { -webkit-appearance: none; flex-grow: 1; background: transparent; cursor: pointer; height: calc(var(--unit) * 1.2); }
+        input[type=range]::-webkit-slider-runnable-track { height: calc(var(--unit) * 0.4); background: rgba(78, 204, 163, 0.25); border-radius: calc(var(--unit) * 0.3); }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: calc(var(--unit) * 1.1); width: calc(var(--unit) * 1.1); border-radius: 50%; background: var(--main-color); margin-top: calc(var(--unit) * -0.35); box-shadow: 0 0 calc(var(--unit) * 0.3) rgba(0,0,0,0.4); border: calc(var(--unit) * 0.1) solid #fff; }
     </style>
 </head>
 <body>
@@ -161,7 +157,7 @@
             
             <div class="side-panel">
                 <div class="next-box">
-                    <div class="stat-label">NEXT</div>
+                    <div class="stat-label" style="margin-bottom: 3px;">NEXT</div>
                     <canvas id="next"></canvas>
                 </div>
                 <div class="stat-group">
@@ -176,14 +172,18 @@
         </div>
 
         <div class="controls-section">
-            <div class="mobile-controls">
-                <div class="btn btn-up" id="ctrl-up">회전 (ROTATE)</div>
-                <div class="btn btn-left" id="ctrl-left">◀</div>
-                <div class="btn btn-down" id="ctrl-down">▼</div>
-                <div class="btn btn-right" id="ctrl-right">▶</div>
-                <div class="btn btn-drop" id="ctrl-drop">하드드롭 (HARD DROP)</div>
+            <div class="layout-row-top">
+                <div class="btn" id="ctrl-left">◀</div>
+                <div class="btn" id="ctrl-down">▼</div>
+                <div class="btn" id="ctrl-right">▶</div>
+            </div>
+            <div class="layout-row-bottom">
+                <div class="btn" style="background: rgba(78, 204, 163, 0.25);" id="ctrl-up">ROTATE</div>
+                <div class="btn" style="background: rgba(255, 255, 255, 0.1);" id="ctrl-drop">HARD DROP</div>
             </div>
             
+            <div class="controls-info">←→ 이동 | ↑ 회전 | ↓ 가속 | Space 하드드롭</div>
+
             <div class="slider-area">
                 <span class="slider-label">투명도</span>
                 <input type="range" id="opacitySlider" min="5" max="100" value="100">
@@ -192,7 +192,7 @@
     </div>
 
 <script>
-// [JS 로직은 v4.3과 동일하게 유지 - 7-Bag, DAS, 리사이징, 고스트 피팅 등 포함]
+// [JS 로직은 v4.9와 동일 유지]
 const canvas = document.getElementById('tetris');
 const context = canvas.getContext('2d');
 const nextCanvas = document.getElementById('next');
@@ -212,8 +212,8 @@ let calculatedUnit = 20;
 function resizeGame() {
     const screenHeight = window.innerHeight;
     const screenWidth = window.innerWidth;
-    calculatedUnit = Math.floor((screenHeight * 0.68) / 20);
-    const totalRequiredWidthUnits = 12 + 4 + 4 + 1; 
+    calculatedUnit = Math.floor((screenHeight * 0.52) / 20);
+    const totalRequiredWidthUnits = 12 + 4.5 + 4.5 + 2; 
     if (calculatedUnit * totalRequiredWidthUnits > screenWidth) {
         calculatedUnit = Math.floor(screenWidth / totalRequiredWidthUnits);
     }
@@ -225,7 +225,7 @@ function resizeGame() {
     nextCanvas.width = calculatedUnit * 3;
     nextCanvas.height = calculatedUnit * 16; 
     nextContext.setTransform(1, 0, 0, 1, 0, 0);
-    nextContext.scale(calculatedUnit * 0.75, calculatedUnit * 0.75);
+    nextContext.scale(calculatedUnit * 0.8, calculatedUnit * 0.8);
 }
 
 window.addEventListener('resize', resizeGame);
@@ -311,11 +311,10 @@ function draw() {
     const ghostPos = getGhostPosition();
     drawMatrix(player.matrix, ghostPos, context, true);
     drawMatrix(player.matrix, player.pos);
-
     nextContext.fillStyle = '#16213e';
     nextContext.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
     player.queue.slice(0, 4).forEach((matrix, i) => {
-        const slotH = 5.3; 
+        const slotH = 5; 
         const yBase = i * slotH;
         nextContext.strokeStyle = 'rgba(78, 204, 163, 0.15)';
         nextContext.strokeRect(0.1, yBase + 0.1, 3.8, 3.8);
@@ -323,7 +322,6 @@ function draw() {
         const yOff = yBase + (4 - matrix.length) / 2;
         drawMatrix(matrix, {x: xOff, y: yOff}, nextContext);
     });
-
     if (isGameOver) {
         context.fillStyle = 'rgba(0, 0, 0, 0.85)';
         context.fillRect(0, 0, canvas.width, canvas.height);
