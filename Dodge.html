@@ -305,7 +305,8 @@
             if (!gameActive) return;
             const side = Math.floor(Math.random() * 4);
             let x, y, vx, vy;
-            const speed = 0.6 + (score / 12); // Lower initial (1.0 -> 0.6), faster scaling (15 -> 12)
+            // Exponential Speed: Starts very slow (0.4), ramps up steeply after 20-30s
+            const speed = 0.4 + Math.pow(score / 25, 2.2);
             const typeProb = Math.random();
             let type = 'straight';
             if (score > 10) {
@@ -379,8 +380,8 @@
             score += 1 / 60;
             scoreEl.innerText = score.toFixed(1) + 's';
 
-            // Spawn bullets periodically
-            if (Math.random() < 0.02 + (score / 150)) {
+            // Exponential Spawn Rate: Starts sparse (0.01), increases non-linearly
+            if (Math.random() < 0.01 + Math.pow(score / 35, 2.5)) {
                 spawnBullet();
             }
 
