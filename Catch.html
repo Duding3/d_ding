@@ -319,7 +319,9 @@
         function gameOver() {
             gameActive = false;
             msgEl.innerText = "GAME OVER";
+            msgEl.style.display = 'block';
             finalMsg.innerText = `최종 점수: ${score}`;
+            finalMsg.style.display = 'block';
             overlay.style.display = 'flex';
             if (score > bestScore) {
                 bestScore = score;
