@@ -22,6 +22,16 @@
             font-family: 'Segoe UI', sans-serif;
             overflow: hidden;
             position: relative;
+            padding: 10px;
+        }
+
+        .game-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: min(95vw, 450px);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
         .hud-container {
@@ -189,8 +199,10 @@
         .game-wrapper {
             position: relative;
             width: 100%;
-            max-width: 400px;
-            margin: 0 auto;
+            max-width: min(95vw, 450px);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
         .game-over-screen h2 {
@@ -205,12 +217,19 @@
             margin-bottom: 30px;
         }
 
+        canvas {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 400/600;
+            background: #000;
+            display: block;
+        }
+
         .canvas-container {
             position: relative;
             width: 100%;
             border-radius: 12px;
             overflow: hidden;
-            /* Ensures screens conform to rounded corners */
         }
     </style>
 </head>
@@ -219,7 +238,7 @@
     <div class="game-wrapper">
         <div class="game-header">
             <h1 style="font-family: 'Segoe UI', sans-serif;">🟢 슬라임 점프 <span
-                    style="font-size: 0.9rem; color: #aaa; opacity: 0.5; font-weight: normal;">v10.0</span></h1>
+                    style="font-size: 0.9rem; color: #aaa; opacity: 0.5; font-weight: normal;">v1.0</span></h1>
             <button class="refresh-btn" onclick="location.reload(true)">새로고침</button>
         </div>
 

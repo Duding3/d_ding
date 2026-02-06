@@ -8,11 +8,11 @@
     <title>다일러 테트리스</title>
     <style>
         :root {
-            --unit: 20px;
+            --unit: min(3.5vh, 2.8vw, 22px);
             --main-color: #4ecca3;
             --bg-color: #1a1a2e;
-            --board-width: calc(var(--unit) * 12);
-            --side-width: calc(var(--unit) * 4.5);
+            --board-width: calc(var(--unit) * 10);
+            --side-width: calc(var(--unit) * 5);
         }
 
         body {
@@ -79,7 +79,7 @@
             grid-template-columns: var(--side-width) var(--board-width) var(--side-width);
             align-items: start;
             justify-content: center;
-            gap: calc(var(--unit) * 0.6);
+            gap: calc(var(--unit) * 0.4);
             position: relative;
         }
 

@@ -32,10 +32,8 @@
             border-radius: 30px;
             border: 1px solid var(--glass-border);
             box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
-            padding: 1.5rem;
-            /* 모바일 대응 패딩 축소 */
-            width: 92%;
-            max-width: 1050px;
+            padding: clamp(1rem, 3vw, 2rem);
+            width: min(95%, 1050px);
             text-align: center;
             margin: 10px auto;
         }
@@ -135,10 +133,10 @@
 
         /* 타자 표시창 */
         .quote-display {
-            font-size: 1.3rem;
+            font-size: clamp(1rem, 2.5vw, 1.4rem);
             line-height: 1.6;
             text-align: left;
-            padding: 20px;
+            padding: 1.5rem;
             background: rgba(0, 0, 0, 0.25);
             border-radius: 20px;
             min-height: 100px;
@@ -349,7 +347,7 @@
 
     <div class="container" id="mainContainer">
         <h1 style="font-family: 'Segoe UI', sans-serif; color: white; margin-bottom: 20px; font-size: 1.8rem;">프리미엄 타자
-            연습 <span style="font-size: 0.9rem; color: #aaa; opacity: 0.5; font-weight: normal;">v10.0</span></h1>
+            연습 <span style="font-size: 0.9rem; color: #aaa; opacity: 0.5; font-weight: normal;">v1.0</span></h1>
         <div class="top-controls">
             <div class="category-menu">
                 <button class="cat-btn active" id="btn-proverbs" onclick="setCategory('proverbs')">짧은 글</button>
