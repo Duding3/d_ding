@@ -116,9 +116,8 @@
             border-radius: 12px;
             box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
             width: 100%;
-            max-width: 400px;
             height: auto;
-            aspect-ratio: 2/3;
+            aspect-ratio: 400/600;
             display: block;
             background: rgba(0, 0, 0, 0.2);
         }
@@ -184,14 +183,6 @@
             z-index: 100;
         }
 
-        .game-wrapper {
-            position: relative;
-            width: 100%;
-            max-width: min(95vw, 450px);
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
 
         .game-over-screen h2 {
             color: #ef4444;
@@ -404,8 +395,8 @@
         // Physics Re-tuning for Faster Gameplay (v1.7 Hyper)
         const GRAVITY = 0.35; // 0.25 -> 0.35 (Hyper Fast)
         const MAX_CHARGE = 60;
-        const MIN_JUMP = -8; // -10 -> -8 (Lower base jump)
-        const MAX_JUMP = -12; // -16 -> -12 (Lower max jump - easier control)
+        const MIN_JUMP = -10; // -8 -> -10 (Faster)
+        const MAX_JUMP = -16; // -12 -> -16 (Faster)
         const PLAYER_SIZE = 30;
         const PLATFORM_HEIGHT = 15;
 
