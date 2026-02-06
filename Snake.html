@@ -293,6 +293,8 @@
         let gameActive = false;
         let lastTime = 0;
         let speed = 150;
+        let worms = [];
+        let wormSpawnTimer = 0;
 
         document.getElementById('highScore').innerText = highScore;
 
@@ -312,6 +314,8 @@
             dx = 0; dy = 0;
             score = 0;
             speed = 150;
+            worms = [];
+            wormSpawnTimer = 0;
             document.getElementById('score').innerText = score;
             overlay.style.display = 'none';
             gameActive = true;
@@ -329,18 +333,37 @@
             if (snake.some(p => p.x === food.x && p.y === food.y)) generateFood();
         }
 
-        function gameLoop(time) {
-            if (!gameActive) return;
+        function spawnWorm() {
+            const side = Math.floor(Math.random() * 4);
+            let x, y, dx, dy;
+            if (side === 0) { x = 0; y = Math.floor(Math.random() * TILE_COUNT); dx = 1; dy = 0; }
+            else if (side === 1) { x = TILE_COUNT - 1; y = Math.floor(Math.random() * TILE_COUNT); dx = -1; dy = 0; }
+            else if (side === 2) { x = Math.floor(Math.random() * TILE_COUNT); y = 0; dx = 0; dy = 1; }
+            else { x = Math.floor(Math.random() * TILE_COUNT); y = TILE_COUNT - 1; dx = 0; dy = -1; }
 
-            if (time - lastTime > speed) {
-                lastTime = time;
-                update();
-                draw();
+            const length = 3 + Math.floor(Math.random() * 3);
+            const segments = [];
+            for (let i = 0; i < length; i++) {
+                segments.push({ x: x - dx * i, y: y - dy * i });
             }
-            requestAnimationFrame(gameLoop);
+            worms.push({ segments, dx, dy, lastMove: 0, moveInterval: 300 });
         }
 
-        function update() {
+        if (time - lastTime > speed) {
+            lastTime = time;
+            update(time);
+            draw();
+        }
+        requestAnimationFrame(gameLoop);
+        }
+
+        function update(time) {
+            // Worm Spawning
+            wormSpawnTimer++;
+            if (wormSpawnTimer > 100 && Math.random() < 0.05) {
+                spawnWorm();
+                wormSpawnTimer = 0;
+            }
             const head = { x: snake[0].x + dx, y: snake[0].y + dy };
 
             // Wall collision
@@ -348,6 +371,14 @@
 
             // Self collision
             if (snake.some(p => p.x === head.x && p.y === head.y)) return gameOver();
+
+            // Worm collision
+            for (const worm of worms) {
+                if (worm.segments.some(s => s.x === head.x && s.y === head.y)) return gameOver();
+                // If worm head hits player body
+                const wHead = worm.segments[0];
+                if (snake.some(p => p.x === wHead.x && p.y === wHead.y)) return gameOver();
+            }
 
             snake.unshift(head);
 
@@ -364,6 +395,32 @@
             } else {
                 snake.pop();
             }
+
+            // Move worms
+            worms.forEach((worm, i) => {
+                if (time - worm.lastMove > worm.moveInterval) {
+                    worm.lastMove = time;
+                    const wHead = { x: worm.segments[0].x + worm.dx, y: worm.segments[0].y + worm.dy };
+
+                    // Worm random turn
+                    if (Math.random() < 0.1) {
+                        if (worm.dx !== 0) { worm.dy = Math.random() < 0.5 ? 1 : -1; worm.dx = 0; }
+                        else { worm.dx = Math.random() < 0.5 ? 1 : -1; worm.dy = 0; }
+                    }
+
+                    // Wall collision - change direction or wrap
+                    if (wHead.x < 0 || wHead.x >= TILE_COUNT || wHead.y < 0 || wHead.y >= TILE_COUNT) {
+                        worm.dx *= -1; worm.dy *= -1;
+                        return;
+                    }
+
+                    worm.segments.unshift(wHead);
+                    worm.segments.pop();
+                }
+            });
+
+            // Cleanup offscreen or old worms? For now just keep them limited.
+            if (worms.length > 3) worms.shift();
         }
 
         function draw() {
@@ -391,6 +448,15 @@
             snake.forEach((p, i) => {
                 ctx.fillStyle = i === 0 ? '#4ade80' : 'rgba(74, 222, 128, 0.6)';
                 ctx.fillRect(p.x * GRID_SIZE + 1, p.y * GRID_SIZE + 1, GRID_SIZE - 2, GRID_SIZE - 2);
+            });
+
+            // Draw worms
+            ctx.shadowColor = '#ff00ff';
+            worms.forEach(worm => {
+                worm.segments.forEach((p, i) => {
+                    ctx.fillStyle = i === 0 ? '#ff00ff' : 'rgba(255, 0, 255, 0.5)';
+                    ctx.fillRect(p.x * GRID_SIZE + 1, p.y * GRID_SIZE + 1, GRID_SIZE - 2, GRID_SIZE - 2);
+                });
             });
             ctx.shadowBlur = 0;
         }
