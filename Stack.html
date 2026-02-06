@@ -327,36 +327,27 @@
             swingDir = 1;
         }
 
-        function handleTap() {
-            if (!gameActive) return;
+        // Check if there is ANY overlap between current and previous
+        const hasOverlap = (dropX < prev.x + prev.w) && (dropX + currentBlock.w > prev.x);
 
-            const prev = blocks[blocks.length - 1];
-            const dropX = currentBlock.x;
+        if (!hasOverlap) {
+            gameOver();
+            return;
+        }
 
-            // Calculate overlap (Intersection)
-            const leftEdge = Math.max(dropX, prev.x);
-            const rightEdge = Math.min(dropX + currentBlock.w, prev.x + prev.w);
-            const newW = rightEdge - leftEdge;
+        // Preserving the random spawned size as requested
+        blocks.push({ ...currentBlock });
 
-            if (newW <= 0) {
-                gameOver();
-                return;
-            }
+        score++;
+        scoreEl.innerText = score;
+        speed = 0.6 + Math.floor(score / 15) * 0.2;
 
-            currentBlock.w = newW;
-            currentBlock.x = leftEdge;
-            blocks.push({ ...currentBlock });
+        // Camera shift up
+        if (blocks.length > 5) {
+            cameraY = (blocks.length - 5) * BLOCK_HEIGHT;
+        }
 
-            score++;
-            scoreEl.innerText = score;
-            speed = 0.6 + Math.floor(score / 15) * 0.2;
-
-            // Camera shift up
-            if (blocks.length > 5) {
-                cameraY = (blocks.length - 5) * BLOCK_HEIGHT;
-            }
-
-            newBlock();
+        newBlock();
         }
 
         function startGame() {
