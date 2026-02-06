@@ -2,13 +2,12 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>프리미엄 타자 연습 v6.5</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>프리미엄 타자 연습 v7.0</title>
     <style>
         :root { 
             --glass-bg: rgba(255, 255, 255, 0.1);
             --glass-border: rgba(255, 255, 255, 0.25);
-            --text-main: #ffffff;
             --text-dim: rgba(255, 255, 255, 0.6);
             --accent-color: #00d2ff;
         }
@@ -18,128 +17,144 @@
             font-family: 'Pretendard', 'Malgun Gothic', sans-serif;
             background: radial-gradient(circle at 20% 30%, #1e3a8a 0%, #0f172a 100%);
             display: flex; justify-content: center; align-items: center;
-            min-height: 100vh; overflow: hidden;
+            min-height: 100vh; overflow-x: hidden;
         }
 
         .container {
             background: var(--glass-bg);
             backdrop-filter: blur(40px);
             -webkit-backdrop-filter: blur(40px);
-            border-radius: 40px;
-            border: 1.5px solid var(--glass-border);
+            border-radius: 30px;
+            border: 1px solid var(--glass-border);
             box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
-            padding: 2rem;
-            width: 95%; max-width: 1050px;
+            padding: 1.5rem; /* 모바일 대응 패딩 축소 */
+            width: 92%; max-width: 1050px;
             text-align: center;
+            margin: 10px auto;
         }
 
-        /* 상단 컨트롤 바 */
+        /* 상단 컨트롤 영역 레이아웃 수정 */
         .top-controls {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 25px;
-            padding: 0 10px;
+            margin-bottom: 20px;
+            gap: 10px;
         }
 
-        .category-menu { display: flex; gap: 8px; flex-wrap: wrap; }
+        .category-menu { 
+            display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-start;
+        }
         
+        /* 터치하기 편하도록 버튼 크기 및 간격 조정 */
         .cat-btn {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid var(--glass-border);
-            color: white; padding: 10px 22px; border-radius: 50px;
-            font-weight: 600; cursor: pointer; transition: 0.3s; font-size: 0.9rem;
+            color: white; padding: 10px 16px; border-radius: 50px;
+            font-weight: 600; cursor: pointer; transition: 0.3s; font-size: 0.85rem;
+            -webkit-tap-highlight-color: transparent; /* 모바일 터치 잔상 제거 */
         }
         .cat-btn.active { background: white; color: #0f172a; box-shadow: 0 0 15px rgba(255, 255, 255, 0.3); }
 
-        /* [수정] 업뎃용 새로고침 버튼 스타일 */
         .refresh-btn {
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid var(--glass-border);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 50px;
-            cursor: pointer;
-            display: flex; align-items: center; gap: 8px;
-            transition: all 0.3s ease;
-            font-size: 0.85rem;
-            font-weight: bold;
+            color: white; padding: 10px 15px; border-radius: 50px;
+            cursor: pointer; display: flex; align-items: center; gap: 5px;
+            transition: all 0.3s ease; font-size: 0.8rem; font-weight: bold;
             white-space: nowrap;
         }
-        .refresh-btn:hover {
-            background: white; color: #0f172a;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255,255,255,0.2);
-        }
-        .refresh-btn span { font-size: 1.1rem; }
 
+        /* 상태바 모바일 대응 */
         .stats-bar {
             display: flex; justify-content: space-around;
             background: rgba(0, 0, 0, 0.3);
-            padding: 15px; border-radius: 20px; margin-bottom: 20px;
+            padding: 12px; border-radius: 15px; margin-bottom: 15px;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
         .stat-item { display: flex; flex-direction: column; }
-        .stat-label { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 5px; }
-        .stat-val { font-size: 1.7rem; font-weight: 800; font-family: 'Courier New', monospace; }
+        .stat-label { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 3px; }
+        .stat-val { font-size: 1.4rem; font-weight: 800; font-family: 'Courier New', monospace; }
         #accuracy { color: #00ff88; }
         #cpm { color: #00d2ff; }
         #lastCpm { color: #f1c40f; }
 
+        /* 타자 표시창 */
         .quote-display {
-            font-size: 1.7rem; line-height: 1.6; text-align: left; padding: 25px;
+            font-size: 1.3rem; line-height: 1.6; text-align: left; padding: 20px;
             background: rgba(0, 0, 0, 0.25); border-radius: 20px;
-            min-height: 140px; margin-bottom: 15px;
+            min-height: 100px; margin-bottom: 15px;
             color: rgba(255, 255, 255, 0.4);
             white-space: pre-wrap; word-break: break-all;
             border: 1px solid rgba(255, 255, 255, 0.05);
             user-select: none; font-family: 'Courier New', Courier, monospace;
         }
-        .quote-display span { font-weight: normal !important; transition: color 0.1s; }
+        .quote-display span { font-weight: normal !important; }
         .correct { color: #ffffff !important; text-shadow: 0 0 8px rgba(255,255,255,0.6); }
         .incorrect { color: #ff4d4d !important; background: rgba(255, 77, 77, 0.3); }
 
+        /* 입력창 모바일 최적화 (자동 줌 방지를 위해 font-size 16px 이상 권장) */
         .quote-input {
-            width: 100%; height: 110px;
+            width: 100%; height: 100px;
             background: rgba(255, 255, 255, 0.07);
             border: 2px solid var(--glass-border);
-            border-radius: 20px; padding: 20px;
-            color: white; font-size: 1.5rem; line-height: 1.5; outline: none;
+            border-radius: 15px; padding: 15px;
+            color: white; font-size: 1.1rem; line-height: 1.4; outline: none;
             resize: none; box-sizing: border-box; font-family: 'Courier New', monospace;
+            margin-bottom: 15px;
         }
 
+        /* [핵심] 키보드 모바일 대응 (화면 크기에 따라 축소) */
+        .keyboard-wrapper {
+            width: 100%;
+            overflow: hidden; /* 모바일에서 삐져나가지 않게 */
+        }
         .keyboard {
             background: rgba(0, 0, 0, 0.3);
-            padding: 20px; border-radius: 30px;
-            display: flex; flex-direction: column; gap: 8px;
+            padding: 10px; border-radius: 20px;
+            display: flex; flex-direction: column; gap: 5px;
             border: 1px solid rgba(255, 255, 255, 0.08);
+            transform-origin: top center; /* 모바일에서 스케일 조절용 */
         }
-        .row { display: flex; justify-content: center; gap: 8px; }
+        .row { display: flex; justify-content: center; gap: 5px; }
         .key {
-            width: 52px; height: 52px;
+            width: 45px; height: 45px; /* 기본 크기 약간 축소 */
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px; position: relative;
+            border-radius: 8px; position: relative;
             transition: all 0.05s ease;
         }
         .key span { position: absolute; font-weight: bold; color: rgba(255, 255, 255, 0.4); pointer-events: none; }
-        .key .eng { top: 6px; left: 8px; font-size: 0.8rem; }
-        .key .kor { bottom: 6px; right: 8px; font-size: 1.1rem; }
+        .key .eng { top: 4px; left: 6px; font-size: 0.65rem; }
+        .key .kor { bottom: 4px; right: 6px; font-size: 0.9rem; }
 
-        .key.active {
-            background: #fff !important;
-            box-shadow: 0 0 25px #fff;
-            transform: scale(0.92); border: none;
-            z-index: 10;
-        }
+        .key.active { background: #fff !important; box-shadow: 0 0 15px #fff; transform: scale(0.92); border: none; }
         .key.active span { color: #000 !important; }
 
-        .key.backspace { width: 110px; } .key.tab { width: 85px; } 
-        .key.caps { width: 95px; } .key.enter { width: 120px; }
-        .key.shift { width: 135px; } .key.space { width: 345px; }
+        /* 특수키 모바일 비율 조정 */
+        .key.backspace { width: 80px; } .key.tab { width: 65px; } 
+        .key.caps { width: 75px; } .key.enter { width: 90px; }
+        .key.shift { width: 100px; } .key.space { width: 200px; }
 
-        .footer { margin-top: 25px; display: flex; justify-content: space-between; align-items: center; color: var(--text-dim); }
-        .info-msg { background: rgba(255, 255, 255, 0.1); padding: 8px 18px; border-radius: 12px; color: #fff; font-size: 0.85rem; font-weight: bold; }
+        /* 모바일용 미디어 쿼리 */
+        @media (max-width: 768px) {
+            .container { padding: 1rem; border-radius: 20px; }
+            .top-controls { flex-direction: column; align-items: stretch; }
+            .refresh-btn { justify-content: center; }
+            .quote-display { font-size: 1.1rem; padding: 15px; min-height: 80px; }
+            .stat-val { font-size: 1.3rem; }
+            /* 모바일에서 키보드 크기를 화면 너비에 맞춤 */
+            .keyboard { transform: scale(0.85); margin-bottom: -20px; } 
+        }
+
+        @media (max-width: 480px) {
+            .keyboard { transform: scale(0.65); margin-bottom: -40px; }
+            .key { width: 38px; height: 38px; }
+            .cat-btn { padding: 8px 12px; font-size: 0.75rem; }
+        }
+
+        .footer { margin-top: 15px; display: flex; justify-content: space-between; align-items: center; color: var(--text-dim); }
+        .info-msg { background: rgba(255, 255, 255, 0.1); padding: 5px 12px; border-radius: 8px; color: #fff; font-size: 0.7rem; font-weight: bold; }
     </style>
 </head>
 <body oncontextmenu="return false">
@@ -152,9 +167,7 @@
             <button class="cat-btn" id="btn-fairy" onclick="setCategory('fairyTales')">동화</button>
             <button class="cat-btn" id="btn-english" onclick="setCategory('english')">영타연습</button>
         </div>
-        <button class="refresh-btn" onclick="render()" title="문장 새로고침">
-            <span>⟳</span> 업뎃용 새로고침 버튼
-        </button>
+        <button class="refresh-btn" onclick="render()" title="문장 새로고침">⟳ 업뎃용 새로고침 버튼</button>
     </div>
 
     <div class="stats-bar">
@@ -164,67 +177,69 @@
     </div>
 
     <div class="quote-display" id="quoteDisplay" oncopy="return false"></div>
-    <textarea class="quote-input" id="quoteInput" placeholder="이곳에 타이핑을 시작하세요..." autocomplete="off" spellcheck="false"></textarea>
+    <textarea class="quote-input" id="quoteInput" placeholder="터치하여 입력을 시작하세요..." autocomplete="off" spellcheck="false"></textarea>
 
-    <div class="keyboard" id="visualKeyboard">
-        <div class="row">
-            <div class="key" id="Digit1"><span class="eng">1</span></div><div class="key" id="Digit2"><span class="eng">2</span></div>
-            <div class="key" id="Digit3"><span class="eng">3</span></div><div class="key" id="Digit4"><span class="eng">4</span></div>
-            <div class="key" id="Digit5"><span class="eng">5</span></div><div class="key" id="Digit6"><span class="eng">6</span></div>
-            <div class="key" id="Digit7"><span class="eng">7</span></div><div class="key" id="Digit8"><span class="eng">8</span></div>
-            <div class="key" id="Digit9"><span class="eng">9</span></div><div class="key" id="Digit0"><span class="eng">0</span></div>
-            <div class="key backspace" id="Backspace"><span class="eng" style="top:18px; left:30px">Backspace</span></div>
-        </div>
-        <div class="row">
-            <div class="key tab" id="Tab"><span class="eng" style="top:18px; left:25px">Tab</span></div>
-            <div class="key" id="KeyQ"><span class="eng">Q</span><span class="kor">ㅂ</span></div>
-            <div class="key" id="KeyW"><span class="eng">W</span><span class="kor">ㅈ</span></div>
-            <div class="key" id="KeyE"><span class="eng">E</span><span class="kor">ㄷ</span></div>
-            <div class="key" id="KeyR"><span class="eng">R</span><span class="kor">ㄱ</span></div>
-            <div class="key" id="KeyT"><span class="eng">T</span><span class="kor">ㅅ</span></div>
-            <div class="key" id="KeyY"><span class="eng">Y</span><span class="kor">ㅛ</span></div>
-            <div class="key" id="KeyU"><span class="eng">U</span><span class="kor">ㅕ</span></div>
-            <div class="key" id="KeyI"><span class="eng">I</span><span class="kor">ㅑ</span></div>
-            <div class="key" id="KeyO"><span class="eng">O</span><span class="kor">ㅐ</span></div>
-            <div class="key" id="KeyP"><span class="eng">P</span><span class="kor">ㅔ</span></div>
-            <div class="key" id="BracketLeft"><span class="eng">[</span></div>
-        </div>
-        <div class="row">
-            <div class="key caps" id="CapsLock"><span class="eng" style="top:18px; left:20px">Caps</span></div>
-            <div class="key" id="KeyA"><span class="eng">A</span><span class="kor">ㅁ</span></div>
-            <div class="key" id="KeyS"><span class="eng">S</span><span class="kor">ㄴ</span></div>
-            <div class="key" id="KeyD"><span class="eng">D</span><span class="kor">ㅇ</span></div>
-            <div class="key" id="KeyF"><span class="eng">F</span><span class="kor">ㄹ</span></div>
-            <div class="key" id="KeyG"><span class="eng">G</span><span class="kor">ㅎ</span></div>
-            <div class="key" id="KeyH"><span class="eng">H</span><span class="kor">ㅗ</span></div>
-            <div class="key" id="KeyJ"><span class="eng">J</span><span class="kor">ㅓ</span></div>
-            <div class="key" id="KeyK"><span class="eng">K</span><span class="kor">ㅏ</span></div>
-            <div class="key" id="KeyL"><span class="eng">L</span><span class="kor">ㅣ</span></div>
-            <div class="key enter" id="Enter"><span class="eng" style="top:18px; left:40px">Enter</span></div>
-        </div>
-        <div class="row">
-            <div class="key shift" id="ShiftLeft"><span class="eng" style="top:18px; left:30px">Shift</span></div>
-            <div class="key" id="KeyZ"><span class="eng">Z</span><span class="kor">ㅋ</span></div>
-            <div class="key" id="KeyX"><span class="eng">X</span><span class="kor">ㅌ</span></div>
-            <div class="key" id="KeyC"><span class="eng">C</span><span class="kor">ㅊ</span></div>
-            <div class="key" id="KeyV"><span class="eng">V</span><span class="kor">ㅍ</span></div>
-            <div class="key" id="KeyB"><span class="eng">B</span><span class="kor">ㅠ</span></div>
-            <div class="key" id="KeyN"><span class="eng">N</span><span class="kor">ㅜ</span></div>
-            <div class="key" id="KeyM"><span class="eng">M</span><span class="kor">ㅡ</span></div>
-            <div class="key shift" id="ShiftRight"><span class="eng" style="top:18px; left:40px">Shift</span></div>
-        </div>
-        <div class="row">
-            <div class="key space" id="Space"></div>
+    <div class="keyboard-wrapper">
+        <div class="keyboard" id="visualKeyboard">
+            <div class="row">
+                <div class="key" id="Digit1"><span class="eng">1</span></div><div class="key" id="Digit2"><span class="eng">2</span></div>
+                <div class="key" id="Digit3"><span class="eng">3</span></div><div class="key" id="Digit4"><span class="eng">4</span></div>
+                <div class="key" id="Digit5"><span class="eng">5</span></div><div class="key" id="Digit6"><span class="eng">6</span></div>
+                <div class="key" id="Digit7"><span class="eng">7</span></div><div class="key" id="Digit8"><span class="eng">8</span></div>
+                <div class="key" id="Digit9"><span class="eng">9</span></div><div class="key" id="Digit0"><span class="eng">0</span></div>
+                <div class="key backspace" id="Backspace"><span class="eng" style="top:12px; left:15px">Back</span></div>
+            </div>
+            <div class="row">
+                <div class="key tab" id="Tab"><span class="eng" style="top:12px; left:15px">Tab</span></div>
+                <div class="key" id="KeyQ"><span class="eng">Q</span><span class="kor">ㅂ</span></div>
+                <div class="key" id="KeyW"><span class="eng">W</span><span class="kor">ㅈ</span></div>
+                <div class="key" id="KeyE"><span class="eng">E</span><span class="kor">ㄷ</span></div>
+                <div class="key" id="KeyR"><span class="eng">R</span><span class="kor">ㄱ</span></div>
+                <div class="key" id="KeyT"><span class="eng">T</span><span class="kor">ㅅ</span></div>
+                <div class="key" id="KeyY"><span class="eng">Y</span><span class="kor">ㅛ</span></div>
+                <div class="key" id="KeyU"><span class="eng">U</span><span class="kor">ㅕ</span></div>
+                <div class="key" id="KeyI"><span class="eng">I</span><span class="kor">ㅑ</span></div>
+                <div class="key" id="KeyO"><span class="eng">O</span><span class="kor">ㅐ</span></div>
+                <div class="key" id="KeyP"><span class="eng">P</span><span class="kor">ㅔ</span></div>
+            </div>
+            <div class="row">
+                <div class="key caps" id="CapsLock"><span class="eng" style="top:12px; left:10px">Caps</span></div>
+                <div class="key" id="KeyA"><span class="eng">A</span><span class="kor">ㅁ</span></div>
+                <div class="key" id="KeyS"><span class="eng">S</span><span class="kor">ㄴ</span></div>
+                <div class="key" id="KeyD"><span class="eng">D</span><span class="kor">ㅇ</span></div>
+                <div class="key" id="KeyF"><span class="eng">F</span><span class="kor">ㄹ</span></div>
+                <div class="key" id="KeyG"><span class="eng">G</span><span class="kor">ㅎ</span></div>
+                <div class="key" id="KeyH"><span class="eng">H</span><span class="kor">ㅗ</span></div>
+                <div class="key" id="KeyJ"><span class="eng">J</span><span class="kor">ㅓ</span></div>
+                <div class="key" id="KeyK"><span class="eng">K</span><span class="kor">ㅏ</span></div>
+                <div class="key" id="KeyL"><span class="eng">L</span><span class="kor">ㅣ</span></div>
+                <div class="key enter" id="Enter"><span class="eng" style="top:12px; left:20px">Enter</span></div>
+            </div>
+            <div class="row">
+                <div class="key shift" id="ShiftLeft"><span class="eng" style="top:12px; left:15px">Shift</span></div>
+                <div class="key" id="KeyZ"><span class="eng">Z</span><span class="kor">ㅋ</span></div>
+                <div class="key" id="KeyX"><span class="eng">X</span><span class="kor">ㅌ</span></div>
+                <div class="key" id="KeyC"><span class="eng">C</span><span class="kor">ㅊ</span></div>
+                <div class="key" id="KeyV"><span class="eng">V</span><span class="kor">ㅍ</span></div>
+                <div class="key" id="KeyB"><span class="eng">B</span><span class="kor">ㅠ</span></div>
+                <div class="key" id="KeyN"><span class="eng">N</span><span class="kor">ㅜ</span></div>
+                <div class="key" id="KeyM"><span class="eng">M</span><span class="kor">ㅡ</span></div>
+                <div class="key shift" id="ShiftRight"><span class="eng" style="top:12px; left:15px">Shift</span></div>
+            </div>
+            <div class="row">
+                <div class="key space" id="Space"></div>
+            </div>
         </div>
     </div>
 
     <div class="footer">
         <div>투명도: <input type="range" id="opacitySlider" min="0.3" max="1" step="0.1" value="1"></div>
-        <div class="info-msg">💡 Shift + Enter는 줄바꿈입니다.</div>
+        <div class="info-msg">💡 Shift + Enter 줄바꿈</div>
     </div>
 </div>
 
 <script>
+    // [데이터 영역] v6.3 유지
     const typingData = {
         proverbs: ["가는 말이 고와야 오는 말이 곱다.", "등잔 밑이 어둡다.", "세 살 버릇 여든까지 간다.", "고생 끝에 낙이 온다.", "원숭이도 나무에서 떨어진다.", "시작이 반이다.", "샤랩 죽어!", "샤랩 망해라!"],
         lyrics: ["동해 물과 백두산이 마르고 닳도록 하느님이 보우하사 우리나라 만세.", "멈추지 말고 꿈을 향해 달려가세요. 당신의 노력은 배신하지 않습니다.", "흔들리지 않고 피는 꽃이 어디 있으랴."],
@@ -289,7 +304,8 @@
         cpmEl.innerText = "0";
         accEl.innerText = "100%";
         forceClearKeys();
-        quoteInput.focus();
+        // 모바일에서는 포커스를 주면 키보드가 올라와 화면을 가릴 수 있으므로 필요시 주석 해제
+        // quoteInput.focus();
     }
 
     window.addEventListener('keydown', (e) => {
