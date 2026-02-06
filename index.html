@@ -58,14 +58,15 @@
         </div>
 
         <div class="game-card">
-            <div class="icon-wrapper" style="flex-direction: row; gap: 10px;">
-                <div style="position: relative; display: flex; align-items: center; justify-content: center;">
-                    <i class="far fa-square" style="font-size: 3rem; opacity: 0.8;"></i>
-                    <i class="fas fa-paw" style="position: absolute; font-size: 1.2rem; opacity: 0.9;"></i>
+            <div class="icon-wrapper" style="position: relative;">
+                <!-- Overlapping Card Symbols with Animal Silhouettes -->
+                <div
+                    style="position: absolute; transform: translate(-15px, -10px) rotate(-5deg); background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); width: 60px; height: 80px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-cat" style="font-size: 1.8rem; opacity: 0.8; color: #4ade80;"></i>
                 </div>
-                <div style="position: relative; display: flex; align-items: center; justify-content: center;">
-                    <i class="far fa-square" style="font-size: 3rem; opacity: 0.8;"></i>
-                    <i class="fas fa-paw" style="position: absolute; font-size: 1.2rem; opacity: 0.9;"></i>
+                <div
+                    style="position: absolute; transform: translate(15px, 10px) rotate(5deg); background: rgba(255, 255, 255, 0.1); border: 2px solid #4ade80; width: 60px; height: 80px; border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);">
+                    <i class="fas fa-cat" style="font-size: 1.8rem; color: #4ade80;"></i>
                 </div>
             </div>
             <h2>메모리 매치 (Memory)</h2>
