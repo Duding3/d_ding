@@ -349,12 +349,15 @@
             worms.push({ segments, dx, dy, lastMove: 0, moveInterval: 300 });
         }
 
-        if (time - lastTime > speed) {
-            lastTime = time;
-            update(time);
-            draw();
-        }
-        requestAnimationFrame(gameLoop);
+        function gameLoop(time) {
+            if (!gameActive) return;
+
+            if (time - lastTime > speed) {
+                lastTime = time;
+                update(time);
+                draw();
+            }
+            requestAnimationFrame(gameLoop);
         }
 
         function update(time) {
