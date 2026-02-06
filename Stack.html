@@ -314,8 +314,11 @@
 
         function newBlock() {
             const prev = blocks[blocks.length - 1];
-            // Completely random width between 80 and 220 regardless of height
-            const nextW = 80 + Math.random() * 140;
+            // Dynamic width scaling: Max width decreases as score increases
+            const maxWidth = Math.max(60, 220 - Math.floor(score / 5) * 15);
+            const minWidth = Math.max(30, 80 - Math.floor(score / 10) * 5);
+            const nextW = minWidth + Math.random() * (maxWidth - minWidth);
+
             currentBlock = {
                 x: 0,
                 y: prev.y - BLOCK_HEIGHT,
