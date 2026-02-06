@@ -287,11 +287,14 @@
             y: GRID_SIZE / 2,
             radius: 8,
             speed: 2.5,
-            color: '#60a5fa'
+            color: '#60a5fa',
+            hasShield: false
         };
 
         let bullets = [];
+        let items = [];
         let particles = [];
+        let lastItemSpawn = 0;
         let stars = Array.from({ length: 50 }, () => ({
             x: Math.random() * GRID_SIZE,
             y: Math.random() * GRID_SIZE,
@@ -305,8 +308,8 @@
             if (!gameActive) return;
             const side = Math.floor(Math.random() * 4);
             let x, y, vx, vy;
-            // Exponential Speed: Slower progression (Score/40)
-            const speed = 0.4 + Math.pow(score / 40, 2);
+            // Exponential Speed: Extremely slow progression (Score/80)
+            const speed = 0.4 + Math.pow(score / 80, 2);
             const typeProb = Math.random();
             let type = 'straight';
             if (score > 10) {
@@ -348,14 +351,31 @@
             });
         }
 
+        function spawnItem() {
+            if (!gameActive) return;
+            const side = Math.floor(Math.random() * 4);
+            let x, y, vx, vy;
+            const speed = 1.5;
+
+            if (side === 0) { x = Math.random() * GRID_SIZE; y = -20; vx = (Math.random() - 0.5) * speed; vy = speed; }
+            else if (side === 1) { x = Math.random() * GRID_SIZE; y = GRID_SIZE + 20; vx = (Math.random() - 0.5) * speed; vy = -speed; }
+            else if (side === 2) { x = -20; y = Math.random() * GRID_SIZE; vx = speed; vy = (Math.random() - 0.5) * speed; }
+            else { x = GRID_SIZE + 20; y = Math.random() * GRID_SIZE; vx = -speed; vy = (Math.random() - 0.5) * speed; }
+
+            items.push({ x, y, vx, vy, radius: 10, type: 'shield' });
+        }
+
         function startGame() {
             gameActive = true;
             score = 0;
             player.x = GRID_SIZE / 2;
             player.y = GRID_SIZE / 2;
+            player.hasShield = false;
             bullets = [];
+            items = [];
             particles = [];
             overlay.style.display = 'none';
+            lastItemSpawn = 0;
             requestAnimationFrame(update);
         }
 
@@ -380,9 +400,15 @@
             score += 1 / 60;
             scoreEl.innerText = score.toFixed(1) + 's';
 
-            // Exponential Spawn Rate: Slower density increase (Score/60)
-            if (Math.random() < 0.01 + Math.pow(score / 60, 2.2)) {
+            // Exponential Spawn Rate: Extremely slow density increase (Score/120)
+            if (Math.random() < 0.01 + Math.pow(score / 120, 2)) {
                 spawnBullet();
+            }
+
+            // Spawn Item occasionally (every ~20s)
+            if (score - lastItemSpawn > 20) {
+                spawnItem();
+                lastItemSpawn = score;
             }
 
             // Move player
@@ -426,13 +452,58 @@
                 const distance = Math.sqrt(dx * dx + dy * dy);
 
                 if (distance < b.radius + player.radius) {
-                    gameOver();
+                    if (player.hasShield) {
+                        player.hasShield = false;
+                        bullets.splice(i, 1);
+                        // Trigger shield break effect
+                        for (let j = 0; j < 15; j++) {
+                            particles.push({
+                                x: player.x,
+                                y: player.y,
+                                vx: (Math.random() - 0.5) * 10,
+                                vy: (Math.random() - 0.5) * 10,
+                                life: 1,
+                                color: '#00ffff'
+                            });
+                        }
+                    } else {
+                        gameOver();
+                    }
                 }
 
                 // Remove offscreen bullets
                 if (b.x < -50 || b.x > GRID_SIZE + 50 || b.y < -50 || b.y > GRID_SIZE + 50) {
                     bullets.splice(i, 1);
                 }
+            });
+
+            // Move items
+            items.forEach((item, i) => {
+                item.x += item.vx;
+                item.y += item.vy;
+
+                // Item collision
+                const dx = item.x - player.x;
+                const dy = item.y - player.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < item.radius + player.radius) {
+                    player.hasShield = true;
+                    items.splice(i, 1);
+                    // Shield popup effect?
+                }
+
+                if (item.x < -100 || item.x > GRID_SIZE + 100 || item.y < -100 || item.y > GRID_SIZE + 100) {
+                    items.splice(i, 1);
+                }
+            });
+
+            // Update particles
+            particles.forEach((p, i) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.02;
+                if (p.life <= 0) particles.splice(i, 1);
             });
 
             draw();
@@ -470,13 +541,43 @@
             ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
             ctx.fill();
 
-            // Bevel effect on player
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-            ctx.beginPath();
-            ctx.arc(player.x - 2, player.y - 2, player.radius / 2, 0, Math.PI * 2);
-            ctx.fill();
+            // Shield Halo
+            if (player.hasShield) {
+                ctx.strokeStyle = '#00ffff';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(player.x, player.y, player.radius + 5, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#00ffff';
+                ctx.shadowBlur = 0;
+            }
 
-            ctx.shadowBlur = 0;
+            // Draw items
+            items.forEach(item => {
+                ctx.fillStyle = '#00ffff';
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#00ffff';
+                ctx.beginPath();
+                ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 12px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('🛡️', item.x, item.y);
+                ctx.shadowBlur = 0;
+            });
+
+            // Draw particles
+            particles.forEach(p => {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
         }
 
         // Input handling
