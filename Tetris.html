@@ -498,6 +498,13 @@
                 const overlay = document.getElementById('levelUpOverlay');
                 overlay.classList.add('show');
                 setTimeout(() => overlay.classList.remove('show'), 600);
+
+                // 게임판 초기화
+                for (let y = 0; y < arena.length; y++) {
+                    for (let x = 0; x < arena[y].length; x++) {
+                        arena[y][x] = 0;
+                    }
+                }
             }
             player.level = newLevel;
             document.getElementById('level').innerText = player.level;
