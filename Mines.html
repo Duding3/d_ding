@@ -319,7 +319,7 @@
             gameActive = false;
             clearInterval(timer);
             overlay.style.display = 'flex';
-            msgEl.innerText = win ? "승리!" : "폭발!";
+            msgEl.innerText = win ? "WIN!" : "GAME OVER";
         }
 
         document.getElementById('tap-mode').onclick = () => { isFlagMode = false; document.getElementById('tap-mode').classList.add('active'); document.getElementById('flag-mode').classList.remove('active'); };
