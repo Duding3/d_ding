@@ -19,6 +19,11 @@
     font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
 }
 
+button {
+    appearance: none;
+    -webkit-appearance: none;
+}
+
 body {
     background: var(--bg-gradient);
     color: var(--text-main);
