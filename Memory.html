@@ -306,7 +306,7 @@
             matchedPairs = 0;
             seconds = 0;
             flippedCards = [];
-            isLock = false;
+            isLock = true; // Lock interactions during preview
 
             movesEl.innerText = moves;
             timeEl.innerText = '00:00';
@@ -314,7 +314,7 @@
 
             cards.forEach((emoji, index) => {
                 const card = document.createElement('div');
-                card.className = 'card';
+                card.className = 'card flipped'; // Start as flipped
                 card.dataset.emoji = emoji;
                 card.innerHTML = `
                     <div class="card-face card-front"></div>
@@ -325,12 +325,21 @@
             });
 
             clearInterval(timer);
-            timer = setInterval(() => {
-                seconds++;
-                const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
-                const secs = String(seconds % 60).padStart(2, '0');
-                timeEl.innerText = `${mins}:${secs}`;
-            }, 1000);
+
+            // Preview phase
+            setTimeout(() => {
+                const allCards = document.querySelectorAll('.card');
+                allCards.forEach(c => c.classList.remove('flipped'));
+                isLock = false; // Unlock interactions
+
+                // Start timer after preview
+                timer = setInterval(() => {
+                    seconds++;
+                    const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
+                    const secs = String(seconds % 60).padStart(2, '0');
+                    timeEl.innerText = `${mins}:${secs}`;
+                }, 1000);
+            }, 2000); // 2 second preview
         }
 
         function flipCard(card) {
