@@ -3,8 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>루팡 - 다일러 테트리스 v2.9.5</title>
+    <title>루팡 - 다일러 테트리스 v3.1</title>
     <style>
+        :root {
+            /* 🚀 전체 크기를 조절하는 기준점 (화면 높이의 75%) */
+            --game-height: 75vh;
+            --main-color: #4ecca3;
+        }
+
         body {
             background: #1a1a2e;
             color: #fff;
@@ -19,14 +25,14 @@
             touch-action: manipulation;
         }
 
-        h1 { color: #4ecca3; letter-spacing: 5px; margin: 0 0 5px 0; font-size: 1.6rem; }
+        h1 { color: var(--main-color); letter-spacing: 5px; margin: 0 0 5px 0; font-size: 3vh; }
         
-        .header-info { margin-bottom: 10px; text-align: center; }
-        .info-text { font-size: 0.7rem; color: #aaa; margin-bottom: 5px; }
+        .header-info { margin-bottom: 5px; text-align: center; }
+        .info-text { font-size: 1.5vh; color: #aaa; margin-bottom: 3px; }
         .refresh-btn {
-            background: #4ecca3; border: none; color: #1a1a2e; 
-            padding: 4px 12px; border-radius: 4px; cursor: pointer; 
-            font-weight: bold; font-size: 0.75rem;
+            background: var(--main-color); border: none; color: #1a1a2e; 
+            padding: 0.5vh 2vh; border-radius: 4px; cursor: pointer; 
+            font-weight: bold; font-size: 1.4vh;
         }
 
         #game-wrapper {
@@ -34,72 +40,83 @@
             flex-direction: column;
             align-items: center;
             transition: opacity 0.1s;
+            width: 100%;
         }
 
-        /* 🌟 메인 화면 중앙 배치를 위한 그리드 설정 */
+        /* 🌟 비례 제어를 위한 반응형 그리드 */
         .game-area {
             display: grid;
-            /* 좌측 여백(80px), 메인판(240px), 우측 사이드바(80px) -> 메인이 항상 중앙 */
-            grid-template-columns: 80px 240px 80px; 
-            align-items: flex-start;
+            /* 사이드바가 메인판의 약 1/3 비율을 유지하도록 설정 */
+            grid-template-columns: 12vh auto 12vh; 
+            align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 2vh;
+            width: 100%;
         }
 
         canvas#tetris {
-            grid-column: 2; /* 2번째 칸(중앙)에 배치 */
-            border: solid 4px #4ecca3;
-            box-shadow: 0 0 20px rgba(78, 204, 163, 0.3);
+            grid-column: 2;
+            border: solid 0.5vh var(--main-color);
+            box-shadow: 0 0 2vh rgba(78, 204, 163, 0.3);
             background-color: #16213e;
-            width: 240px;
-            height: 400px;
+            height: var(--game-height); 
+            width: auto;
+            aspect-ratio: 12 / 20;
         }
 
         .side-panel {
-            grid-column: 3; /* 3번째 칸(우측)에 배치 */
+            grid-column: 3;
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            width: 80px;
+            gap: 1vh;
+            width: 12vh; /* 사이드바도 화면 높이에 비례 */
         }
 
         .next-box {
-            border: solid 2px #4ecca3;
+            border: solid 0.3vh var(--main-color);
             background: #16213e;
-            padding: 5px 0;
+            padding: 0.5vh 0;
             text-align: center;
             border-radius: 4px;
         }
 
-        canvas#next { background-color: #16213e; display: block; margin: 0 auto; }
+        canvas#next { 
+            background-color: #16213e; 
+            display: block; 
+            margin: 0 auto;
+            width: 10vh; /* 넥스트 캔버스 크기도 비례 */
+            height: 40vh;
+        }
 
-        .stat-group { text-align: center; background: rgba(255,255,255,0.05); padding: 5px; border-radius: 4px; }
-        .stat-label { font-size: 0.6rem; color: #4ecca3; font-weight: bold; }
-        .stat-value { font-size: 1rem; font-weight: bold; }
+        .stat-group { text-align: center; background: rgba(255,255,255,0.05); padding: 0.8vh; border-radius: 4px; }
+        .stat-label { font-size: 1.2vh; color: var(--main-color); font-weight: bold; }
+        .stat-value { font-size: 2vh; font-weight: bold; }
         
-        /* 모바일 컨트롤러 */
+        /* 컨트롤러 크기도 화면 높이에 비례 */
         .mobile-controls {
             display: grid;
             grid-template-areas: ". up ." "left down right" "drop drop drop";
-            gap: 8px; margin-top: 15px;
+            gap: 1vh; margin-top: 1.5vh;
         }
         .btn {
-            background: rgba(78, 204, 163, 0.15); border: 2px solid #4ecca3;
-            color: #4ecca3; padding: 10px; border-radius: 8px;
-            text-align: center; font-weight: bold; cursor: pointer; font-size: 0.8rem;
-            min-width: 55px;
+            background: rgba(78, 204, 163, 0.15); border: 0.2vh solid var(--main-color);
+            color: var(--main-color); padding: 1.2vh; border-radius: 8px;
+            text-align: center; font-weight: bold; cursor: pointer; 
+            font-size: 1.6vh;
+            min-width: 8vh;
             user-select: none;
         }
-        .btn:active { background: #4ecca3; color: #1a1a2e; }
+        .btn:active { background: var(--main-color); color: #1a1a2e; }
         .btn-up { grid-area: up; } .btn-left { grid-area: left; }
         .btn-down { grid-area: down; } .btn-right { grid-area: right; }
-        .btn-drop { grid-area: drop; background: rgba(255, 255, 255, 0.05); color: #eee; padding: 8px; }
+        .btn-drop { grid-area: drop; background: rgba(255, 255, 255, 0.05); color: #eee; padding: 1vh; }
 
-        .controls-info { margin-top: 10px; font-size: 0.6rem; color: #666; }
-        .key { padding: 1px 3px; background: #333; border-radius: 3px; color: #eee; }
+        .controls-info { margin-top: 1vh; font-size: 1.3vh; color: #666; }
+        .key { padding: 0.2vh 0.6vh; background: #333; border-radius: 3px; color: #eee; }
 
-        .slider-area { margin-top: 12px; display: flex; align-items: center; gap: 8px; }
-        input[type=range] { cursor: pointer; width: 90px; }
+        .slider-area { margin-top: 1vh; display: flex; align-items: center; gap: 1vh; }
+        .slider-label { font-size: 1.4vh; color: var(--main-color); font-weight: bold; }
+        input[type=range] { cursor: pointer; width: 15vh; height: 1.5vh; }
     </style>
 </head>
 <body>
@@ -107,19 +124,19 @@
     <h1>다일러</h1>
     
     <div class="header-info">
-        <p class="info-text">새로고침 버튼을 누르면 빠른 업뎃 적용 가능</p>
+        <p class="info-text">수정사항이 안 보인다면 버튼 클릭</p>
         <button class="refresh-btn" onclick="location.reload(true)">새로고침</button>
     </div>
     
     <div id="game-wrapper">
         <div class="game-area">
-            <div></div>
+            <div style="width: 12vh;"></div>
 
             <canvas id="tetris" width="240" height="400"></canvas>
             
             <div class="side-panel">
                 <div class="next-box">
-                    <div class="stat-label" style="margin-bottom: 4px;">NEXT</div>
+                    <div class="stat-label" style="margin-bottom: 0.5vh;">NEXT</div>
                     <canvas id="next" width="60" height="240"></canvas>
                 </div>
                 <div class="stat-group">
@@ -147,11 +164,12 @@
     </div>
 
     <div class="slider-area">
-        <span style="font-size: 0.7rem; color: #4ecca3; font-weight: bold;">전체 투명도</span>
+        <span class="slider-label">전체 투명도</span>
         <input type="range" id="opacitySlider" min="5" max="100" value="100">
     </div>
 
 <script>
+// 기존의 모든 로직(7-Bag, DAS, Ghost Piece 등)은 그대로 유지됩니다.
 const canvas = document.getElementById('tetris');
 const context = canvas.getContext('2d');
 const nextCanvas = document.getElementById('next');
@@ -160,8 +178,6 @@ const gameWrapper = document.getElementById('game-wrapper');
 const opacitySlider = document.getElementById('opacitySlider');
 
 context.scale(20, 20);
-
-// 🌟 넥스트 블록 사이즈 조정 (스케일을 12로 낮춰 여유 공간 확보)
 nextContext.scale(12, 12); 
 
 const colors = [null, '#00f0f0', '#f0a000', '#0000f0', '#f0f000', '#f00000', '#00f000', '#a000f0'];
@@ -264,21 +280,16 @@ function draw() {
     drawMatrix(player.matrix, ghostPos, context, true);
     drawMatrix(player.matrix, player.pos);
 
-    // 🌟 Next 블록 독립 슬롯 정중앙 배치 그리기
     nextContext.fillStyle = '#16213e';
     nextContext.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
     player.queue.slice(0, 4).forEach((matrix, i) => {
-        const slotHeight = 5; // 60/12 = 5단위
+        const slotHeight = 5;
         const yBase = i * slotHeight;
-
         nextContext.strokeStyle = 'rgba(78, 204, 163, 0.2)';
         nextContext.lineWidth = 0.05;
         nextContext.strokeRect(0.1, yBase + 0.1, 4.8, 4.8);
-
-        // 정중앙 좌표 계산 (5단위 박스 내 중앙)
         const xOffset = (5 - matrix[0].length) / 2;
         const yOffset = yBase + (5 - matrix.length) / 2;
-        
         drawMatrix(matrix, {x: xOffset, y: yOffset}, nextContext);
     });
 
