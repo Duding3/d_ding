@@ -333,20 +333,18 @@
             const prev = blocks[blocks.length - 1];
             const dropX = currentBlock.x;
 
-            const diff = dropX - prev.x;
-            const absDiff = Math.abs(diff);
+            // Calculate overlap (Intersection)
+            const leftEdge = Math.max(dropX, prev.x);
+            const rightEdge = Math.min(dropX + currentBlock.w, prev.x + prev.w);
+            const newW = rightEdge - leftEdge;
 
-            if (absDiff >= prev.w) {
+            if (newW <= 0) {
                 gameOver();
                 return;
             }
 
-            // Slice block
-            const newW = prev.w - absDiff;
-            const newX = diff > 0 ? dropX : prev.x;
-
             currentBlock.w = newW;
-            currentBlock.x = newX;
+            currentBlock.x = leftEdge;
             blocks.push({ ...currentBlock });
 
             score++;
