@@ -222,12 +222,15 @@
 
         function spawnItem() {
             const isGift = Math.random() > 0.2;
+            const isFake = isGift && Math.random() < 0.25; // 25% chance a gift is fake
             items.push({
                 x: Math.random() * (canvas.width - 30),
                 y: -30,
                 w: 30,
                 h: 30,
                 type: isGift ? 'gift' : 'bomb',
+                isFake: isFake,
+                sparkle: 0,
                 emoji: isGift ? ['🍎', '🎁', '🍭', '⭐'][Math.floor(Math.random() * 4)] : '💣'
             });
         }
@@ -246,6 +249,15 @@
 
             items.forEach((item, i) => {
                 item.y += itemSpeed;
+
+                // 페이크 선물 로직: 특정 높이(200)에서 상자로 변신!
+                if (item.isFake && item.y > 200 && item.type === 'gift') {
+                    item.type = 'bomb';
+                    item.emoji = '💣';
+                    item.sparkle = 20; // 반짝임 효과 지속 시간
+                    item.isFake = false; // 중복 변신 방지
+                }
+                if (item.sparkle > 0) item.sparkle--;
 
                 // Collision
                 if (item.y + item.h > canvas.height - 40 && item.y < canvas.height - 20) {
