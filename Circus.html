@@ -260,7 +260,7 @@
         function update() {
             // Gravity - Slowed down for floatier jump
             if (player.jumping) {
-                player.vy += 0.45; // Much slower than 1.0
+                player.vy += 0.3; // Slower gravity (was 0.45)
                 player.y += player.vy;
                 if (player.y > groundY - player.h) {
                     player.y = groundY - player.h;
@@ -373,7 +373,7 @@
         function jump() {
             if (!player.jumping && gameActive) {
                 player.jumping = true;
-                player.vy = -9; // Slower jump power to match lower gravity
+                player.vy = -7; // Slower jump power (was -9)
             }
         }
 

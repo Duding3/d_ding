@@ -16,9 +16,9 @@
         }
 
         body {
-            background: radial-gradient(circle at center, #1e2a4a 0%, #1a1a2e 100%);
+            background: radial-gradient(circle at center, #1b2735 0%, #090a0f 100%);
             color: #fff;
-            font-family: 'Outfit', 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Outfit', 'Inter', 'Segoe UI', sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -30,6 +30,7 @@
             touch-action: none;
             padding: 20px 10px;
             box-sizing: border-box;
+            background-attachment: fixed;
         }
 
         #game-wrapper {
@@ -176,9 +177,10 @@
 
         canvas#tetris {
             grid-column: 2;
-            border: solid calc(var(--unit) * 0.15) var(--main-color);
-            box-shadow: 0 0 calc(var(--unit) * 1) rgba(78, 204, 163, 0.2);
-            background-color: #16213e;
+            border: solid calc(var(--unit) * 0.1) rgba(78, 204, 163, 0.3);
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(78, 204, 163, 0.1), inset 0 0 20px rgba(0, 0, 0, 0.5);
+            background-color: rgba(22, 33, 62, 0.8);
             image-rendering: pixelated;
             width: var(--board-width);
             height: calc(var(--unit) * 20);
@@ -193,14 +195,14 @@
         }
 
         .next-box {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: calc(var(--unit) * 0.4) 0;
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: calc(var(--unit) * 0.6) 0;
             text-align: center;
-            border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
         }
 
         canvas#next {
@@ -210,29 +212,40 @@
             image-rendering: pixelated;
             width: calc(var(--unit) * 2.5);
             height: calc(var(--unit) * 6);
-            /* Reduced height for 2 pieces */
         }
 
         .stat-group {
             text-align: center;
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: calc(var(--unit) * 0.4);
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: calc(var(--unit) * 0.5);
+            border-radius: 16px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .stat-group:hover {
+            background: rgba(255, 255, 255, 0.04);
+            transform: translateY(-2px);
         }
 
         .stat-label {
-            font-size: calc(var(--unit) * 0.4);
+            font-size: calc(var(--unit) * 0.35);
             color: var(--main-color);
-            font-weight: bold;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 2px;
+            opacity: 0.8;
         }
 
         .stat-value {
-            font-size: calc(var(--unit) * 0.7);
-            font-weight: bold;
+            font-size: calc(var(--unit) * 0.8);
+            font-weight: 800;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: -0.5px;
         }
 
         .controls-section {
@@ -539,7 +552,10 @@
         }
         function getGhostPosition() { const pos = { x: player.pos.x, y: player.pos.y }; while (!collide(arena, { pos, matrix: player.matrix })) pos.y++; pos.y--; return pos; }
         function draw() {
-            context.fillStyle = '#16213e'; context.fillRect(0, 0, 10, 20); drawGrid(); drawMatrix(arena, { x: 0, y: 0 });
+            context.fillStyle = 'rgba(10, 15, 30, 0.95)';
+            context.fillRect(0, 0, 10, 20);
+            drawGrid();
+            drawMatrix(arena, { x: 0, y: 0 });
             if (gameStarted) {
                 const ghostPos = getGhostPosition(); drawMatrix(player.matrix, ghostPos, context, true); drawMatrix(player.matrix, player.pos);
             }

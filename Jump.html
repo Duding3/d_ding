@@ -417,7 +417,7 @@
             camera,
             score,
             maxHeight;
-        let highScore = 0; // 최고 스코어
+        let highScore = Number(localStorage.getItem('jumpHighScore')) || 0; // 최고 스코어 로드
         let isCharging = false;
         let chargeTime = 0;
         let highestLandedY = 0; // 안전한 착지 지점 (카메라 제한용)
