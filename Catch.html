@@ -233,6 +233,10 @@
 
         let spawnTimer = 0;
         function update(dt) {
+            // 조작 업데이트
+            if (moveLeft) player.x = Math.max(0, player.x - 7);
+            if (moveRight) player.x = Math.min(canvas.width - player.w, player.x + 7);
+
             spawnTimer += dt;
             if (spawnTimer > 1000 - Math.min(score, 500)) {
                 spawnItem();
@@ -301,14 +305,6 @@
         // Controls
         let moveLeft = false;
         let moveRight = false;
-
-        function handleMove() {
-            if (!gameActive) return;
-            if (moveLeft) player.x = Math.max(0, player.x - 7);
-            if (moveRight) player.x = Math.min(canvas.width - player.w, player.x + 7);
-            requestAnimationFrame(handleMove);
-        }
-        handleMove();
 
         window.addEventListener('keydown', e => {
             if (e.key === 'ArrowLeft') moveLeft = true;
