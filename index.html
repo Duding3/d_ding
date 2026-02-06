@@ -2,37 +2,30 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>루팡 - 다일러 테트리스 v3.1</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>루팡 - 다일러 테트리스 v4.0</title>
     <style>
         :root {
-            /* 🚀 전체 크기를 조절하는 기준점 (화면 높이의 75%) */
-            --game-height: 75vh;
+            --unit: 20px; 
             --main-color: #4ecca3;
+            --bg-color: #1a1a2e;
+            --board-width: calc(var(--unit) * 12);
+            --side-width: calc(var(--unit) * 4.5);
         }
 
         body {
-            background: #1a1a2e;
+            background: var(--bg-color);
             color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            height: 100dvh;
             margin: 0;
             overflow: hidden;
-            touch-action: manipulation;
-        }
-
-        h1 { color: var(--main-color); letter-spacing: 5px; margin: 0 0 5px 0; font-size: 3vh; }
-        
-        .header-info { margin-bottom: 5px; text-align: center; }
-        .info-text { font-size: 1.5vh; color: #aaa; margin-bottom: 3px; }
-        .refresh-btn {
-            background: var(--main-color); border: none; color: #1a1a2e; 
-            padding: 0.5vh 2vh; border-radius: 4px; cursor: pointer; 
-            font-weight: bold; font-size: 1.4vh;
+            touch-action: none;
+            padding: 1dvh;
         }
 
         #game-wrapper {
@@ -40,104 +33,159 @@
             flex-direction: column;
             align-items: center;
             transition: opacity 0.1s;
-            width: 100%;
+            gap: calc(var(--unit) * 0.5);
         }
 
-        /* 🌟 비례 제어를 위한 반응형 그리드 */
+        /* 헤더 영역 */
+        .game-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: calc(var(--unit) * 0.3);
+            margin-bottom: calc(var(--unit) * 0.3);
+        }
+
+        h1 { color: var(--main-color); letter-spacing: 5px; margin: 0; font-size: calc(var(--unit) * 1.4); }
+        .info-text { font-size: calc(var(--unit) * 0.5); color: #aaa; margin: 0; }
+        .refresh-btn { 
+            background: var(--main-color); border: none; color: #1a1a2e; 
+            padding: calc(var(--unit) * 0.2) calc(var(--unit) * 0.8); 
+            border-radius: 4px; cursor: pointer; 
+            font-weight: bold; font-size: calc(var(--unit) * 0.5);
+        }
+
+        /* 게임 메인 영역 */
         .game-area {
             display: grid;
-            /* 사이드바가 메인판의 약 1/3 비율을 유지하도록 설정 */
-            grid-template-columns: 12vh auto 12vh; 
-            align-items: center;
+            grid-template-columns: var(--side-width) var(--board-width) var(--side-width);
+            align-items: start; /* 🚀 넥스트와 판의 상단을 일치시킴 */
             justify-content: center;
-            gap: 2vh;
-            width: 100%;
+            gap: calc(var(--unit) * 0.6);
         }
 
         canvas#tetris {
             grid-column: 2;
-            border: solid 0.5vh var(--main-color);
-            box-shadow: 0 0 2vh rgba(78, 204, 163, 0.3);
+            border: solid calc(var(--unit) * 0.15) var(--main-color);
+            box-shadow: 0 0 calc(var(--unit) * 1) rgba(78, 204, 163, 0.2);
             background-color: #16213e;
-            height: var(--game-height); 
-            width: auto;
-            aspect-ratio: 12 / 20;
+            image-rendering: pixelated;
+            width: var(--board-width);
+            height: calc(var(--unit) * 20);
         }
 
         .side-panel {
             grid-column: 3;
             display: flex;
             flex-direction: column;
-            gap: 1vh;
-            width: 12vh; /* 사이드바도 화면 높이에 비례 */
+            gap: calc(var(--unit) * 0.5);
+            width: var(--side-width);
         }
 
         .next-box {
-            border: solid 0.3vh var(--main-color);
-            background: #16213e;
-            padding: 0.5vh 0;
-            text-align: center;
-            border-radius: 4px;
+            border: solid calc(var(--unit) * 0.1) var(--main-color);
+            background: #16213e; padding: calc(var(--unit) * 0.3) 0;
+            text-align: center; border-radius: 4px;
         }
 
         canvas#next { 
-            background-color: #16213e; 
-            display: block; 
-            margin: 0 auto;
-            width: 10vh; /* 넥스트 캔버스 크기도 비례 */
-            height: 40vh;
+            background-color: #16213e; display: block; margin: 0 auto;
+            image-rendering: pixelated;
+            width: calc(var(--unit) * 3); height: calc(var(--unit) * 12);
         }
 
-        .stat-group { text-align: center; background: rgba(255,255,255,0.05); padding: 0.8vh; border-radius: 4px; }
-        .stat-label { font-size: 1.2vh; color: var(--main-color); font-weight: bold; }
-        .stat-value { font-size: 2vh; font-weight: bold; }
+        .stat-group { text-align: center; background: rgba(255,255,255,0.05); padding: calc(var(--unit) * 0.3); border-radius: 4px; }
+        .stat-label { font-size: calc(var(--unit) * 0.45); color: var(--main-color); font-weight: bold; }
+        .stat-value { font-size: calc(var(--unit) * 0.8); font-weight: bold; }
         
-        /* 컨트롤러 크기도 화면 높이에 비례 */
+        /* 컨트롤러 구역 */
+        .controls-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: var(--board-width);
+            gap: calc(var(--unit) * 0.4);
+        }
+
         .mobile-controls {
+            width: 100%; 
             display: grid;
             grid-template-areas: ". up ." "left down right" "drop drop drop";
-            gap: 1vh; margin-top: 1.5vh;
+            gap: calc(var(--unit) * 0.3);
         }
+
         .btn {
-            background: rgba(78, 204, 163, 0.15); border: 0.2vh solid var(--main-color);
-            color: var(--main-color); padding: 1.2vh; border-radius: 8px;
+            background: rgba(78, 204, 163, 0.1); border: calc(var(--unit) * 0.1) solid var(--main-color);
+            color: var(--main-color); padding: calc(var(--unit) * 0.4); border-radius: 8px;
             text-align: center; font-weight: bold; cursor: pointer; 
-            font-size: 1.6vh;
-            min-width: 8vh;
+            font-size: calc(var(--unit) * 0.55); 
+            -webkit-tap-highlight-color: transparent;
             user-select: none;
         }
         .btn:active { background: var(--main-color); color: #1a1a2e; }
         .btn-up { grid-area: up; } .btn-left { grid-area: left; }
         .btn-down { grid-area: down; } .btn-right { grid-area: right; }
-        .btn-drop { grid-area: drop; background: rgba(255, 255, 255, 0.05); color: #eee; padding: 1vh; }
+        .btn-drop { grid-area: drop; background: rgba(255, 255, 255, 0.05); color: #eee; padding: calc(var(--unit) * 0.3); }
 
-        .controls-info { margin-top: 1vh; font-size: 1.3vh; color: #666; }
-        .key { padding: 0.2vh 0.6vh; background: #333; border-radius: 3px; color: #eee; }
+        .controls-info { font-size: calc(var(--unit) * 0.45); color: #666; text-align: center; }
 
-        .slider-area { margin-top: 1vh; display: flex; align-items: center; gap: 1vh; }
-        .slider-label { font-size: 1.4vh; color: var(--main-color); font-weight: bold; }
-        input[type=range] { cursor: pointer; width: 15vh; height: 1.5vh; }
+        /* 🌟 슬라이더 박스 버튼 디자인 최적화 */
+        .slider-area { 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            gap: calc(var(--unit) * 0.5); 
+            width: 100%;
+            background: rgba(255,255,255,0.03);
+            padding: calc(var(--unit) * 0.3);
+            border-radius: calc(var(--unit) * 0.5);
+        }
+        .slider-label { font-size: calc(var(--unit) * 0.5); color: var(--main-color); font-weight: bold; white-space: nowrap; }
+        
+        input[type=range] { 
+            -webkit-appearance: none;
+            width: 100%; 
+            background: transparent;
+            cursor: pointer;
+        }
+
+        /* 슬라이더 트랙 */
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: calc(var(--unit) * 0.3);
+            background: rgba(78, 204, 163, 0.2);
+            border-radius: calc(var(--unit) * 0.2);
+        }
+
+        /* 슬라이더 손잡이 */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: calc(var(--unit) * 0.8);
+            width: calc(var(--unit) * 0.8);
+            border-radius: 50%;
+            background: var(--main-color);
+            margin-top: calc(var(--unit) * -0.25); /* 트랙 중앙 정렬 */
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+        }
     </style>
 </head>
 <body>
 
-    <h1>다일러</h1>
-    
-    <div class="header-info">
-        <p class="info-text">수정사항이 안 보인다면 버튼 클릭</p>
-        <button class="refresh-btn" onclick="location.reload(true)">새로고침</button>
-    </div>
-    
     <div id="game-wrapper">
+        <div class="game-header">
+            <h1>다일러</h1>
+            <p class="info-text">새로고침 시 빠른 업데이트 적용</p>
+            <button class="refresh-btn" onclick="location.reload(true)">새로고침</button>
+        </div>
+        
         <div class="game-area">
-            <div style="width: 12vh;"></div>
+            <div style="width: var(--side-width);"></div> 
 
-            <canvas id="tetris" width="240" height="400"></canvas>
+            <canvas id="tetris"></canvas>
             
             <div class="side-panel">
                 <div class="next-box">
-                    <div class="stat-label" style="margin-bottom: 0.5vh;">NEXT</div>
-                    <canvas id="next" width="60" height="240"></canvas>
+                    <div class="stat-label" style="margin-bottom: 2px;">NEXT</div>
+                    <canvas id="next"></canvas>
                 </div>
                 <div class="stat-group">
                     <div class="stat-label">SCORE</div>
@@ -150,35 +198,30 @@
             </div>
         </div>
 
-        <div class="mobile-controls">
-            <div class="btn btn-up" id="ctrl-up">회전</div>
-            <div class="btn btn-left" id="ctrl-left">◀</div>
-            <div class="btn btn-down" id="ctrl-down">▼</div>
-            <div class="btn btn-right" id="ctrl-right">▶</div>
-            <div class="btn btn-drop" id="ctrl-drop">하드드롭</div>
+        <div class="controls-section">
+            <div class="mobile-controls">
+                <div class="btn btn-up" id="ctrl-up">회전</div>
+                <div class="btn btn-left" id="ctrl-left">◀</div>
+                <div class="btn btn-down" id="ctrl-down">▼</div>
+                <div class="btn btn-right" id="ctrl-right">▶</div>
+                <div class="btn btn-drop" id="ctrl-drop">하드드롭</div>
+            </div>
+            <div class="controls-info">←→ 이동 | ↑ 회전 | ↓ 가속 | Space 하드드롭</div>
+            
+            <div class="slider-area">
+                <span class="slider-label">투명도</span>
+                <input type="range" id="opacitySlider" min="5" max="100" value="100">
+            </div>
         </div>
-
-        <div class="controls-info">
-            <span class="key">←</span><span class="key">→</span> 이동 | <span class="key">↑</span> 회전 | <span class="key">↓</span> 가속 | <span class="key">Space</span> 하드드롭
-        </div>
-    </div>
-
-    <div class="slider-area">
-        <span class="slider-label">전체 투명도</span>
-        <input type="range" id="opacitySlider" min="5" max="100" value="100">
     </div>
 
 <script>
-// 기존의 모든 로직(7-Bag, DAS, Ghost Piece 등)은 그대로 유지됩니다.
 const canvas = document.getElementById('tetris');
 const context = canvas.getContext('2d');
 const nextCanvas = document.getElementById('next');
 const nextContext = nextCanvas.getContext('2d');
 const gameWrapper = document.getElementById('game-wrapper');
 const opacitySlider = document.getElementById('opacitySlider');
-
-context.scale(20, 20);
-nextContext.scale(12, 12); 
 
 const colors = [null, '#00f0f0', '#f0a000', '#0000f0', '#f0f000', '#f00000', '#00f000', '#a000f0'];
 
@@ -187,15 +230,29 @@ let dropCounter = 0;
 let dropInterval = 800;
 let lastTime = 0;
 let bag = [];
+let calculatedUnit = 20;
 
-const keys = {
-    left: { pressed: false, timer: 0 },
-    right: { pressed: false, timer: 0 },
-    down: { pressed: false, timer: 0 }
-};
+function resizeGame() {
+    const screenHeight = window.innerHeight;
+    const screenWidth = window.innerWidth;
+    calculatedUnit = Math.floor((screenHeight * 0.58) / 20);
+    const totalRequiredWidthUnits = 12 + 4.5 + 4.5 + 2; 
+    if (calculatedUnit * totalRequiredWidthUnits > screenWidth) {
+        calculatedUnit = Math.floor(screenWidth / totalRequiredWidthUnits);
+    }
+    document.documentElement.style.setProperty('--unit', `${calculatedUnit}px`);
+    canvas.width = calculatedUnit * 12;
+    canvas.height = calculatedUnit * 20;
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.scale(calculatedUnit, calculatedUnit);
+    nextCanvas.width = calculatedUnit * 3;
+    nextCanvas.height = calculatedUnit * 12;
+    nextContext.setTransform(1, 0, 0, 1, 0, 0);
+    nextContext.scale(calculatedUnit, calculatedUnit);
+}
 
-const DAS_DELAY = 160;
-const DAS_INTERVAL = 45;
+window.addEventListener('resize', resizeGame);
+resizeGame();
 
 function createPiece(type) {
     if (type === 'I') return [[0,1,0,0],[0,1,0,0],[0,1,0,0],[0,1,0,0]];
@@ -247,11 +304,9 @@ function drawMatrix(matrix, offset, ctx = context, isGhost = false) {
         row.forEach((value, x) => {
             if (value !== 0) {
                 if (isGhost) {
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
                     ctx.lineWidth = 0.05;
-                    ctx.strokeRect(x + offset.x + 0.05, y + offset.y + 0.05, 0.9, 0.9);
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
-                    ctx.fillRect(x + offset.x, y + offset.y, 1, 1);
+                    ctx.strokeRect(x + offset.x + 0.1, y + offset.y + 0.1, 0.8, 0.8);
                 } else {
                     ctx.fillStyle = colors[value];
                     ctx.fillRect(x + offset.x, y + offset.y, 1, 1);
@@ -279,27 +334,24 @@ function draw() {
     const ghostPos = getGhostPosition();
     drawMatrix(player.matrix, ghostPos, context, true);
     drawMatrix(player.matrix, player.pos);
-
     nextContext.fillStyle = '#16213e';
     nextContext.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
-    player.queue.slice(0, 4).forEach((matrix, i) => {
-        const slotHeight = 5;
-        const yBase = i * slotHeight;
-        nextContext.strokeStyle = 'rgba(78, 204, 163, 0.2)';
-        nextContext.lineWidth = 0.05;
-        nextContext.strokeRect(0.1, yBase + 0.1, 4.8, 4.8);
-        const xOffset = (5 - matrix[0].length) / 2;
-        const yOffset = yBase + (5 - matrix.length) / 2;
-        drawMatrix(matrix, {x: xOffset, y: yOffset}, nextContext);
+    player.queue.slice(0, 3).forEach((matrix, i) => {
+        const slotH = 4;
+        const yBase = i * slotH;
+        nextContext.strokeStyle = 'rgba(78, 204, 163, 0.15)';
+        nextContext.strokeRect(0.1, yBase + 0.1, 2.8, 2.8);
+        const xOff = (3 - matrix[0].length) / 2;
+        const yOff = yBase + (3 - matrix.length) / 2;
+        drawMatrix(matrix, {x: xOff, y: yOff}, nextContext);
     });
-
     if (isGameOver) {
         context.fillStyle = 'rgba(0, 0, 0, 0.85)';
         context.fillRect(0, 0, canvas.width, canvas.height);
         context.fillStyle = '#ff4d4d';
-        context.font = '1.2px "Segoe UI"';
+        context.font = '1px "Segoe UI"';
         context.textAlign = 'center';
-        context.fillText('GAME OVER', 6, 8);
+        context.fillText('GAME OVER', 6, 10);
     }
 }
 
@@ -384,6 +436,10 @@ function hardDrop() {
     arenaSweep();
 }
 
+const keys = { left: { pressed: false, timer: 0 }, right: { pressed: false, timer: 0 }, down: { pressed: false, timer: 0 }, space: { pressed: false } };
+const DAS_DELAY = 160;
+const DAS_INTERVAL = 45;
+
 function handleInput(deltaTime) {
     if (isGameOver) return;
     ['left', 'right', 'down'].forEach(dir => {
@@ -392,18 +448,18 @@ function handleInput(deltaTime) {
             if (k.timer === 0) {
                 if (dir === 'left') { player.pos.x--; if (collide(arena, player)) player.pos.x++; }
                 if (dir === 'right') { player.pos.x++; if (collide(arena, player)) player.pos.x--; }
-                if (dir === 'down') { playerDrop(); }
+                if (dir === 'down') playerDrop();
             }
             k.timer += deltaTime;
             if (k.timer > DAS_DELAY) {
                 if (k.timer > DAS_DELAY + DAS_INTERVAL) {
                     if (dir === 'left') { player.pos.x--; if (collide(arena, player)) player.pos.x++; }
                     if (dir === 'right') { player.pos.x++; if (collide(arena, player)) player.pos.x--; }
-                    if (dir === 'down') { playerDrop(); }
+                    if (dir === 'down') playerDrop();
                     k.timer = DAS_DELAY;
                 }
             }
-        } else { k.timer = 0; }
+        } else k.timer = 0;
     });
 }
 
@@ -423,18 +479,19 @@ opacitySlider.addEventListener('input', (e) => {
     gameWrapper.style.opacity = e.target.value / 100;
 });
 
-document.addEventListener('keydown', event => {
+document.addEventListener('keydown', e => {
     if (isGameOver) { location.reload(); return; }
-    if (event.keyCode === 37) keys.left.pressed = true;
-    if (event.keyCode === 39) keys.right.pressed = true;
-    if (event.keyCode === 40) keys.down.pressed = true;
-    if (event.keyCode === 38) playerRotate(1);
-    if (event.keyCode === 32) hardDrop();
+    if (e.keyCode === 37) keys.left.pressed = true;
+    if (e.keyCode === 39) keys.right.pressed = true;
+    if (e.keyCode === 40) keys.down.pressed = true;
+    if (e.keyCode === 38) playerRotate(1);
+    if (e.keyCode === 32) { if(!keys.space.pressed){ hardDrop(); keys.space.pressed=true; } }
 });
-document.addEventListener('keyup', event => {
-    if (event.keyCode === 37) keys.left.pressed = false;
-    if (event.keyCode === 39) keys.right.pressed = false;
-    if (event.keyCode === 40) keys.down.pressed = false;
+document.addEventListener('keyup', e => {
+    if (e.keyCode === 37) keys.left.pressed = false;
+    if (e.keyCode === 39) keys.right.pressed = false;
+    if (e.keyCode === 40) keys.down.pressed = false;
+    if (e.keyCode === 32) keys.space.pressed = false;
 });
 
 const bindMobileBtn = (id, keyName, isAction = false) => {
@@ -445,9 +502,9 @@ const bindMobileBtn = (id, keyName, isAction = false) => {
         if (isAction) {
             if (keyName === 'up') playerRotate(1);
             if (keyName === 'drop') hardDrop();
-        } else { keys[keyName].pressed = true; }
+        } else keys[keyName].pressed = true;
     };
-    const end = () => { if (!isAction) keys[keyName].pressed = false; };
+    const end = (e) => { e.preventDefault(); if (!isAction) keys[keyName].pressed = false; };
     el.addEventListener('touchstart', start);
     el.addEventListener('touchend', end);
     el.addEventListener('mousedown', start);
