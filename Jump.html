@@ -1183,7 +1183,7 @@
 
         function update() {
             if (isCharging && player.onGround) {
-                chargeTime = Math.min(chargeTime + 1, MAX_CHARGE);
+                chargeTime = Math.min(chargeTime + 3, MAX_CHARGE); // +1 -> +3 (Faster Charging)
                 // chargeBar update removed
             }
 
