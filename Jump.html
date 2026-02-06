@@ -218,8 +218,8 @@
 <body>
     <div class="game-wrapper">
         <div class="game-header">
-            <h1>🟢 슬라임 점프 <span
-                    style="font-size: 0.9rem; opacity: 0.5; font-weight: normal; color: inherit;">v1.7</span></h1>
+            <h1 style="font-family: 'Segoe UI', sans-serif;">🟢 슬라임 점프 <span
+                    style="font-size: 0.9rem; color: #aaa; opacity: 0.5; font-weight: normal;">v10.0</span></h1>
             <button class="refresh-btn" onclick="location.reload(true)">새로고침</button>
         </div>
 
@@ -1150,32 +1150,22 @@
                     // 즉, 플레이어가 '안전지대' 위에 있는 동안은 카메라가 자유롭게 오르락내리락 해도 됨.
                     // 하지만 '안전지대' 밑으로 떨어지면 카메라는 멈춰야 함.
 
-                    // 안전지대 기준 카메라 Y값
-                    const safetyCameraY = Math.max(0, -highestLandedY + canvas.height * 0.6);
-
-                    // 만약 플레이어가 안전지대보다 위에 있거나 근처라면 targetCameraY가 safetyCameraY와 비슷할 것.
-                    // 그냥 targetCameraY를 따라가되, 그 값이 safetyCameraY보다 너무 작아지면 안됨?
-
-                    // 가장 확실한 방법:
-                    // 카메라의 최소 Y값(바닥)을 highestLandedY 기준으로 정해버림.
-                    // camera.y = Math.max(camera.y, targetCameraY) <-- 이건 올라가기만 함
-
-                    // 수정:
-                    // 1. 카메라는 항상 targetCameraY를 향해 부드럽게 이동.
-                    // 2. 단, 그 결과값(newCameraY)이 '안전지대 뷰'보다 아래로 내려가면 안됨.
-
-                    const minSafeCamY = Math.max(0, -highestLandedY - canvas.height + 100);
-                    // 높이가 올라갈수록 highestLandedY는 작아짐(음수 등). -highestLandedY는 커짐.
-                    // 예: 바닥(600). -600 - 600 + 100 = -1100 => 0.
-                    // 예: 100층(-2000). 2000 - 600 + 100 = 1500.
-
-                    // 실제 적용
-                    camera.y += (targetCameraY - camera.y) * 0.1;
-                    if (camera.y < minSafeCamY) camera.y = minSafeCamY;
+                    // One-Way Camera Logic (Ratchet)
+                    // Camera only moves UP towards the target. Never down.
+                    if (targetCameraY > camera.y) {
+                        camera.y += (targetCameraY - camera.y) * 0.1;
+                    }
                 }
             }
 
+            // Prevent camera from going below 0 (though ratchet logic handles this mostly, safety check)
             if (camera.y < 0) camera.y = 0;
+
+            // Strict Game Over Check
+            // If player falls below the bottom of the VISIBLE camera view
+            if (player.y > camera.y + canvas.height) {
+                endGame();
+            }
 
             // 게임오버 체크 - 카메라 화면 아래로 떨어지면
             const screenY = player.y + camera.y;
