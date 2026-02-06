@@ -318,10 +318,13 @@
                 ctx.fillRect(i - (gameTime / 10 % 40), groundY, 40, 40);
             }
 
-            // Player (Cute Lion 🦁)
+            // Player (Cute Lion 🦁 with Glow)
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#fff'; // White glow for visibility
             ctx.font = `${player.h}px Arial`;
             ctx.textAlign = 'center';
             ctx.fillText('🦁', player.x + player.w / 2, player.y + player.h);
+            ctx.shadowBlur = 0;
 
 
             // Obstacles
