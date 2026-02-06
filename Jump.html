@@ -204,39 +204,49 @@
             font-size: 1.5rem;
             margin-bottom: 30px;
         }
+
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            border-radius: 12px;
+            overflow: hidden;
+            /* Ensures screens conform to rounded corners */
+        }
     </style>
 </head>
 
 <body>
     <div class="game-wrapper">
-        <div class="hud-container">
-            <div class="hud-box">
-                <div class="hud-label">현재 높이</div>
-                <div class="hud-value" id="scoreHeight">0m</div>
-            </div>
-            <div class="hud-box">
-                <div class="hud-label">최고 높이</div>
-                <div class="hud-value" id="scoreMax">0m</div>
-            </div>
-        </div>
-
         <div class="game-header">
             <h1>🟢 슬라임 점프 <span style="font-size: 0.8rem; color: #888; font-weight: normal;">v1.7</span></h1>
             <button class="refresh-btn" onclick="location.reload(true)">새로고침</button>
         </div>
 
-        <canvas id="gameCanvas" width="400" height="600"></canvas>
+        <div class="canvas-container">
+            <div class="hud-container">
+                <div class="hud-box">
+                    <div class="hud-label">현재 높이</div>
+                    <div class="hud-value" id="scoreHeight">0m</div>
+                </div>
+                <div class="hud-box">
+                    <div class="hud-label">최고 높이</div>
+                    <div class="hud-value" id="scoreMax">0m</div>
+                </div>
+            </div>
 
-        <div id="startScreen">
-            <h1 style="font-size: 2.5rem; margin-bottom: 10px;">🟢 슬라임 점프</h1>
-            <span style="color: #666; margin-bottom: 20px; font-size: 0.9rem;">Ver 1.5 - Hills Update</span>
-            <p style="color: #aaa; margin-bottom: 20px;">스페이스바를 길게 눌러 차징하고<br>높이 점프하세요 !</p><button class="start-btn"
-                onclick="startGame()">START</button>
-        </div>
-        <div class="game-over-screen" id="gameOverScreen">
-            <h2>GAME OVER</h2>
-            <p>최고 높이: <span id="finalScore">0</span>m</p><button class="start-btn" onclick="restartGame()">다시
-                시작</button>
+            <canvas id="gameCanvas" width="400" height="600"></canvas>
+
+            <div id="startScreen">
+                <h1 style="font-size: 2.5rem; margin-bottom: 10px;">🟢 슬라임 점프</h1>
+                <span style="color: #666; margin-bottom: 20px; font-size: 0.9rem;">Ver 1.5 - Hills Update</span>
+                <p style="color: #aaa; margin-bottom: 20px;">스페이스바를 길게 눌러 차징하고<br>높이 점프하세요 !</p><button
+                    class="start-btn" onclick="startGame()">START</button>
+            </div>
+            <div class="game-over-screen" id="gameOverScreen">
+                <h2>GAME OVER</h2>
+                <p>최고 높이: <span id="finalScore">0</span>m</p><button class="start-btn" onclick="restartGame()">다시
+                    시작</button>
+            </div>
         </div>
     </div>
 
