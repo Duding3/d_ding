@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>루팡</title>
+    <title>루팡 - 다일러 테트리스</title>
     <style>
         body {
             background: #1a1a2e;
@@ -21,7 +21,7 @@
             border: solid 4px #4ecca3;
             box-shadow: 0 0 20px rgba(78, 204, 163, 0.3);
             background-color: #16213e;
-            transition: opacity 0.2s; /* 투명도 변경 시 부드럽게 적용 */
+            /* transition 제거: 슬라이더 반응 속도를 최대로 높임 */
         }
         #ui {
             margin-top: 15px;
@@ -60,11 +60,32 @@
             border-radius: 3px;
             color: #eee;
         }
+
+        /* 새로고침 버튼 스타일 */
+        .refresh-btn {
+            background: #4ecca3; 
+            border: none; 
+            color: #1a1a2e; 
+            padding: 5px 15px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-weight: bold;
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
+        .refresh-btn:hover { background: #45b38f; }
     </style>
 </head>
 <body>
 
-    <h1 style="color: #4ecca3; letter-spacing: 5px; margin-bottom: 10px;">다일러</h1>
+    <h1 style="color: #4ecca3; letter-spacing: 5px; margin-bottom: 5px;">다일러</h1>
+    
+    <div style="margin-bottom: 20px; text-align: center;">
+        <p style="font-size: 0.75rem; color: #aaa; margin: 0;">
+            💡 빠른 업뎃 적용용 새로고침버튼 <b>[Ctrl + F5]</b> 또는 버튼 클릭
+        </p>
+        <button class="refresh-btn" onclick="location.reload(true)">새로고침</button>
+    </div>
     
     <canvas id="tetris" width="240" height="400"></canvas>
 
@@ -100,7 +121,7 @@ context.scale(20, 20);
 let isGameOver = false;
 let levelUpTimer = 0;
 
-// 투명도 조절 이벤트
+// 투명도 조절 이벤트 (실시간 반영)
 opacitySlider.addEventListener('input', (e) => {
     canvas.style.opacity = e.target.value / 100;
 });
@@ -304,5 +325,4 @@ playerReset();
 update();
 </script>
 </body>
-
 </html>
