@@ -476,10 +476,10 @@
             const screenHeight = window.innerHeight;
             const screenWidth = window.innerWidth;
             calculatedUnit = Math.floor((screenHeight * 0.52) / 20);
-            const totalRequiredWidthUnits = 10 + 4.5 + 4.5 + 4; // Increased margin for side panels
+            const totalRequiredWidthUnits = 12 + 4.5 + 4.5 + 4; // Updated from 10 to 12
             if (calculatedUnit * totalRequiredWidthUnits > screenWidth) { calculatedUnit = Math.floor(screenWidth / totalRequiredWidthUnits); }
             document.documentElement.style.setProperty('--unit', `${calculatedUnit}px`);
-            canvas.width = calculatedUnit * 10; canvas.height = calculatedUnit * 20;
+            canvas.width = calculatedUnit * 12; canvas.height = calculatedUnit * 20;
             context.setTransform(1, 0, 0, 1, 0, 0); context.scale(calculatedUnit, calculatedUnit);
             nextCanvas.width = calculatedUnit * 2.5; nextCanvas.height = calculatedUnit * 6;
             nextContext.setTransform(1, 0, 0, 1, 0, 0); nextContext.scale(calculatedUnit * 0.6, calculatedUnit * 0.6);
@@ -536,8 +536,8 @@
         }
         function drawGrid() {
             context.strokeStyle = 'rgba(255, 255, 255, 0.05)'; context.lineWidth = 0.02;
-            for (let x = 0; x <= 10; x++) { context.beginPath(); context.moveTo(x, 0); context.lineTo(x, 20); context.stroke(); }
-            for (let y = 0; y <= 20; y++) { context.beginPath(); context.moveTo(0, y); context.lineTo(10, y); context.stroke(); }
+            for (let x = 0; x <= 12; x++) { context.beginPath(); context.moveTo(x, 0); context.lineTo(x, 20); context.stroke(); }
+            for (let y = 0; y <= 20; y++) { context.beginPath(); context.moveTo(0, y); context.lineTo(12, y); context.stroke(); }
         }
         function drawMatrix(matrix, offset, ctx = context, isGhost = false) {
             matrix.forEach((row, y) => {
@@ -552,7 +552,7 @@
         function getGhostPosition() { const pos = { x: player.pos.x, y: player.pos.y }; while (!collide(arena, { pos, matrix: player.matrix })) pos.y++; pos.y--; return pos; }
         function draw() {
             context.fillStyle = 'rgba(10, 15, 30, 0.95)';
-            context.fillRect(0, 0, 10, 20);
+            context.fillRect(0, 0, 12, 20);
             drawGrid();
             drawMatrix(arena, { x: 0, y: 0 });
             if (gameStarted) {
@@ -654,7 +654,7 @@
             el.addEventListener('touchstart', start); el.addEventListener('touchend', end); el.addEventListener('mousedown', start); el.addEventListener('mouseup', end);
         };
         bindMobileBtn('ctrl-left', 'left'); bindMobileBtn('ctrl-right', 'right'); bindMobileBtn('ctrl-down', 'down'); bindMobileBtn('ctrl-up', 'up', true); bindMobileBtn('ctrl-drop', 'drop', true);
-        const arena = Array.from({ length: 20 }, () => new Array(10).fill(0)); draw(); // 초기 화면 그리기
+        const arena = Array.from({ length: 20 }, () => new Array(12).fill(0)); draw(); // 초기 화면 그리기
     </script>
 </body>
 
