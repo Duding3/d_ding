@@ -189,11 +189,11 @@
             <h1>네온 스네이크 <span class="version">v1.0</span></h1>
             <div class="stats">
                 <div class="stat-box">
-                    <div class="stat-label">SCORE</div>
+                    <div class="stat-label">현재 점수</div>
                     <div id="score" class="stat-value">0</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-label">HIGH</div>
+                    <div class="stat-label">최고 기록</div>
                     <div id="highScore" class="stat-value">0</div>
                 </div>
             </div>
@@ -202,8 +202,8 @@
         <div style="position: relative;">
             <canvas id="gameCanvas"></canvas>
             <div id="overlay">
-                <h2 id="msg" style="margin-bottom: 20px; font-size: 1.8rem;">READY?</h2>
-                <button class="start-btn" onclick="startGame()">START GAME</button>
+                <h2 id="msg" style="margin-bottom: 20px; font-size: 1.8rem;">준비?</h2>
+                <button class="start-btn" onclick="startGame()">게임 시작</button>
             </div>
         </div>
 
@@ -336,7 +336,7 @@
 
         function gameOver() {
             gameActive = false;
-            msg.innerText = "GAME OVER";
+            msg.innerText = "게임 종료";
             overlay.style.display = 'flex';
         }
 

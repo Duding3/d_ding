@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>지뢰 찾기 (Mines)</title>
+    <style>
+        :root {
+            --unit: min(3.5vh, 2.8vw, 22px);
+            --main-color: #facc15;
+            /* Yellow for mines */
+            --bg-color: #1a1a2e;
+            --card-bg: rgba(255, 255, 255, 0.03);
+        }
+
+        body {
+            background: radial-gradient(circle at center, #2d2d1b 0%, #1a1a2e 100%);
+            color: #fff;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100dvh;
+            margin: 0;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #game-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: calc(var(--unit) * 0.8);
+            position: relative;
+        }
+
+        h1 {
+            color: var(--main-color);
+            margin: 0;
+            font-size: calc(var(--unit) * 1.5);
+            text-shadow: 0 0 15px rgba(250, 204, 21, 0.3);
+        }
+
+        .version {
+            font-size: 0.9rem;
+            color: #aaa;
+            opacity: 0.5;
+            font-weight: normal;
+        }
+
+        .stats {
+            display: flex;
+            gap: calc(var(--unit) * 1);
+            margin-bottom: calc(var(--unit) * 0.5);
+        }
+
+        .stat-box {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: calc(var(--unit) * 0.3) calc(var(--unit) * 0.8);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: calc(var(--unit) * 0.4);
+            color: var(--main-color);
+            font-weight: bold;
+        }
+
+        .stat-value {
+            font-size: calc(var(--unit) * 0.8);
+            font-weight: 800;
+        }
+
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 2px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 5px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .cell {
+            width: calc(var(--unit) * 1.5);
+            height: calc(var(--unit) * 1.5);
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: calc(var(--unit) * 0.8);
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s;
+        }
+
+        .cell:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .cell.revealed {
+            background: rgba(255, 255, 255, 0.05);
+            cursor: default;
+        }
+
+        .cell.mine {
+            background: #ef4444 !important;
+        }
+
+        .cell.flagged::after {
+            content: '🚩';
+            font-size: 0.8em;
+        }
+
+        .v1 {
+            color: #3b82f6;
+        }
+
+        .v2 {
+            color: #10b981;
+        }
+
+        .v3 {
+            color: #ef4444;
+        }
+
+        .v4 {
+            color: #8b5cf6;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .mode-btn {
+            padding: 10px 20px;
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ccc;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .mode-btn.active {
+            background: var(--main-color);
+            color: #1a1a2e;
+            border-color: var(--main-color);
+            box-shadow: 0 0 15px rgba(250, 204, 21, 0.3);
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            border-radius: 12px;
+            display: none;
+        }
+
+        .start-btn {
+            margin-top: 20px;
+            padding: 12px 30px;
+            background: var(--main-color);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 10px;
+            font-weight: 900;
+            font-size: 1.1rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="game-wrapper">
+        <h1>지뢰 찾기 <span class="version">v1.0</span></h1>
+
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-label">남은 지뢰</div>
+                <div id="mine-count" class="stat-value">10</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">시간</div>
+                <div id="timer" class="stat-value">0</div>
+            </div>
+        </div>
+
+        <div id="grid"></div>
+
+        <div class="controls">
+            <button id="tap-mode" class="mode-btn active">👆 열기</button>
+            <button id="flag-mode" class="mode-btn">🚩 깃발</button>
+        </div>
+
+        <div id="overlay">
+            <h2 id="msg" style="font-size: 2rem;">준비?</h2>
+            <button class="start-btn" onclick="initGame()">게임 시작</button>
+        </div>
+    </div>
+
+    <script>
+        const ROWS = 10; const COLS = 10; const MINES = 10;
+        let board = []; let revealedCount = 0; let flags = 0;
+        let timer = null; let seconds = 0; let gameActive = false;
+        let isFlagMode = false;
+
+        const gridEl = document.getElementById('grid');
+        const mineCountEl = document.getElementById('mine-count');
+        const timerEl = document.getElementById('timer');
+        const overlay = document.getElementById('overlay');
+        const msgEl = document.getElementById('msg');
+
+        function initGame() {
+            board = Array.from({ length: ROWS * COLS }, () => ({ mine: false, revealed: false, flagged: false, neighborCount: 0 }));
+            let minesPlaced = 0;
+            while (minesPlaced < MINES) {
+                let idx = Math.floor(Math.random() * (ROWS * COLS));
+                if (!board[idx].mine) { board[idx].mine = true; minesPlaced++; }
+            }
+
+            for (let i = 0; i < board.length; i++) {
+                if (board[i].mine) continue;
+                let r = Math.floor(i / COLS); let c = i % COLS;
+                for (let dr = -1; dr <= 1; dr++) {
+                    for (let dc = -1; dc <= 1; dc++) {
+                        let nr = r + dr; let nc = c + dc;
+                        if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) {
+                            if (board[nr * COLS + nc].mine) board[i].neighborCount++;
+                        }
+                    }
+                }
+            }
+
+            gridEl.innerHTML = '';
+            board.forEach((cell, i) => {
+                const cellEl = document.createElement('div');
+                cellEl.className = 'cell';
+                cellEl.onclick = () => handleCellClick(i);
+                gridEl.appendChild(cellEl);
+            });
+
+            revealedCount = 0; flags = 0; seconds = 0; gameActive = true;
+            mineCountEl.innerText = MINES; timerEl.innerText = 0;
+            overlay.style.display = 'none';
+            clearInterval(timer);
+            timer = setInterval(() => { seconds++; timerEl.innerText = seconds; }, 1000);
+        }
+
+        function handleCellClick(i) {
+            if (!gameActive || board[i].revealed) return;
+
+            if (isFlagMode) {
+                board[i].flagged = !board[i].flagged;
+                gridEl.children[i].classList.toggle('flagged');
+                flags += board[i].flagged ? 1 : -1;
+                mineCountEl.innerText = MINES - flags;
+                return;
+            }
+
+            if (board[i].flagged) return;
+
+            if (board[i].mine) {
+                revealAll();
+                gameOver(false);
+                return;
+            }
+
+            revealCell(i);
+            if (revealedCount === ROWS * COLS - MINES) gameOver(true);
+        }
+
+        function revealCell(i) {
+            if (board[i].revealed || board[i].flagged) return;
+            board[i].revealed = true;
+            revealedCount++;
+            const el = gridEl.children[i];
+            el.classList.add('revealed');
+            if (board[i].neighborCount > 0) {
+                el.innerText = board[i].neighborCount;
+                el.classList.add('v' + Math.min(board[i].neighborCount, 4));
+            } else {
+                let r = Math.floor(i / COLS); let c = i % COLS;
+                for (let dr = -1; dr <= 1; dr++) {
+                    for (let dc = -1; dc <= 1; dc++) {
+                        let nr = r + dr; let nc = c + dc;
+                        if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) revealCell(nr * COLS + nc);
+                    }
+                }
+            }
+        }
+
+        function revealAll() {
+            board.forEach((cell, i) => {
+                if (cell.mine) gridEl.children[i].classList.add('mine');
+                gridEl.children[i].classList.add('revealed');
+            });
+        }
+
+        function gameOver(win) {
+            gameActive = false;
+            clearInterval(timer);
+            overlay.style.display = 'flex';
+            msgEl.innerText = win ? "승리!" : "폭발!";
+        }
+
+        document.getElementById('tap-mode').onclick = () => { isFlagMode = false; document.getElementById('tap-mode').classList.add('active'); document.getElementById('flag-mode').classList.remove('active'); };
+        document.getElementById('flag-mode').onclick = () => { isFlagMode = true; document.getElementById('flag-mode').classList.add('active'); document.getElementById('tap-mode').classList.remove('active'); };
+
+        overlay.style.display = 'flex';
+    </script>
+</body>
+
+</html>
