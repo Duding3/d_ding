@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,12 +8,13 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
+
 <body>
 
     <header>
         <h1>🎮 JiHye Mini-Game</h1>
         <p>냥냥?!</p>
-        
+
         <button id="update-refresh-btn" class="update-refresh-btn">
             <i class="fas fa-sync-alt"></i> 빠른 업뎃용 새로고침
         </button>
@@ -37,6 +39,15 @@
             <a href="typing.html" class="play-btn">게임 시작</a>
         </div>
 
+        <div class="game-card">
+            <div class="icon-wrapper">
+                <i class="fas fa-arrow-up"></i>
+            </div>
+            <h2>슬라임 점프 (Jump)</h2>
+            <p>점프해서 하늘 끝까지 올라가보자!</p>
+            <a href="Jump.html" class="play-btn">게임 시작</a>
+        </div>
+
         <div class="game-card coming-soon">
             <div class="icon-wrapper">
                 <i class="fas fa-plus"></i>
@@ -52,7 +63,7 @@
 
     <script>
         // 캐시를 무시하고 페이지를 새로 불러오는 로직
-        document.getElementById('update-refresh-btn').addEventListener('click', function() {
+        document.getElementById('update-refresh-btn').addEventListener('click', function () {
             // URL 뒤에 현재 시간을 붙여서 브라우저가 새로운 페이지로 인식하게 강제함
             const currentUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
             window.location.href = currentUrl + '?update=' + new Date().getTime();
@@ -60,4 +71,5 @@
     </script>
 
 </body>
+
 </html>

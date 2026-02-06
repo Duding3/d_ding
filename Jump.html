@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>슬라임 점프 - JiHye Mini-Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #1a1a2e;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+        }
+
+        .game-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            color: #4ade80;
+            font-size: 1.8rem;
+            letter-spacing: 3px;
+            text-shadow: 0 0 20px rgba(74, 222, 128, 0.5);
+        }
+
+        .refresh-btn {
+            background: #4ade80;
+            border: none;
+            color: #1a1a2e;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        #gameCanvas {
+            border: 3px solid #4ade80;
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(74, 222, 128, 0.3);
+        }
+
+        .controls-info {
+            margin-top: 15px;
+            color: #888;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        .charge-bar-container {
+            width: 300px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-top: 10px;
+            overflow: hidden;
+            border: 2px solid #4ade80;
+        }
+
+        .charge-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #4ade80, #22c55e, #16a34a);
+            transition: width 0.05s;
+            border-radius: 8px;
+        }
+
+        #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(26, 26, 46, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .start-btn {
+            background: #4ade80;
+            color: #1a1a2e;
+            border: none;
+            padding: 20px 50px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border-radius: 15px;
+            cursor: pointer;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .game-over-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .game-over-screen h2 {
+            color: #ef4444;
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        .game-over-screen p {
+            color: #fff;
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="game-header">
+        <h1>🟢 슬라임 점프</h1>
+        <button class="refresh-btn" onclick="location.reload(true)">새로고침</button>
+    </div>
+
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+
+    <div class="charge-bar-container">
+        <div class="charge-bar" id="chargeBar"></div>
+    </div>
+
+    <div class="controls-info">
+        SPACE 짧게 = 작은 점프 | SPACE 길게 차징 = 높은 점프
+    </div>
+
+    <div id="startScreen">
+        <h1 style="font-size: 2.5rem; margin-bottom: 30px;">🟢 슬라임 점프</h1>
+        <p style="color: #aaa; margin-bottom: 20px;">스페이스바를 길게 눌러 차징하고<br>높이 점프하세요!</p>
+        <button class="start-btn" onclick="startGame()">START</button>
+    </div>
+
+    <div class="game-over-screen" id="gameOverScreen">
+        <h2>GAME OVER</h2>
+        <p>최고 높이: <span id="finalScore">0</span>m</p>
+        <button class="start-btn" onclick="restartGame()">다시 시작</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const chargeBar = document.getElementById('chargeBar');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const finalScoreEl = document.getElementById('finalScore');
+
+        // 게임 상수
+        const GRAVITY = 0.5;
+        const MAX_CHARGE = 60;
+        const MIN_JUMP = -8;
+        const MAX_JUMP = -18;
+        const PLAYER_SIZE = 30;
+        const PLATFORM_HEIGHT = 15;
+
+        // 게임 상태
+        let gameStarted = false;
+        let gameOver = false;
+        let player, platforms, camera, score, maxHeight;
+        let isCharging = false;
+        let chargeTime = 0;
+
+        // 배경 구역 정의
+        const ZONES = [
+            { name: 'mountain', minY: 0, maxY: 2000, colors: ['#2d5016', '#1a3009'] },
+            { name: 'ocean', minY: 2000, maxY: 4000, colors: ['#0369a1', '#0c4a6e'] },
+            { name: 'sky', minY: 4000, maxY: 6000, colors: ['#38bdf8', '#0ea5e9'] },
+            { name: 'space', minY: 6000, maxY: Infinity, colors: ['#1e1b4b', '#0f0a1a'] }
+        ];
+
+        function init() {
+            player = {
+                x: canvas.width / 2 - PLAYER_SIZE / 2,
+                y: canvas.height - 100,
+                vx: 0,
+                vy: 0,
+                width: PLAYER_SIZE,
+                height: PLAYER_SIZE,
+                onGround: false
+            };
+
+            camera = { y: 0 };
+            score = 0;
+            maxHeight = 0;
+            chargeTime = 0;
+            isCharging = false;
+
+            // 발판 생성
+            platforms = [];
+            generateInitialPlatforms();
+        }
+
+        function generateInitialPlatforms() {
+            // 시작 발판
+            platforms.push({
+                x: canvas.width / 2 - 60,
+                y: canvas.height - 50,
+                width: 120,
+                height: PLATFORM_HEIGHT,
+                type: 'static'
+            });
+
+            // 위로 올라가는 발판들
+            for (let i = 1; i < 200; i++) {
+                addPlatform(i * 80 + 50);
+            }
+        }
+
+        function addPlatform(worldY) {
+            const isMoving = Math.random() < 0.25; // 25% 확률로 이동 발판
+            const width = 60 + Math.random() * 60;
+            const x = Math.random() * (canvas.width - width);
+
+            platforms.push({
+                x: x,
+                y: canvas.height - worldY,
+                width: width,
+                height: PLATFORM_HEIGHT,
+                type: isMoving ? 'moving' : 'static',
+                moveSpeed: isMoving ? (1 + Math.random() * 1.5) * (Math.random() < 0.5 ? 1 : -1) : 0,
+                originalX: x
+            });
+        }
+
+        function getZoneForHeight(height) {
+            for (let zone of ZONES) {
+                if (height >= zone.minY && height < zone.maxY) {
+                    return zone;
+                }
+            }
+            return ZONES[ZONES.length - 1];
+        }
+
+        function drawBackground() {
+            const height = maxHeight;
+            const zone = getZoneForHeight(height);
+
+            // 그라데이션 배경
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, zone.colors[0]);
+            gradient.addColorStop(1, zone.colors[1]);
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 구역별 장식
+            if (zone.name === 'mountain') {
+                drawMountainDecorations();
+            } else if (zone.name === 'ocean') {
+                drawOceanDecorations();
+            } else if (zone.name === 'sky') {
+                drawSkyDecorations();
+            } else if (zone.name === 'space') {
+                drawSpaceDecorations();
+            }
+        }
+
+        function drawMountainDecorations() {
+            // 구름
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.beginPath();
+            ctx.arc(50, 100, 30, 0, Math.PI * 2);
+            ctx.arc(80, 100, 40, 0, Math.PI * 2);
+            ctx.arc(120, 100, 30, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(320, 200, 25, 0, Math.PI * 2);
+            ctx.arc(350, 200, 35, 0, Math.PI * 2);
+            ctx.arc(380, 200, 25, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawOceanDecorations() {
+            // 파도 효과
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 3; i++) {
+                ctx.beginPath();
+                for (let x = 0; x < canvas.width; x += 10) {
+                    const y = 100 + i * 80 + Math.sin((x + Date.now() * 0.001) * 0.05) * 10;
+                    if (x === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+
+            // 물고기
+            ctx.fillStyle = 'rgba(255, 200, 100, 0.5)';
+            const fishX = (Date.now() * 0.05) % (canvas.width + 50) - 25;
+            ctx.beginPath();
+            ctx.ellipse(fishX, 300, 15, 8, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawSkyDecorations() {
+            // 큰 구름
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            for (let i = 0; i < 5; i++) {
+                const x = (i * 100 + Date.now() * 0.01) % (canvas.width + 100) - 50;
+                ctx.beginPath();
+                ctx.arc(x, 80 + i * 50, 25 + i * 5, 0, Math.PI * 2);
+                ctx.arc(x + 30, 80 + i * 50, 30 + i * 5, 0, Math.PI * 2);
+                ctx.arc(x + 60, 80 + i * 50, 25 + i * 5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // 새
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 3; i++) {
+                const x = 100 + i * 100;
+                const y = 150 + i * 80;
+                ctx.beginPath();
+                ctx.moveTo(x - 10, y);
+                ctx.quadraticCurveTo(x, y - 10, x + 10, y);
+                ctx.stroke();
+            }
+        }
+
+        function drawSpaceDecorations() {
+            // 별
+            ctx.fillStyle = '#fff';
+            for (let i = 0; i < 50; i++) {
+                const x = (i * 37) % canvas.width;
+                const y = (i * 53) % canvas.height;
+                const size = 1 + (i % 3);
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // 행성
+            const gradient = ctx.createRadialGradient(350, 150, 10, 350, 150, 40);
+            gradient.addColorStop(0, '#f472b6');
+            gradient.addColorStop(1, '#9333ea');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(350, 150, 35, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 토성 고리
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.ellipse(350, 150, 55, 15, 0.3, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        function drawPlatforms() {
+            platforms.forEach(p => {
+                const screenY = p.y + camera.y;
+
+                // 화면 밖이면 그리지 않음
+                if (screenY < -50 || screenY > canvas.height + 50) return;
+
+                // 높이에 따른 발판 스타일
+                const height = -p.y + canvas.height - 50;
+                const zone = getZoneForHeight(height);
+
+                let platformColor;
+                if (zone.name === 'mountain') {
+                    platformColor = p.type === 'moving' ? '#8b5a2b' : '#654321';
+                } else if (zone.name === 'ocean') {
+                    platformColor = p.type === 'moving' ? '#0891b2' : '#0e7490';
+                } else if (zone.name === 'sky') {
+                    platformColor = p.type === 'moving' ? '#f0abfc' : '#e879f9';
+                } else {
+                    platformColor = p.type === 'moving' ? '#a855f7' : '#7c3aed';
+                }
+
+                // 발판 그림자
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.fillRect(p.x + 3, screenY + 3, p.width, p.height);
+
+                // 발판 본체
+                const grad = ctx.createLinearGradient(p.x, screenY, p.x, screenY + p.height);
+                grad.addColorStop(0, platformColor);
+                grad.addColorStop(1, shadeColor(platformColor, -30));
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.roundRect(p.x, screenY, p.width, p.height, 5);
+                ctx.fill();
+
+                // 이동 발판 표시
+                if (p.type === 'moving') {
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                    ctx.beginPath();
+                    ctx.moveTo(p.x + p.width / 2 - 10, screenY + p.height / 2);
+                    ctx.lineTo(p.x + p.width / 2, screenY + p.height / 2 - 4);
+                    ctx.lineTo(p.x + p.width / 2 + 10, screenY + p.height / 2);
+                    ctx.lineTo(p.x + p.width / 2, screenY + p.height / 2 + 4);
+                    ctx.fill();
+                }
+            });
+        }
+
+        function shadeColor(color, percent) {
+            const num = parseInt(color.replace('#', ''), 16);
+            const amt = Math.round(2.55 * percent);
+            const R = (num >> 16) + amt;
+            const G = (num >> 8 & 0x00FF) + amt;
+            const B = (num & 0x0000FF) + amt;
+            return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+                (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+                (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
+        }
+
+        function drawSlime() {
+            const screenY = player.y + camera.y;
+            const centerX = player.x + player.width / 2;
+            const centerY = screenY + player.height / 2;
+
+            // 차징 효과
+            let squish = 1;
+            if (isCharging && player.onGround) {
+                squish = 1 - (chargeTime / MAX_CHARGE) * 0.3;
+            }
+
+            // 슬라임 그림자
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.beginPath();
+            ctx.ellipse(centerX + 3, screenY + player.height + 3, player.width / 2, 8, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 슬라임 몸체
+            const bodyGrad = ctx.createRadialGradient(
+                centerX - 5, centerY - 5, 0,
+                centerX, centerY, player.width / 2
+            );
+            bodyGrad.addColorStop(0, '#86efac');
+            bodyGrad.addColorStop(0.7, '#4ade80');
+            bodyGrad.addColorStop(1, '#22c55e');
+
+            ctx.fillStyle = bodyGrad;
+            ctx.beginPath();
+            ctx.ellipse(
+                centerX,
+                screenY + player.height / 2 + (1 - squish) * player.height / 4,
+                player.width / 2,
+                (player.height / 2) * squish,
+                0, 0, Math.PI * 2
+            );
+            ctx.fill();
+
+            // 슬라임 윤곽
+            ctx.strokeStyle = '#16a34a';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // 눈
+            const eyeY = screenY + player.height / 2 - 5 + (1 - squish) * player.height / 4;
+
+            // 왼쪽 눈
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.ellipse(centerX - 7, eyeY, 6, 7 * squish, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#1a1a2e';
+            ctx.beginPath();
+            ctx.arc(centerX - 6, eyeY + 1, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 오른쪽 눈
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.ellipse(centerX + 7, eyeY, 6, 7 * squish, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#1a1a2e';
+            ctx.beginPath();
+            ctx.arc(centerX + 8, eyeY + 1, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 볼터치
+            ctx.fillStyle = 'rgba(255, 150, 150, 0.5)';
+            ctx.beginPath();
+            ctx.ellipse(centerX - 12, eyeY + 8, 4, 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(centerX + 12, eyeY + 8, 4, 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 차징 이펙트
+            if (isCharging && player.onGround) {
+                const chargePercent = chargeTime / MAX_CHARGE;
+                ctx.strokeStyle = `rgba(74, 222, 128, ${chargePercent})`;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, player.width / 2 + 10 + chargePercent * 10, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+
+        function drawScore() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(canvas.width - 110, 10, 100, 40);
+            ctx.strokeStyle = '#4ade80';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(canvas.width - 110, 10, 100, 40);
+
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 14px Segoe UI';
+            ctx.textAlign = 'right';
+            ctx.fillText('HEIGHT', canvas.width - 20, 28);
+            ctx.font = 'bold 18px Segoe UI';
+            ctx.fillStyle = '#4ade80';
+            ctx.fillText(Math.floor(maxHeight) + 'm', canvas.width - 20, 46);
+        }
+
+        function updatePlayer() {
+            if (!gameStarted || gameOver) return;
+
+            // 중력
+            player.vy += GRAVITY;
+
+            // 이동
+            player.x += player.vx;
+            player.y += player.vy;
+
+            // 좌우 벽 충돌
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+
+            // 발판 충돌 체크
+            player.onGround = false;
+            platforms.forEach(p => {
+                // 이동 발판 업데이트
+                if (p.type === 'moving') {
+                    p.x += p.moveSpeed;
+                    if (p.x < 0 || p.x + p.width > canvas.width) {
+                        p.moveSpeed *= -1;
+                    }
+                }
+
+                // 충돌 체크 (위에서 아래로 떨어질 때만)
+                if (player.vy > 0) {
+                    const playerBottom = player.y + player.height;
+                    const playerNextBottom = playerBottom + player.vy;
+
+                    if (player.x + player.width > p.x && player.x < p.x + p.width) {
+                        if (playerBottom <= p.y && playerNextBottom >= p.y) {
+                            player.y = p.y - player.height;
+                            player.vy = 0;
+                            player.onGround = true;
+
+                            // 이동 발판 위에 있으면 같이 이동
+                            if (p.type === 'moving') {
+                                player.x += p.moveSpeed;
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 높이 계산 (카메라 기준)
+            const currentHeight = -player.y + canvas.height - 100;
+            if (currentHeight > maxHeight) {
+                maxHeight = currentHeight;
+            }
+
+            // 카메라 업데이트
+            const targetCameraY = -player.y + canvas.height / 2;
+            if (targetCameraY > camera.y) {
+                camera.y = targetCameraY;
+            } else if (targetCameraY < camera.y - 100) {
+                // 플레이어가 내려가면 카메라도 따라감
+                camera.y = targetCameraY + 100;
+            }
+
+            // 게임오버 체크 (맨 바닥으로 떨어짐)
+            const screenY = player.y + camera.y;
+            if (screenY > canvas.height + 100) {
+                endGame();
+            }
+
+            // 새로운 발판 생성
+            const highestPlatformY = Math.min(...platforms.map(p => p.y));
+            if (-highestPlatformY + canvas.height < maxHeight + 500) {
+                addPlatform(maxHeight + 500);
+            }
+        }
+
+        function update() {
+            if (isCharging && player.onGround) {
+                chargeTime = Math.min(chargeTime + 1, MAX_CHARGE);
+                chargeBar.style.width = (chargeTime / MAX_CHARGE * 100) + '%';
+            }
+
+            updatePlayer();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBackground();
+            drawPlatforms();
+            drawSlime();
+            drawScore();
+        }
+
+        function gameLoop() {
+            if (gameStarted && !gameOver) {
+                update();
+            }
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function jump() {
+            if (!player.onGround || gameOver) return;
+
+            const chargePercent = chargeTime / MAX_CHARGE;
+            player.vy = MIN_JUMP + (MAX_JUMP - MIN_JUMP) * chargePercent;
+            player.onGround = false;
+            chargeTime = 0;
+            chargeBar.style.width = '0%';
+        }
+
+        function startGame() {
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            gameStarted = true;
+            gameOver = false;
+            init();
+        }
+
+        function restartGame() {
+            gameOverScreen.style.display = 'none';
+            gameOver = false;
+            init();
+        }
+
+        function endGame() {
+            gameOver = true;
+            finalScoreEl.textContent = Math.floor(maxHeight);
+            gameOverScreen.style.display = 'flex';
+        }
+
+        // 키보드 이벤트
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !e.repeat) {
+                e.preventDefault();
+                if (!gameStarted) {
+                    startGame();
+                } else if (gameOver) {
+                    restartGame();
+                } else {
+                    isCharging = true;
+                }
+            }
+            if (e.code === 'ArrowLeft') player.vx = -4;
+            if (e.code === 'ArrowRight') player.vx = 4;
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.code === 'Space') {
+                if (isCharging) {
+                    jump();
+                    isCharging = false;
+                }
+            }
+            if (e.code === 'ArrowLeft' && player.vx < 0) player.vx = 0;
+            if (e.code === 'ArrowRight' && player.vx > 0) player.vx = 0;
+        });
+
+        // 터치 이벤트 (모바일)
+        let touchStartTime = 0;
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!gameStarted) {
+                startGame();
+            } else if (gameOver) {
+                restartGame();
+            } else {
+                isCharging = true;
+                touchStartTime = Date.now();
+            }
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (isCharging) {
+                jump();
+                isCharging = false;
+            }
+        });
+
+        // 초기화 및 게임 루프 시작
+        init();
+        gameLoop();
+    </script>
+</body>
+
+</html>
