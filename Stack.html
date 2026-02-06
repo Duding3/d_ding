@@ -314,10 +314,12 @@
 
         function newBlock() {
             const prev = blocks[blocks.length - 1];
+            // Height-based shrinkage: Subtract 1px per floor to increase difficulty, minimum 20px
+            const nextW = Math.max(20, prev.w - 1);
             currentBlock = {
                 x: 0,
                 y: prev.y - BLOCK_HEIGHT,
-                w: prev.w,
+                w: nextW,
                 h: BLOCK_HEIGHT,
                 color: `hsl(${(blocks.length * 40) % 360}, 70%, 70%)`
             };
