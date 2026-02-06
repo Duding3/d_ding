@@ -83,8 +83,9 @@
             position: relative;
         }
 
-        /* 🌟 스타트 화면 오버레이 */
-        #start-screen {
+        /* 스타트 & 게임오버 오버레이 */
+        #start-screen,
+        #game-over-screen {
             position: absolute;
             top: 0;
             left: calc(var(--side-width) + calc(var(--unit) * 0.6));
@@ -98,6 +99,23 @@
             z-index: 10;
             box-sizing: border-box;
             border-radius: 4px;
+        }
+
+        #game-over-screen {
+            display: none;
+            border: 2px solid #ff4d4d;
+        }
+
+        #game-over-screen h2 {
+            color: #ff4d4d;
+            font-size: calc(var(--unit) * 1.5);
+            margin-bottom: calc(var(--unit) * 1);
+            text-shadow: 0 0 15px rgba(255, 77, 77, 0.5);
+        }
+
+        #game-over-screen p {
+            font-size: calc(var(--unit) * 0.8);
+            margin-bottom: calc(var(--unit) * 1.5);
         }
 
         /* 레벨업 애니메이션 */
@@ -349,6 +367,12 @@
                 <button class="start-btn" onclick="startGame()">START GAME</button>
             </div>
 
+            <div id="game-over-screen">
+                <h2>GAME OVER</h2>
+                <p>최고 점수: <span id="finalScore">0</span></p>
+                <button class="start-btn" onclick="resetGame()">다시 시작</button>
+            </div>
+
             <div class="level-up-overlay" id="levelUpOverlay">
                 <div class="level-up-text">LEVEL UP!</div>
             </div>
@@ -427,10 +451,21 @@
         // 🌟 게임 시작 함수
         function startGame() {
             gameStarted = true;
+            isGameOver = false;
             startScreen.style.display = 'none'; // 시작 화면 숨김
+            document.getElementById('game-over-screen').style.display = 'none';
             playerReset();
             updateStats();
             update();
+        }
+
+        function resetGame() {
+            arena.forEach(row => row.fill(0));
+            player.score = 0;
+            player.level = 1;
+            isGameOver = false;
+            document.getElementById('game-over-screen').style.display = 'none';
+            startGame();
         }
 
         function createPiece(type) {
@@ -453,7 +488,12 @@
             while (player.queue.length < 5) player.queue.push(getNextPiece());
             player.matrix = player.queue.shift(); player.pos.y = 0;
             player.pos.x = (arena[0].length / 2 | 0) - (player.matrix[0].length / 2 | 0);
-            if (collide(arena, player)) { isGameOver = true; gameStarted = false; startScreen.style.display = 'flex'; }
+            if (collide(arena, player)) {
+                isGameOver = true;
+                gameStarted = false;
+                document.getElementById('finalScore').innerText = player.score;
+                document.getElementById('game-over-screen').style.display = 'flex';
+            }
         }
         function drawGrid() {
             context.strokeStyle = 'rgba(255, 255, 255, 0.05)'; context.lineWidth = 0.02;
@@ -481,7 +521,6 @@
                 const slotH = 5; const yBase = i * slotH; nextContext.strokeStyle = 'rgba(78, 204, 163, 0.15)'; nextContext.strokeRect(0.1, yBase + 0.1, 3.8, 3.8);
                 const xOff = (4 - matrix[0].length) / 2; const yOff = yBase + (4 - matrix.length) / 2; drawMatrix(matrix, { x: xOff, y: yOff }, nextContext);
             });
-            if (isGameOver) { context.fillStyle = 'rgba(0, 0, 0, 0.85)'; context.fillRect(0, 0, canvas.width, canvas.height); context.fillStyle = '#ff4d4d'; context.font = '1px "Segoe UI"'; context.textAlign = 'center'; context.fillText('GAME OVER', 6, 10); }
         }
         function collide(arena, player) {
             const [m, o] = [player.matrix, player.pos];

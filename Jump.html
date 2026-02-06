@@ -207,6 +207,8 @@
         canvas {
             width: 100%;
             height: auto;
+            max-height: 60vh;
+            /* Limits height to leave room for controls */
             aspect-ratio: 400/600;
             background: #000;
             display: block;
@@ -220,17 +222,13 @@
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
         }
 
-        /* Responsive Mobile Controls Overlay */
+        /* Responsive Mobile Controls Overlay - Moved below canvas */
         .controls-area {
-            position: absolute;
-            bottom: 20px;
-            left: 0;
-            right: 0;
             display: flex;
             justify-content: space-between;
-            align-items: flex-end;
-            padding: 0 20px;
-            pointer-events: none;
+            align-items: center;
+            padding: 10px 0;
+            width: 100%;
             z-index: 60;
         }
 
@@ -238,12 +236,11 @@
         .controls-right {
             display: flex;
             gap: 15px;
-            pointer-events: auto;
         }
 
         .control-btn {
-            width: 65px;
-            height: 65px;
+            width: clamp(50px, 15vw, 65px);
+            height: clamp(50px, 15vw, 65px);
             border-radius: 50%;
             background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(10px);
@@ -269,8 +266,8 @@
         }
 
         .jump-btn {
-            width: 80px;
-            height: 80px;
+            width: clamp(65px, 20vw, 80px);
+            height: clamp(65px, 20vw, 80px);
             background: rgba(74, 222, 128, 0.2);
             border-color: rgba(74, 222, 128, 0.3);
             font-size: 1rem;
@@ -307,27 +304,16 @@
             <!-- Floating HUD -->
             <div class="hud-container">
                 <div class="hud-box">
-                    <div class="hud-label">HEIGHT</div>
+                    <div class="hud-label">현재 높이</div>
                     <div class="hud-value" id="scoreHeight">0m</div>
                 </div>
                 <div class="hud-box">
-                    <div class="hud-label">BEST</div>
+                    <div class="hud-label">최고 높이</div>
                     <div class="hud-value" id="scoreMax">0m</div>
                 </div>
             </div>
 
             <canvas id="gameCanvas" width="400" height="600"></canvas>
-
-            <!-- Floating Controls -->
-            <div class="controls-area">
-                <div class="controls-left">
-                    <button class="control-btn jump-btn" id="btnJump">점프</button>
-                </div>
-                <div class="controls-right">
-                    <button class="control-btn" id="btnLeft">◀</button>
-                    <button class="control-btn" id="btnRight">▶</button>
-                </div>
-            </div>
 
             <div id="startScreen">
                 <h1 style="font-size: 2.5rem; margin-bottom: 10px;">🟢 슬라임 점프</h1>
@@ -339,6 +325,17 @@
                 <h2>GAME OVER</h2>
                 <p>최고 높이: <span id="finalScore">0</span>m</p>
                 <button class="start-btn" onclick="restartGame()">다시 시작</button>
+            </div>
+        </div>
+
+        <!-- Corrected Controls Positioning Below Canvas -->
+        <div class="controls-area">
+            <div class="controls-left">
+                <button class="control-btn jump-btn" id="btnJump">점프</button>
+            </div>
+            <div class="controls-right">
+                <button class="control-btn" id="btnLeft">◀</button>
+                <button class="control-btn" id="btnRight">▶</button>
             </div>
         </div>
     </div>
@@ -392,59 +389,6 @@
             border-radius: 50%;
             background: #4ade80;
             cursor: pointer;
-        }
-
-        /* Mobile Controls */
-        .controls-area {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-            width: 100%;
-            width: 90%;
-            max-width: 450px;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .controls-left,
-        .controls-right {
-            display: flex;
-            gap: 10px;
-        }
-
-        .controls-right {
-            flex: 2;
-            /* 오른쪽 그룹에 더 많은 공간 배분 */
-        }
-
-        .controls-left {
-            flex: 1;
-        }
-
-        .control-btn {
-            background: rgba(74, 222, 128, 0.1);
-            border: 2px solid #4ade80;
-            color: #4ade80;
-            padding: 15px;
-            border-radius: 12px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            flex: 1;
-            cursor: pointer;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .control-btn:active {
-            background: rgba(74, 222, 128, 0.4);
-        }
-
-        .control-btn.jump-btn {
-            flex: 1.5;
-            background: rgba(74, 222, 128, 0.2);
         }
     </style>
 
