@@ -187,8 +187,8 @@
             display: block;
             margin: 0 auto;
             image-rendering: pixelated;
-            width: calc(var(--unit) * 3);
-            height: calc(var(--unit) * 15);
+            width: calc(var(--unit) * 2.5);
+            height: calc(var(--unit) * 12);
         }
 
         .stat-group {
@@ -359,11 +359,15 @@
                     <canvas id="next"></canvas>
                 </div>
                 <div class="stat-group">
-                    <div class="stat-label">SCORE</div>
+                    <div class="stat-label">현재 스코어</div>
                     <div id="score" class="stat-value">0</div>
                 </div>
                 <div class="stat-group">
-                    <div class="stat-label">LV</div>
+                    <div class="stat-label">최고 스코어</div>
+                    <div id="highScore" class="stat-value">0</div>
+                </div>
+                <div class="stat-group">
+                    <div class="stat-label">레벨</div>
                     <div id="level" class="stat-value">1</div>
                 </div>
             </div>
@@ -376,8 +380,8 @@
                 <div class="btn" id="ctrl-right">▶</div>
             </div>
             <div class="layout-row-bottom">
-                <div class="btn" style="background: rgba(78, 204, 163, 0.25);" id="ctrl-up">ROTATE</div>
-                <div class="btn" style="background: rgba(255, 255, 255, 0.1);" id="ctrl-drop">HARD DROP</div>
+                <div class="btn" style="background: rgba(78, 204, 163, 0.25);" id="ctrl-up">회전</div>
+                <div class="btn" style="background: rgba(255, 255, 255, 0.1);" id="ctrl-drop">스페이스바</div>
             </div>
 
             <div class="controls-info">←→ 이동 | ↑ 회전 | ↓ 가속 | Space 하드드롭</div>
@@ -402,6 +406,7 @@
         let isGameOver = false;
         let gameStarted = false; // 🌟 게임 시작 여부 플래그
         let dropCounter = 0; let dropInterval = 800; let lastTime = 0; let bag = []; let calculatedUnit = 20;
+        let highScore = 0; // 최고 스코어
 
         function resizeGame() {
             const screenHeight = window.innerHeight;
@@ -412,8 +417,8 @@
             document.documentElement.style.setProperty('--unit', `${calculatedUnit}px`);
             canvas.width = calculatedUnit * 12; canvas.height = calculatedUnit * 20;
             context.setTransform(1, 0, 0, 1, 0, 0); context.scale(calculatedUnit, calculatedUnit);
-            nextCanvas.width = calculatedUnit * 3; nextCanvas.height = calculatedUnit * 16;
-            nextContext.setTransform(1, 0, 0, 1, 0, 0); nextContext.scale(calculatedUnit * 0.8, calculatedUnit * 0.8);
+            nextCanvas.width = calculatedUnit * 2.5; nextCanvas.height = calculatedUnit * 12;
+            nextContext.setTransform(1, 0, 0, 1, 0, 0); nextContext.scale(calculatedUnit * 0.6, calculatedUnit * 0.6);
         }
 
         window.addEventListener('resize', resizeGame); resizeGame();
@@ -492,6 +497,11 @@
         }
         function updateStats() {
             document.getElementById('score').innerText = player.score;
+            // 최고 스코어 업데이트
+            if (player.score > highScore) {
+                highScore = player.score;
+                document.getElementById('highScore').innerText = highScore;
+            }
             const newLevel = Math.floor(player.score / 150) + 1;
             if (newLevel > player.level) {
                 // 레벨업 애니메이션
