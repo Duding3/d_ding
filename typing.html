@@ -462,7 +462,7 @@
 
         let currentCategory = 'proverbs';
         let timer, timeElapsed = 0, timerStarted = false;
-        let lastCpm = "-";
+        let lastCpm = localStorage.getItem('typingLastCpm') || "-";
         let lastSentence = "";
 
         function forceClearKeys() {
@@ -484,6 +484,7 @@
             document.querySelectorAll('.cat-btn').forEach(btn => btn.classList.remove('active'));
             const targetBtn = document.getElementById(`btn-${cat === 'fairyTales' ? 'fairy' : (cat === 'english' ? 'english' : cat)}`);
             if (targetBtn) targetBtn.classList.add('active');
+            lastCpmEl.innerText = lastCpm;
             render();
         }
 
@@ -529,6 +530,7 @@
                 if (quoteInput.value.length > 0) {
                     lastCpm = cpmEl.innerText;
                     lastCpmEl.innerText = lastCpm;
+                    localStorage.setItem('typingLastCpm', lastCpm);
                     setTimeout(render, 50);
                 }
             }

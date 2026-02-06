@@ -457,7 +457,8 @@
         let isGameOver = false;
         let gameStarted = false; // 🌟 게임 시작 여부 플래그
         let dropCounter = 0; let dropInterval = 800; let lastTime = 0; let bag = []; let calculatedUnit = 20;
-        let highScore = 0; // 최고 스코어
+        let highScore = localStorage.getItem('tetrisHighScore') || 0; // 로드된 최고 스코어
+        document.getElementById('highScore').innerText = highScore;
 
         function resizeGame() {
             const screenHeight = window.innerHeight;
@@ -568,6 +569,7 @@
             // 최고 스코어 업데이트
             if (player.score > highScore) {
                 highScore = player.score;
+                localStorage.setItem('tetrisHighScore', highScore);
                 document.getElementById('highScore').innerText = highScore;
             }
             const newLevel = Math.floor(player.score / 150) + 1;

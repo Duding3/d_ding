@@ -338,6 +338,11 @@
             gameActive = false;
             msg.innerText = "GAME OVER";
             overlay.style.display = 'flex';
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('snakeHighScore', highScore);
+                document.getElementById('highScore').innerText = highScore;
+            }
         }
 
         // Controls
