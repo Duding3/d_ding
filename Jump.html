@@ -21,6 +21,66 @@
             min-height: 100vh;
             font-family: 'Segoe UI', sans-serif;
             overflow: hidden;
+            position: relative;
+        }
+
+        .hud-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            /* Right aligned */
+            left: auto;
+            transform: none;
+            display: flex;
+            flex-direction: column;
+            /* Stack vertically */
+            gap: 10px;
+            z-index: 10;
+            width: auto;
+            max-width: 200px;
+            align-items: flex-end;
+            /* Align content to right */
+        }
+
+        .hud-box {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 15px;
+            border-radius: 12px;
+            color: #fff;
+            text-align: right;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            min-width: 120px;
+        }
+
+        .hud-label {
+            font-size: 0.7rem;
+            color: #ddd;
+            margin-bottom: 2px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Current Height - Large */
+        #scoreHeight {
+            font-size: 2.2rem;
+            color: #4ade80;
+        }
+
+        /* Max Height - Smaller */
+        #scoreMax {
+            font-size: 1.2rem;
+            color: #fbbf24;
+            /* Yellowish for High Score */
+        }
+
+        .hud-value {
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
         }
 
         .game-header {
@@ -50,9 +110,15 @@
         }
 
         #gameCanvas {
-            border: 3px solid #4ade80;
-            border-radius: 8px;
-            box-shadow: 0 0 30px rgba(74, 222, 128, 0.3);
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            width: 100%;
+            max-width: 450px;
+            height: auto;
+            aspect-ratio: 2/3;
+            display: block;
+            background: rgba(0, 0, 0, 0.2);
         }
 
         .controls-info {
@@ -62,23 +128,7 @@
             text-align: center;
         }
 
-        .charge-bar-container {
-            width: 300px;
-            height: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            margin-top: 10px;
-            overflow: hidden;
-            border: 2px solid #4ade80;
-        }
 
-        .charge-bar {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, #4ade80, #22c55e, #16a34a);
-            transition: width 0.05s;
-            border-radius: 8px;
-        }
 
         #startScreen {
             position: absolute;
@@ -147,16 +197,25 @@
 </head>
 
 <body>
-    <div class="game-header">
+    <div class="hud-container">
+        <div class="hud-box">
+            <div class="hud-label">현재 높이</div>
+            <div class="hud-value" id="scoreHeight">0m</div>
+        </div>
+        <div class="hud-box">
+            <div class="hud-label">최고 높이</div>
+            <div class="hud-value" id="scoreMax">0m</div>
+        </div>
+    </div>
+
+    <div class="game-header" style="display:none;">
         <h1>🟢 슬라임 점프</h1>
         <button class="refresh-btn" onclick="location.reload(true)">새로고침</button>
     </div>
 
     <canvas id="gameCanvas" width="400" height="600"></canvas>
 
-    <div class="charge-bar-container">
-        <div class="charge-bar" id="chargeBar"></div>
-    </div>
+
 
     <div class="controls-info">
         SPACE 짧게 = 작은 점프 | SPACE 길게 차징 = 높은 점프
@@ -165,6 +224,16 @@
     <div class="slider-area">
         <span class="slider-label">투명도</span>
         <input type="range" id="opacitySlider" min="30" max="100" value="100">
+    </div>
+
+    <div class="controls-area">
+        <div class="controls-left">
+            <button class="control-btn jump-btn" id="btnJump">점프</button>
+        </div>
+        <div class="controls-right">
+            <button class="control-btn" id="btnLeft">◀</button>
+            <button class="control-btn" id="btnRight">▶</button>
+        </div>
     </div>
 
     <style>
@@ -205,50 +274,103 @@
             background: #4ade80;
             cursor: pointer;
         }
-    </style>
 
+        /* Mobile Controls */
+        .controls-area {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            width: 100%;
+            width: 90%;
+            max-width: 450px;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .controls-left,
+        .controls-right {
+            display: flex;
+            gap: 10px;
+        }
+
+        .controls-right {
+            flex: 2;
+            /* 오른쪽 그룹에 더 많은 공간 배분 */
+        }
+
+        .controls-left {
+            flex: 1;
+        }
+
+        .control-btn {
+            background: rgba(74, 222, 128, 0.1);
+            border: 2px solid #4ade80;
+            color: #4ade80;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            flex: 1;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:active {
+            background: rgba(74, 222, 128, 0.4);
+        }
+
+        .control-btn.jump-btn {
+            flex: 1.5;
+            background: rgba(74, 222, 128, 0.2);
+        }
+    </style>
     <div id="startScreen">
         <h1 style="font-size: 2.5rem; margin-bottom: 30px;">🟢 슬라임 점프</h1>
-        <p style="color: #aaa; margin-bottom: 20px;">스페이스바를 길게 눌러 차징하고<br>높이 점프하세요!</p>
-        <button class="start-btn" onclick="startGame()">START</button>
+        <p style="color: #aaa; margin-bottom: 20px;">스페이스바를 길게 눌러 차징하고<br>높이 점프하세요 !</p><button class="start-btn"
+            onclick="startGame()">START</button>
     </div>
-
     <div class="game-over-screen" id="gameOverScreen">
         <h2>GAME OVER</h2>
-        <p>최고 높이: <span id="finalScore">0</span>m</p>
-        <button class="start-btn" onclick="restartGame()">다시 시작</button>
+        <p>최고 높이: <span id="finalScore">0</span>m</p><button class="start-btn" onclick="restartGame()">다시 시작</button>
     </div>
-
-    <script>
-        const canvas = document.getElementById('gameCanvas');
+    <script>const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const chargeBar = document.getElementById('chargeBar');
+        // const chargeBar = document.getElementById('chargeBar');
         const startScreen = document.getElementById('startScreen');
         const gameOverScreen = document.getElementById('gameOverScreen');
         const finalScoreEl = document.getElementById('finalScore');
 
-        // 게임 상수 (속도 느리게 조정)
-        const GRAVITY = 0.35;
+        // 게임 상수 (속도 느리게 조정 - 더 자연스럽게)
+        const GRAVITY = 0.25; // 0.35 -> 0.25
         const MAX_CHARGE = 60;
-        const MIN_JUMP = -6;
-        const MAX_JUMP = -14;
+        const MIN_JUMP = -5; // -6 -> -5
+        const MAX_JUMP = -12; // -14 -> -12
         const PLAYER_SIZE = 30;
         const PLATFORM_HEIGHT = 15;
 
         // 게임 상태
         let gameStarted = false;
         let gameOver = false;
-        let player, platforms, camera, score, maxHeight;
+        let player,
+            platforms,
+            camera,
+            score,
+            maxHeight;
         let highScore = 0; // 최고 스코어
         let isCharging = false;
         let chargeTime = 0;
+        let highestLandedY = 0; // 안전한 착지 지점 (카메라 제한용)
 
-        // 배경 구역 정의
+        // 배경 구역 정의 (산 -> 물속 -> 하늘 -> 우주)
         const ZONES = [
-            { name: 'mountain', minY: 0, maxY: 2000, colors: ['#2d5016', '#1a3009'] },
-            { name: 'ocean', minY: 2000, maxY: 4000, colors: ['#0369a1', '#0c4a6e'] },
-            { name: 'sky', minY: 4000, maxY: 6000, colors: ['#38bdf8', '#0ea5e9'] },
-            { name: 'space', minY: 6000, maxY: Infinity, colors: ['#1e1b4b', '#0f0a1a'] }
+            { name: 'mountain', minY: 0, maxY: 3000, colors: ['#a8e063', '#56ab2f'] }, // Green/Nature
+            { name: 'underwater', minY: 3000, maxY: 6000, colors: ['#2b5876', '#4e4376'] }, // Deep Blue/Ocean
+            { name: 'sky', minY: 6000, maxY: 9000, colors: ['#4facfe', '#00f2fe'] }, // Bright Sky
+            { name: 'space', minY: 9000, maxY: Infinity, colors: ['#0f2027', '#203a43', '#2c5364'] } // Space Dark
         ];
 
         function init() {
@@ -258,6 +380,7 @@
 
             // 플레이어를 바닥(ground) 위에 배치
             const groundPlatform = platforms[0]; // index 0이 ground
+
             player = {
                 x: canvas.width / 2 - PLAYER_SIZE / 2,
                 y: groundPlatform.y - PLAYER_SIZE,
@@ -266,16 +389,25 @@
                 width: PLAYER_SIZE,
                 height: PLAYER_SIZE,
                 onGround: true
-            };
+            }
 
-            camera = { y: 0 };
+                ;
+
             score = 0;
             maxHeight = 0;
             chargeTime = 0;
             isCharging = false;
+            highestLandedY = platforms[0].y; // 초기 바닥
+
+            camera = {
+                y: 0
+            }
+
+                ;
         }
 
         function generateInitialPlatforms() {
+
             // 바닥 발판 (화면 전체 너비)
             platforms.push({
                 x: 0,
@@ -311,7 +443,7 @@
                 width: width,
                 height: PLATFORM_HEIGHT,
                 type: isMoving ? 'moving' : 'static',
-                moveSpeed: isMoving ? (0.5 + Math.random() * 1) * (Math.random() < 0.5 ? 1 : -1) : 0,
+                moveSpeed: isMoving ? (0.3 + Math.random() * 0.7) * (Math.random() < 0.5 ? 1 : -1) : 0, // Slower platforms
                 originalX: x
             });
         }
@@ -322,28 +454,91 @@
                     return zone;
                 }
             }
+
             return ZONES[ZONES.length - 1];
+        }
+
+        function interpolateColor(color1, color2, factor) {
+            if (arguments.length < 3) {
+                return color1;
+            }
+
+            let result = color1.slice();
+
+            for (let i = 0; i < 3; i++) {
+                result[i] = Math.round(result[i] + factor * (color2[i] - color1[i]));
+            }
+
+            return result;
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? [
+                parseInt(result[1], 16),
+                parseInt(result[2], 16),
+                parseInt(result[3], 16)
+            ] : null;
+        }
+
+        function rgbToHex(rgb) {
+            return "#" + ((1 << 24) + (rgb[0] << 16) + (rgb[1] << 8) + rgb[2]).toString(16).slice(1);
+        }
+
+        function getSmoothedBackgroundColor(height) {
+            // Find current and next zone colors to blend
+            // Simple interpolation: Map height to entire world gradient
+            // For checking segments:
+            const zone = getZoneForHeight(height);
+            // Height within zone
+            const zoneHeight = zone.maxY === Infinity ? 2000 : (zone.maxY - zone.minY);
+            // Progress in zone (0 to 1)
+            let progress = (height - zone.minY) / zoneHeight;
+            if (progress < 0) progress = 0;
+            if (progress > 1) progress = 1;
+
+            const c1 = hexToRgb(zone.colors[0]);
+            const c2 = hexToRgb(zone.colors[1]);
+
+            const blended = interpolateColor(c1, c2, progress);
+            return rgbToHex(blended);
         }
 
         function drawBackground() {
             const height = maxHeight;
             const zone = getZoneForHeight(height);
 
-            // 그라데이션 배경
+            // Smooth gradient background
+            const bottomColor = getSmoothedBackgroundColor(height);
+            const topColor = getSmoothedBackgroundColor(height + canvas.height);
+
             const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            gradient.addColorStop(0, zone.colors[0]);
-            gradient.addColorStop(1, zone.colors[1]);
+            gradient.addColorStop(0, topColor);
+            gradient.addColorStop(1, bottomColor);
             ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // High quality vignette overlay
+            const vignette = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, canvas.height / 3, canvas.width / 2, canvas.height / 2, canvas.height);
+            vignette.addColorStop(0, 'rgba(0,0,0,0)');
+            vignette.addColorStop(1, 'rgba(0,0,0,0.4)');
+            ctx.fillStyle = vignette;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             // 구역별 장식
             if (zone.name === 'mountain') {
                 drawMountainDecorations();
-            } else if (zone.name === 'ocean') {
+            }
+
+            else if (zone.name === 'ocean') {
                 drawOceanDecorations();
-            } else if (zone.name === 'sky') {
+            }
+
+            else if (zone.name === 'sky') {
                 drawSkyDecorations();
-            } else if (zone.name === 'space') {
+            }
+
+            else if (zone.name === 'space') {
                 drawSpaceDecorations();
             }
         }
@@ -368,13 +563,16 @@
             // 파도 효과
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
             ctx.lineWidth = 2;
+
             for (let i = 0; i < 3; i++) {
                 ctx.beginPath();
+
                 for (let x = 0; x < canvas.width; x += 10) {
                     const y = 100 + i * 80 + Math.sin((x + Date.now() * 0.001) * 0.05) * 10;
                     if (x === 0) ctx.moveTo(x, y);
                     else ctx.lineTo(x, y);
                 }
+
                 ctx.stroke();
             }
 
@@ -389,6 +587,7 @@
         function drawSkyDecorations() {
             // 큰 구름
             ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+
             for (let i = 0; i < 5; i++) {
                 const x = (i * 100 + Date.now() * 0.01) % (canvas.width + 100) - 50;
                 ctx.beginPath();
@@ -401,6 +600,7 @@
             // 새
             ctx.strokeStyle = '#fff';
             ctx.lineWidth = 2;
+
             for (let i = 0; i < 3; i++) {
                 const x = 100 + i * 100;
                 const y = 150 + i * 80;
@@ -414,6 +614,7 @@
         function drawSpaceDecorations() {
             // 별
             ctx.fillStyle = '#fff';
+
             for (let i = 0; i < 50; i++) {
                 const x = (i * 37) % canvas.width;
                 const y = (i * 53) % canvas.height;
@@ -452,13 +653,20 @@
                 const zone = getZoneForHeight(height);
 
                 let platformColor;
+
                 if (zone.name === 'mountain') {
                     platformColor = p.type === 'moving' ? '#8b5a2b' : '#654321';
-                } else if (zone.name === 'ocean') {
+                }
+
+                else if (zone.name === 'ocean') {
                     platformColor = p.type === 'moving' ? '#0891b2' : '#0e7490';
-                } else if (zone.name === 'sky') {
+                }
+
+                else if (zone.name === 'sky') {
                     platformColor = p.type === 'moving' ? '#f0abfc' : '#e879f9';
-                } else {
+                }
+
+                else {
                     platformColor = p.type === 'moving' ? '#a855f7' : '#7c3aed';
                 }
 
@@ -494,9 +702,7 @@
             const R = (num >> 16) + amt;
             const G = (num >> 8 & 0x00FF) + amt;
             const B = (num & 0x0000FF) + amt;
-            return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
-                (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
-                (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
+            return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 + (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 + (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
         }
 
         function drawSlime() {
@@ -506,6 +712,7 @@
 
             // 차징 효과
             let squish = 1;
+
             if (isCharging && player.onGround) {
                 squish = 1 - (chargeTime / MAX_CHARGE) * 0.3;
             }
@@ -517,23 +724,19 @@
             ctx.fill();
 
             // 슬라임 몸체
-            const bodyGrad = ctx.createRadialGradient(
-                centerX - 5, centerY - 5, 0,
-                centerX, centerY, player.width / 2
-            );
+            const bodyGrad = ctx.createRadialGradient(centerX - 5, centerY - 5, 0,
+                centerX, centerY, player.width / 2);
             bodyGrad.addColorStop(0, '#86efac');
             bodyGrad.addColorStop(0.7, '#4ade80');
             bodyGrad.addColorStop(1, '#22c55e');
 
             ctx.fillStyle = bodyGrad;
             ctx.beginPath();
-            ctx.ellipse(
-                centerX,
+            ctx.ellipse(centerX,
                 screenY + player.height / 2 + (1 - squish) * player.height / 4,
                 player.width / 2,
                 (player.height / 2) * squish,
-                0, 0, Math.PI * 2
-            );
+                0, 0, Math.PI * 2);
             ctx.fill();
 
             // 슬라임 윤곽
@@ -598,7 +801,9 @@
                 ctx.fillRect(barX + 1, barY + 1, (barWidth - 2) * chargePercent, barHeight - 2);
 
                 // 원형 이펙트도 유지
-                ctx.strokeStyle = `rgba(74, 222, 128, ${chargePercent})`;
+                ctx.strokeStyle = `rgba(74, 222, 128, $ {
+                        chargePercent
+                    })`;
                 ctx.lineWidth = 2;
                 ctx.beginPath();
                 ctx.arc(centerX, centerY, player.width / 2 + 8 + chargePercent * 8, 0, Math.PI * 2);
@@ -607,29 +812,31 @@
         }
 
         function drawScore() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-            ctx.fillRect(canvas.width - 130, 10, 120, 70);
+            // Larger score box for visibility
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(canvas.width - 160, 10, 150, 90);
             ctx.strokeStyle = '#4ade80';
             ctx.lineWidth = 2;
-            ctx.strokeRect(canvas.width - 130, 10, 120, 70);
+            ctx.strokeRect(canvas.width - 160, 10, 150, 90);
 
             ctx.textAlign = 'right';
 
-            // 현재 스코어
-            ctx.fillStyle = '#aaa';
-            ctx.font = 'bold 11px Segoe UI';
-            ctx.fillText('현재 스코어', canvas.width - 20, 28);
-            ctx.font = 'bold 16px Segoe UI';
+            // 현재 스코어 -> 현재 높이 (Larger)
+            ctx.fillStyle = '#ddd';
+            ctx.font = 'bold 14px Segoe UI';
+            ctx.fillText('현재 높이', canvas.width - 20, 35);
+            ctx.font = 'bold 32px Segoe UI'; // Significantly larger
             ctx.fillStyle = '#fff';
-            ctx.fillText(Math.floor(maxHeight) + 'm', canvas.width - 20, 45);
+            // Add text shadow for "glow"
+            ctx.shadowColor = '#4ade80';
+            ctx.shadowBlur = 10;
+            ctx.fillText(Math.floor(maxHeight) + 'm', canvas.width - 20, 65);
+            ctx.shadowBlur = 0; // Reset shadow
 
-            // 최고 스코어
+            // 최고 스코어 -> 최고 높이
             ctx.fillStyle = '#aaa';
-            ctx.font = 'bold 11px Segoe UI';
-            ctx.fillText('최고 스코어', canvas.width - 20, 60);
-            ctx.font = 'bold 16px Segoe UI';
-            ctx.fillStyle = '#4ade80';
-            ctx.fillText(Math.floor(highScore) + 'm', canvas.width - 20, 77);
+            ctx.font = 'bold 12px Segoe UI';
+            ctx.fillText('최고 높이 ' + Math.floor(highScore) + 'm', canvas.width - 20, 85);
         }
 
         function updatePlayer() {
@@ -639,6 +846,7 @@
             platforms.forEach(p => {
                 if (p.type === 'moving') {
                     p.x += p.moveSpeed;
+
                     if (p.x < 0 || p.x + p.width > canvas.width) {
                         p.moveSpeed *= -1;
                     }
@@ -669,6 +877,7 @@
             let landedOnPlatform = null;
 
             platforms.forEach(p => {
+
                 // 충돌 체크 (아래로 떨어질 때만 - vy >= 0)
                 if (player.vy >= 0) {
                     const playerBottom = player.y + player.height;
@@ -684,6 +893,12 @@
                         player.vy = 0;
                         player.onGround = true;
                         landedOnPlatform = p;
+
+                        // 안전한 착지 높이 업데이트 (화면 좌표계에서 y는 아래로 갈수록 커짐. 즉, 더 높은 곳은 y가 작음)
+                        // 따라서 min 값을 찾아야 함
+                        if (p.y < highestLandedY) {
+                            highestLandedY = p.y;
+                        }
                     }
                 }
             });
@@ -701,31 +916,104 @@
 
             // 높이 계산
             const currentHeight = Math.max(0, -(player.y - (canvas.height - 80)));
+
             if (currentHeight > maxHeight) {
                 maxHeight = currentHeight;
+
                 if (maxHeight > highScore) {
                     highScore = maxHeight;
                 }
             }
 
-            // 카메라 업데이트 - 플레이어가 화면 중앙보다 위로 올라가면 따라감
-            const targetCameraY = Math.max(0, -player.y + canvas.height * 0.6);
+            // 카메라 업데이트
+            let targetCameraY = Math.max(0, -player.y + canvas.height * 0.6);
+
+            // 카메라가 안전지대(highestLandedY) 밑으로 너무 내려가지 않도록 제한
+            // highestLandedY는 월드 좌표 (ex: 500, 400, -100...)
+            // 카메라가 보여줄 수 있는 '최하단' 한계 설정
+            // player.y가 highestLandedY보다 아래로(커지면) 떨어지면 카메라가 따라가지 않음
+
+            // 기존 로직: 따라가기
             if (targetCameraY > camera.y) {
-                camera.y += (targetCameraY - camera.y) * 0.1; // 부드러운 카메라
-            } else {
-                // 내려갈 때도 따라가되, 바닥 발판이 보이도록
-                camera.y += (targetCameraY - camera.y) * 0.05;
+                camera.y += (targetCameraY - camera.y) * 0.1;
             }
+
+            else {
+                // 플레이어가 내려갈 때: 
+                // 만약 플레이어가 highestLandedY (안전지대) 근처에 있다면 카메라도 같이 내려가줌
+                // 하지만 안전지대보다 훨씬 아래로 떨어지면? 카메라는 멈춤 -> 게임오버
+
+                // 역계산: 화면 하단(canvas.height)이 highestLandedY + 50(여유) 위치에 있을 때의 카메라 Y
+                // screenY = worldY + cameraY => cameraY = screenY - worldY
+                // minCameraY = canvas.height - (highestLandedY + 50)
+
+                // 간단히: targetCameraY가 우리가 허용하는 최소치보다 작아지는 것을 방지?
+                // 아니, targetCameraY는 플레이어 기준임. 
+
+                // 카메라가 '내려갈 수 있는 한계' 계산
+                const limitBottomWorldY = highestLandedY + canvas.height - 50;
+                // 이 limitBottomWorldY가 화면 하단에 닿을 때의 카메라값
+                // canvas.height = limitBottomWorldY + cameraY
+                // cameraY = canvas.height - limitBottomWorldY = 50 - highestLandedY
+
+                // 복잡함. 직관적으로:
+                // CameraY는 절대값. 클수록 위를 비춤.
+                // CameraY가 작아질수록 아래를 비춤.
+                // 우리는 CameraY가 '안전지대'를 화면에 담을 수 있는 수준까지만 작아지길 원함.
+                // 안전지대(highestLandedY)가 화면 바텀(height) 위로 조금 올라온 수준.
+                // highestLandedY + cameraY <= canvas.height - 50
+                // cameraY <= canvas.height - 50 - highestLandedY
+
+                const minAllowedCameraY = Math.max(0, -highestLandedY - canvas.height + 100);
+                // 안전지대가 화면 하단에서 100px 위에 있도록 유지
+
+                // 내려가는 로직 복원 (단, 제한 적용)
+                if (targetCameraY < camera.y) {
+                    // 목표가 현재보다 아래(내려가야함) -> 내려가되 minAllowed보다 작아지지 않게
+                    const nextCameraY = camera.y + (targetCameraY - camera.y) * 0.1;
+                    // 단, 이미 올라가버린 카메라를 굳이 내리지 않는게 기존 '고정' 로직이었음.
+                    // 사용자 요청: "원래 발판으로 돌아오면 화면과 함께... 아무것도 밟지못하고 추락하면 게임오버"
+
+                    // 즉, 플레이어가 '안전지대' 위에 있는 동안은 카메라가 자유롭게 오르락내리락 해도 됨.
+                    // 하지만 '안전지대' 밑으로 떨어지면 카메라는 멈춰야 함.
+
+                    // 안전지대 기준 카메라 Y값
+                    const safetyCameraY = Math.max(0, -highestLandedY + canvas.height * 0.6);
+
+                    // 만약 플레이어가 안전지대보다 위에 있거나 근처라면 targetCameraY가 safetyCameraY와 비슷할 것.
+                    // 그냥 targetCameraY를 따라가되, 그 값이 safetyCameraY보다 너무 작아지면 안됨?
+
+                    // 가장 확실한 방법:
+                    // 카메라의 최소 Y값(바닥)을 highestLandedY 기준으로 정해버림.
+                    // camera.y = Math.max(camera.y, targetCameraY) <-- 이건 올라가기만 함
+
+                    // 수정:
+                    // 1. 카메라는 항상 targetCameraY를 향해 부드럽게 이동.
+                    // 2. 단, 그 결과값(newCameraY)이 '안전지대 뷰'보다 아래로 내려가면 안됨.
+
+                    const minSafeCamY = Math.max(0, -highestLandedY - canvas.height + 100);
+                    // 높이가 올라갈수록 highestLandedY는 작아짐(음수 등). -highestLandedY는 커짐.
+                    // 예: 바닥(600). -600 - 600 + 100 = -1100 => 0.
+                    // 예: 100층(-2000). 2000 - 600 + 100 = 1500.
+
+                    // 실제 적용
+                    camera.y += (targetCameraY - camera.y) * 0.1;
+                    if (camera.y < minSafeCamY) camera.y = minSafeCamY;
+                }
+            }
+
             if (camera.y < 0) camera.y = 0;
 
             // 게임오버 체크 - 카메라 화면 아래로 떨어지면
             const screenY = player.y + camera.y;
+
             if (screenY > canvas.height + 50) {
                 endGame();
             }
 
             // 새로운 발판 생성
             const highestPlatformY = Math.min(...platforms.map(p => p.y));
+
             if (-highestPlatformY + canvas.height < maxHeight + 500) {
                 addPlatform(maxHeight + 500);
             }
@@ -734,24 +1022,82 @@
         function update() {
             if (isCharging && player.onGround) {
                 chargeTime = Math.min(chargeTime + 1, MAX_CHARGE);
-                chargeBar.style.width = (chargeTime / MAX_CHARGE * 100) + '%';
+                // chargeBar update removed
             }
 
             updatePlayer();
         }
 
+        function drawBackground() {
+            // Calculate current height based on player y or camera y
+            // camera.y increases as we go up.
+            // Let's use camera.y for smooth background transition.
+            const height = camera.y * 3; // Scale factor to match world coords roughly 
+            // OR use max height? 
+            // Better: use camera center as reference.
+            // 1 pixel = 1 unit? 
+            // Let's use maxHeight for zone tracking or just camera.y
+
+            const smoothedColor = getSmoothedBackgroundColor(Math.max(0, -player.y + (canvas.height / 2)));
+
+            // Draw gradient background
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            // Current color at top, slightly darker at bottom?
+            // Actually getSmoothedBackgroundColor gives a single RGB.
+            // Let's interpolate based on screen top and bottom?
+            // Too expensive. Just solid color or simple gradient.
+
+            const colorHex = rgbToHex(smoothedColor);
+            ctx.fillStyle = colorHex;
+            ctx.fillRect(0, 0, canvas.width, canvas.height); // Clear with background color
+
+            // Add Zone Specific Details
+            const currentZone = getZoneForHeight(Math.max(0, -player.y));
+
+            if (currentZone.name === 'underwater') {
+                // Bubbles
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                for (let i = 0; i < 5; i++) {
+                    const x = (Date.now() / 50 + i * 100) % canvas.width;
+                    const y = (Date.now() / 20 + i * 150) % canvas.height;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 5 + i, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            } else if (currentZone.name === 'space') {
+                // Stars
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                for (let i = 0; i < 10; i++) {
+                    const x = (i * 123456 % canvas.width);
+                    const y = (i * 654321 % canvas.height);
+                    ctx.fillRect(x, y, 2, 2);
+                }
+            }
+        }
+
         function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Prevent ghosting
             drawBackground();
+
+            // Draw Slime behind platforms? No, front.
+            // Canvas layering: Background -> Platforms -> Slime -> Score
+
             drawPlatforms();
             drawSlime();
-            drawScore();
+            // drawScore(); // DOM HUD used
+        }
+
+        function updateHUD() {
+            document.getElementById('scoreHeight').innerText = Math.floor(Math.max(0, -player.y + (canvas.height - 80))) + "m";
+            document.getElementById('scoreMax').innerText = Math.floor(maxHeight) + "m";
         }
 
         function gameLoop() {
             if (gameStarted && !gameOver) {
                 update();
+                updateHUD();
             }
+
             draw();
             requestAnimationFrame(gameLoop);
         }
@@ -763,7 +1109,7 @@
             player.vy = MIN_JUMP + (MAX_JUMP - MIN_JUMP) * chargePercent;
             player.onGround = false;
             chargeTime = 0;
-            chargeBar.style.width = '0%';
+            // chargeBar reset removed
         }
 
         function startGame() {
@@ -772,34 +1118,45 @@
             gameStarted = true;
             gameOver = false;
             init();
+
+            // Show HUD
+            document.querySelector('.hud-container').style.display = 'flex';
         }
 
         function restartGame() {
             gameOverScreen.style.display = 'none';
             gameOver = false;
             init();
+            document.querySelector('.hud-container').style.display = 'flex';
         }
 
         function endGame() {
             gameOver = true;
             finalScoreEl.textContent = Math.floor(maxHeight);
             gameOverScreen.style.display = 'flex';
+            document.querySelector('.hud-container').style.display = 'none'; // Hide HUD on Game Over
         }
 
         // 키보드 이벤트
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space' && !e.repeat) {
                 e.preventDefault();
+
                 if (!gameStarted) {
                     startGame();
-                } else if (gameOver) {
+                }
+
+                else if (gameOver) {
                     restartGame();
-                } else {
+                }
+
+                else {
                     isCharging = true;
                 }
             }
-            if (e.code === 'ArrowLeft') player.vx = -4;
-            if (e.code === 'ArrowRight') player.vx = 4;
+
+            if (e.code === 'ArrowLeft') player.vx = -3; // Slower horizontal
+            if (e.code === 'ArrowRight') player.vx = 3;
         });
 
         document.addEventListener('keyup', (e) => {
@@ -809,26 +1166,106 @@
                     isCharging = false;
                 }
             }
+
             if (e.code === 'ArrowLeft' && player.vx < 0) player.vx = 0;
             if (e.code === 'ArrowRight' && player.vx > 0) player.vx = 0;
         });
 
         // 터치 이벤트 (모바일)
         let touchStartTime = 0;
+
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
+
             if (!gameStarted) {
                 startGame();
-            } else if (gameOver) {
+            }
+
+            else if (gameOver) {
                 restartGame();
-            } else {
+            }
+
+            else {
                 isCharging = true;
                 touchStartTime = Date.now();
             }
         });
 
-        canvas.addEventListener('touchend', (e) => {
+        // Mobile Button Controls
+        const btnLeft = document.getElementById('btnLeft');
+        const btnRight = document.getElementById('btnRight');
+        const btnJump = document.getElementById('btnJump');
+
+        function handleMobileStart(e) {
             e.preventDefault();
+            if (!gameStarted) startGame();
+            else if (gameOver) restartGame();
+        }
+
+        btnLeft.addEventListener('touchstart', (e) => {
+            e.preventDefault(); player.vx = -3;
+        });
+
+        btnLeft.addEventListener('touchend', (e) => {
+            e.preventDefault(); if (player.vx < 0) player.vx = 0;
+        });
+
+        btnRight.addEventListener('touchstart', (e) => {
+            e.preventDefault(); player.vx = 3;
+        });
+
+        btnRight.addEventListener('touchend', (e) => {
+            e.preventDefault(); if (player.vx > 0) player.vx = 0;
+        });
+
+        btnJump.addEventListener('touchstart', (e) => {
+            handleMobileStart(e);
+            if (gameStarted && !gameOver) isCharging = true;
+        });
+
+        btnJump.addEventListener('touchend', (e) => {
+            e.preventDefault();
+
+            if (isCharging) {
+                jump();
+                isCharging = false;
+            }
+        });
+
+        // Mouse support for testing on desktop
+        btnLeft.addEventListener('mousedown', (e) => {
+            player.vx = -3;
+        });
+
+        btnLeft.addEventListener('mouseup', (e) => {
+            if (player.vx < 0) player.vx = 0;
+        });
+
+        btnLeft.addEventListener('mouseleave', (e) => {
+            if (player.vx < 0) player.vx = 0;
+        });
+
+        btnRight.addEventListener('mousedown', (e) => {
+            player.vx = 3;
+        });
+
+        btnRight.addEventListener('mouseup', (e) => {
+            if (player.vx > 0) player.vx = 0;
+        });
+
+        btnRight.addEventListener('mouseleave', (e) => {
+            if (player.vx > 0) player.vx = 0;
+        });
+
+        btnJump.addEventListener('mousedown', (e) => {
+            // Click shouldn't trigger if it's not started? 
+            // Logic mixed with start screen.
+            if (!gameStarted) startGame();
+            else if (gameOver) restartGame();
+            else isCharging = true;
+        });
+
+        btnJump.addEventListener('mouseup', (e) => {
             if (isCharging) {
                 jump();
                 isCharging = false;
@@ -837,8 +1274,12 @@
 
         // 투명도 슬라이더
         document.getElementById('opacitySlider').addEventListener('input', (e) => {
-            canvas.style.opacity = e.target.value / 100;
+            document.body.style.opacity = e.target.value / 100;
         });
+
+        // Expose functions to global scope (Redundant if no closure, but safe)
+        window.startGame = startGame;
+        window.restartGame = restartGame;
 
         // 초기화 및 게임 루프 시작
         init();
