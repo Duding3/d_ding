@@ -2,8 +2,8 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>루팡 - 다일러 테트리스</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>루팡</title>
     <style>
         body {
             background: #1a1a2e;
@@ -12,78 +12,92 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            height: 100vh;
+            justify-content: flex-start;
+            min-height: 100vh;
             margin: 0;
             overflow: hidden;
+            touch-action: manipulation;
         }
+
+        h1 { color: #4ecca3; letter-spacing: 5px; margin: 15px 0 5px 0; font-size: 1.8rem; }
+        
+        .header-info { margin-bottom: 10px; text-align: center; }
+        .info-text { font-size: 0.8rem; color: #aaa; margin: 0 0 8px 0; }
+        .refresh-btn {
+            background: #4ecca3; border: none; color: #1a1a2e; 
+            padding: 6px 20px; border-radius: 5px; cursor: pointer; 
+            font-weight: bold; font-size: 0.9rem; transition: transform 0.1s;
+        }
+
         canvas {
             border: solid 4px #4ecca3;
             box-shadow: 0 0 20px rgba(78, 204, 163, 0.3);
             background-color: #16213e;
-            /* transition 제거: 슬라이더 반응 속도를 최대로 높임 */
-        }
-        #ui {
-            margin-top: 15px;
-            text-align: center;
-        }
-        .stat-group { display: inline-block; margin: 0 20px; }
-        .stat-label { font-size: 0.9rem; color: #4ecca3; font-weight: bold; }
-        .stat-value { font-size: 1.8rem; font-weight: bold; }
-        
-        /* 투명도 조절 슬라이더 스타일 */
-        .slider-container {
-            margin-top: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 10px 20px;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        input[type=range] {
-            cursor: pointer;
-            width: 150px;
+            max-width: 85vw;
+            max-height: 42vh; /* 하단 공간 확보를 위해 살짝 조정 */
         }
 
-        .controls-info {
-            margin-top: 15px;
+        #ui { margin-top: 10px; text-align: center; }
+        .stat-group { display: inline-block; margin: 0 15px; }
+        .stat-label { font-size: 0.8rem; color: #4ecca3; font-weight: bold; }
+        .stat-value { font-size: 1.5rem; font-weight: bold; }
+        
+        /* 모바일 컨트롤러 */
+        .mobile-controls {
+            display: grid;
+            grid-template-areas: 
+                ". up ."
+                "left down right"
+                "drop drop drop";
+            gap: 8px;
+            margin-top: 10px;
+            user-select: none;
+        }
+        .btn {
+            background: rgba(78, 204, 163, 0.15);
+            border: 2px solid #4ecca3;
+            color: #4ecca3;
             padding: 10px;
-            font-size: 0.8rem;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .btn:active { background: #4ecca3; color: #1a1a2e; }
+        .btn-up { grid-area: up; }
+        .btn-left { grid-area: left; }
+        .btn-down { grid-area: down; }
+        .btn-right { grid-area: right; }
+        .btn-drop { grid-area: drop; padding: 6px; background: rgba(255, 255, 255, 0.1); border-color: #eee; color: #eee; }
+
+        /* 키보드 단축키 정보 */
+        .controls-info {
+            margin-top: 12px;
+            padding: 8px;
+            font-size: 0.75rem;
             color: #777;
             text-align: center;
         }
         .key {
             display: inline-block;
-            padding: 2px 5px;
+            padding: 1px 4px;
             background: #333;
             border-radius: 3px;
             color: #eee;
+            margin: 0 2px;
         }
 
-        /* 새로고침 버튼 스타일 */
-        .refresh-btn {
-            background: #4ecca3; 
-            border: none; 
-            color: #1a1a2e; 
-            padding: 5px 15px; 
-            border-radius: 5px; 
-            cursor: pointer; 
-            font-weight: bold;
-            font-size: 0.8rem;
-            margin-top: 5px;
-        }
-        .refresh-btn:hover { background: #45b38f; }
+        .options { margin-top: 10px; display: flex; align-items: center; gap: 10px; }
+        input[type=range] { cursor: pointer; width: 100px; }
     </style>
 </head>
 <body>
 
-    <h1 style="color: #4ecca3; letter-spacing: 5px; margin-bottom: 5px;">다일러</h1>
+    <h1>다일러</h1>
     
-    <div style="margin-bottom: 20px; text-align: center;">
-        <p style="font-size: 0.75rem; color: #aaa; margin: 0;">
-            💡 빠른 업뎃 적용용 새로고침버튼 <b>[Ctrl + F5]</b> 또는 버튼 클릭
-        </p>
+    <div class="header-info">
+        <p class="info-text">새로고침 버튼을 누르면 빠른 업뎃 적용 가능</p>
         <button class="refresh-btn" onclick="location.reload(true)">새로고침</button>
     </div>
     
@@ -100,13 +114,21 @@
         </div>
     </div>
 
-    <div class="slider-container">
-        <span class="stat-label" style="font-size: 0.8rem;">투명도</span>
-        <input type="range" id="opacitySlider" min="10" max="100" value="100">
+    <div class="mobile-controls">
+        <div class="btn btn-up" id="ctrl-up">회전</div>
+        <div class="btn btn-left" id="ctrl-left">◀</div>
+        <div class="btn btn-down" id="ctrl-down">▼</div>
+        <div class="btn btn-right" id="ctrl-right">▶</div>
+        <div class="btn btn-drop" id="ctrl-drop">SPACE (하드드롭)</div>
     </div>
 
     <div class="controls-info">
         <span class="key">←</span><span class="key">→</span> 이동 | <span class="key">↑</span> 회전 | <span class="key">↓</span> 가속 | <span class="key">Space</span> 하드드롭
+    </div>
+
+    <div class="options">
+        <span style="font-size: 0.75rem; color: #4ecca3; font-weight: bold;">투명도</span>
+        <input type="range" id="opacitySlider" min="10" max="100" value="100">
     </div>
 
 <script>
@@ -119,9 +141,7 @@ const opacitySlider = document.getElementById('opacitySlider');
 context.scale(20, 20);
 
 let isGameOver = false;
-let levelUpTimer = 0;
 
-// 투명도 조절 이벤트 (실시간 반영)
 opacitySlider.addEventListener('input', (e) => {
     canvas.style.opacity = e.target.value / 100;
 });
@@ -146,9 +166,7 @@ function collide(arena, player) {
     const [m, o] = [player.matrix, player.pos];
     for (let y = 0; y < m.length; ++y) {
         for (let x = 0; x < m[y].length; ++x) {
-            if (m[y][x] !== 0 && (arena[y + o.y] && arena[y + o.y][x + o.x]) !== 0) {
-                return true;
-            }
+            if (m[y][x] !== 0 && (arena[y + o.y] && arena[y + o.y][x + o.x]) !== 0) return true;
         }
     }
     return false;
@@ -164,9 +182,7 @@ function merge(arena, player) {
 
 function rotate(matrix, dir) {
     for (let y = 0; y < matrix.length; ++y) {
-        for (let x = 0; x < y; ++x) {
-            [matrix[x][y], matrix[y][x]] = [matrix[y][x], matrix[x][y]];
-        }
+        for (let x = 0; x < y; ++x) [matrix[x][y], matrix[y][x]] = [matrix[y][x], matrix[x][y]];
     }
     if (dir > 0) matrix.forEach(row => row.reverse());
     else matrix.reverse();
@@ -190,9 +206,7 @@ function playerRotate(dir) {
 function arenaSweep() {
     let rowCount = 1;
     outer: for (let y = arena.length - 1; y > 0; --y) {
-        for (let x = 0; x < arena[y].length; ++x) {
-            if (arena[y][x] === 0) continue outer;
-        }
+        for (let x = 0; x < arena[y].length; ++x) if (arena[y][x] === 0) continue outer;
         const row = arena.splice(y, 1)[0].fill(0);
         arena.unshift(row);
         ++y;
@@ -214,6 +228,16 @@ function playerDrop() {
     dropCounter = 0;
 }
 
+function hardDrop() {
+    if (isGameOver) return;
+    while (!collide(arena, player)) player.pos.y++;
+    player.pos.y--;
+    merge(arena, player);
+    playerReset();
+    arenaSweep();
+    dropCounter = 0;
+}
+
 function playerReset() {
     const pieces = 'ILJOTSZ';
     player.matrix = createPiece(pieces[pieces.length * Math.random() | 0]);
@@ -224,11 +248,7 @@ function playerReset() {
 
 function updateStats() {
     scoreElement.innerText = player.score;
-    const newLevel = Math.floor(player.score / 100) + 1;
-    if (newLevel > player.level) {
-        player.level = newLevel;
-        levelUpTimer = 60; 
-    }
+    player.level = Math.floor(player.score / 100) + 1;
     levelElement.innerText = player.level;
     dropInterval = Math.max(100, 800 - (player.level - 1) * 100);
 }
@@ -238,15 +258,6 @@ function draw() {
     context.fillRect(0, 0, canvas.width, canvas.height);
     drawMatrix(arena, {x: 0, y: 0});
     drawMatrix(player.matrix, player.pos);
-    
-    if (levelUpTimer > 0) {
-        context.fillStyle = '#f9ed69';
-        context.font = '1.2px "Segoe UI"';
-        context.textAlign = 'center';
-        context.fillText('LEVEL UP!', 6, 5);
-        levelUpTimer--;
-    }
-
     if (isGameOver) drawGameOver();
 }
 
@@ -258,10 +269,8 @@ function drawGameOver() {
     context.textAlign = 'center';
     context.fillText('GAME OVER', 6, 8);
     context.fillStyle = '#fff';
-    context.font = '0.7px "Segoe UI"';
-    context.fillText('Score: ' + player.score, 6, 9.5);
     context.font = '0.5px "Segoe UI"';
-    context.fillText('Press ANY KEY to Restart', 6, 12);
+    context.fillText('Touch any button to Restart', 6, 12);
 }
 
 function drawMatrix(matrix, offset) {
@@ -281,12 +290,8 @@ function drawMatrix(matrix, offset) {
 
 function resetGame() {
     arena.forEach(row => row.fill(0));
-    player.score = 0;
-    player.level = 1;
-    isGameOver = false;
-    levelUpTimer = 0;
-    updateStats();
-    playerReset();
+    player.score = 0; player.level = 1; isGameOver = false;
+    updateStats(); playerReset();
 }
 
 let dropCounter = 0;
@@ -304,19 +309,35 @@ function update(time = 0) {
     requestAnimationFrame(update);
 }
 
+// 키보드 조작 (PC)
 document.addEventListener('keydown', event => {
-    if (isGameOver) {
-        resetGame();
-        return;
-    }
+    if (isGameOver) { resetGame(); return; }
     if (event.keyCode === 37) { player.pos.x--; if (collide(arena, player)) player.pos.x++; }
     else if (event.keyCode === 39) { player.pos.x++; if (collide(arena, player)) player.pos.x--; }
     else if (event.keyCode === 40) { playerDrop(); }
     else if (event.keyCode === 38) { playerRotate(1); }
-    else if (event.keyCode === 32) {
-        while (!collide(arena, player)) { player.pos.y++; }
-        player.pos.y--; merge(arena, player); playerReset(); arenaSweep(); dropCounter = 0;
-    }
+    else if (event.keyCode === 32) { hardDrop(); }
+});
+
+// 터치/클릭 조작 통합
+const handleControl = (action) => {
+    if (isGameOver) { resetGame(); return; }
+    if (action === 'left') { player.pos.x--; if (collide(arena, player)) player.pos.x++; }
+    else if (action === 'right') { player.pos.x++; if (collide(arena, player)) player.pos.x--; }
+    else if (action === 'down') { playerDrop(); }
+    else if (action === 'up') { playerRotate(1); }
+    else if (action === 'drop') { hardDrop(); }
+};
+
+const buttons = {
+    'ctrl-left': 'left', 'ctrl-right': 'right', 
+    'ctrl-down': 'down', 'ctrl-up': 'up', 'ctrl-drop': 'drop'
+};
+
+Object.keys(buttons).forEach(id => {
+    const btn = document.getElementById(id);
+    btn.addEventListener('touchstart', (e) => { e.preventDefault(); handleControl(buttons[id]); });
+    btn.addEventListener('mousedown', (e) => { handleControl(buttons[id]); });
 });
 
 const arena = createMatrix(12, 20);
