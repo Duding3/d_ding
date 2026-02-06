@@ -9,14 +9,14 @@
     <style>
         :root {
             --unit: min(3.5vh, 2.8vw, 22px);
-            --main-color: #fca5a5;
-            --bg-color: #fef2f2;
-            --card-bg: rgba(255, 255, 255, 0.7);
+            --main-color: #ef4444;
+            --bg-color: #0f172a;
+            --card-bg: rgba(255, 255, 255, 0.05);
         }
 
         body {
-            background: linear-gradient(to bottom, #fce7f3, #fef2f2);
-            color: #333;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            color: #fff;
             font-family: 'Segoe UI', Roboto, sans-serif;
             display: flex;
             flex-direction: column;
@@ -52,8 +52,8 @@
 
         .version {
             font-size: 0.9rem;
-            color: #888;
-            opacity: 0.6;
+            color: #aaa;
+            opacity: 0.5;
             font-weight: normal;
         }
 
@@ -68,7 +68,7 @@
             font-size: 0.8rem;
             margin-top: 5px;
             transition: all 0.2s;
-            box-shadow: 0 4px 10px rgba(252, 165, 165, 0.3);
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
         }
 
         .stats {
@@ -80,12 +80,12 @@
 
         .stat-box {
             background: var(--card-bg);
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             padding: calc(var(--unit) * 0.3) calc(var(--unit) * 0.8);
             border-radius: 12px;
             text-align: center;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
 
         .stat-label {
@@ -101,11 +101,12 @@
 
         canvas {
             border-radius: 12px;
-            background: rgba(255, 255, 255, 0.3);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            background: rgba(0, 0, 0, 0.4);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
             width: 100%;
             max-width: 400px;
             aspect-ratio: 1/1.2;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         #overlay {
@@ -114,7 +115,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(255, 255, 255, 0.7);
+            background: rgba(0, 0, 0, 0.85);
             backdrop-filter: blur(5px);
             display: flex;
             flex-direction: column;
@@ -143,7 +144,7 @@
 
         .hint {
             margin-top: 15px;
-            color: #666;
+            color: #aaa;
             font-size: 0.9rem;
             animation: bounce 2s infinite;
         }
@@ -166,7 +167,7 @@
             gap: 10px;
             margin-top: 20px;
             padding: 10px 20px;
-            background: rgba(252, 165, 165, 0.1);
+            background: rgba(239, 68, 68, 0.1);
             border: 2px solid var(--main-color);
             border-radius: 12px;
             width: 90%;
@@ -207,7 +208,7 @@
     <div id="game-wrapper" onclick="handleTap()">
         <div class="game-header">
             <h1>퍼펙트 타워 <span class="version">v1.1</span></h1>
-            <button class="refresh-btn" onclick="location.reload(true)">새로고침(컨트롤+에프5)</button>
+            <button class="refresh-btn" onclick="location.reload(true)">새로고침</button>
             <div class="stats">
                 <div class="stat-box">
                     <div class="stat-label">높이</div>
