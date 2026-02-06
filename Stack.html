@@ -314,9 +314,8 @@
 
         function newBlock() {
             const prev = blocks[blocks.length - 1];
-            // Height-based shrinkage + Random variance (±20px)
-            const variance = (Math.random() * 40 - 20);
-            const nextW = Math.max(20, Math.min(prev.w - 1 + variance, 300));
+            // Completely random width between 80 and 220 regardless of height
+            const nextW = 80 + Math.random() * 140;
             currentBlock = {
                 x: 0,
                 y: prev.y - BLOCK_HEIGHT,
