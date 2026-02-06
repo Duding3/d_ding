@@ -1,0 +1,109 @@
+/* 기본 초기화 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Pretendard', sans-serif;
+}
+
+body {
+    background-color: #0f172a; /* 어두운 네이비 톤 */
+    color: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 2rem;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(to right, #38bdf8, #818cf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+header p {
+    color: #94a3b8;
+}
+
+/* 게임 카드 컨테이너 */
+.game-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    width: 100%;
+    max-width: 1000px;
+}
+
+/* 개별 카드 스타일 */
+.game-card {
+    background: #1e293b;
+    border-radius: 20px;
+    padding: 2rem;
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid #334155;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.game-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border-color: #38bdf8;
+}
+
+.icon-wrapper {
+    font-size: 3rem;
+    color: #38bdf8;
+    margin-bottom: 1.5rem;
+}
+
+.game-card h2 {
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+}
+
+.game-card p {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+}
+
+/* 플레이 버튼 */
+.play-btn {
+    display: inline-block;
+    background: #38bdf8;
+    color: #0f172a;
+    padding: 0.8rem 1.5rem;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+
+.play-btn:hover {
+    background: #7dd3fc;
+}
+
+/* 준비중 카드 스타일 */
+.coming-soon {
+    opacity: 0.6;
+    border-style: dashed;
+}
+
+footer {
+    margin-top: auto;
+    padding-top: 3rem;
+    color: #475569;
+    font-size: 0.8rem;
+}
