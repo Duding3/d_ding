@@ -1,14 +1,32 @@
-/* 전반적인 레이아웃 설정 */
+/* Mini Game Paradise Theme 🌈 */
+:root {
+    --bg-gradient: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+    /* Fallback */
+    --pastel-bg: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
+    /* Blue Pastel */
+    --pastel-warm: linear-gradient(120deg, #f6d365 0%, #fda085 100%);
+    /* Warm Pastel */
+    --card-bg: #ffffff;
+    --text-main: #2d3436;
+    --text-sub: #636e72;
+    --accent: #FF7675;
+    --shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    --bounce: cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}
+
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Pretendard', sans-serif;
+    font-family: 'Jua', sans-serif;
+    /* Cute Korean Font */
 }
 
 body {
-    background-color: #0f172a;
-    color: #f8fafc;
+    background: linear-gradient(-45deg, #ff9a9e, #fad0c4, #fad0c4, #a18cd1, #fbc2eb);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+    color: var(--text-main);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -16,38 +34,72 @@ body {
     padding: 3rem 1rem;
 }
 
+@keyframes gradientBG {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
 header {
     text-align: center;
-    margin-bottom: 4rem;
+    margin-bottom: 3rem;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+
+    100% {
+        transform: translateY(0px);
+    }
 }
 
 header h1 {
-    font-size: 3rem;
+    font-size: 3.5rem;
     margin-bottom: 0.5rem;
-    background: linear-gradient(to right, #38bdf8, #818cf8);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: #fff;
+    text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.1);
+    letter-spacing: 2px;
+}
+
+header p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.2rem;
 }
 
 /* 빠른 업뎃용 새로고침 버튼 스타일 */
 .update-refresh-btn {
     margin-top: 20px;
-    background-color: #0ea5e9;
+    background-color: rgba(255, 255, 255, 0.3);
     color: white;
-    border: none;
+    border: 2px solid white;
     padding: 10px 22px;
-    border-radius: 12px;
+    border-radius: 50px;
     cursor: pointer;
-    font-size: 0.95rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2);
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.3s var(--bounce);
+    backdrop-filter: blur(5px);
 }
 
 .update-refresh-btn:hover {
-    background-color: #0284c7;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(14, 165, 233, 0.4);
+    background-color: white;
+    color: var(--accent);
+    transform: scale(1.1);
 }
 
 .update-refresh-btn i {
@@ -64,43 +116,133 @@ header h1 {
 }
 
 .game-card {
-    background: #1e293b;
-    border-radius: 24px;
+    background: var(--card-bg);
+    border-radius: 30px;
     padding: 2.5rem;
     text-align: center;
-    border: 1px solid #334155;
-    transition: all 0.3s ease;
+    border: none;
+    transition: all 0.4s var(--bounce);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.game-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    background: linear-gradient(90deg, #ff9a9e, #fecfef);
 }
 
 .game-card:hover {
-    border-color: #38bdf8;
-    transform: translateY(-10px);
+    transform: translateY(-15px) scale(1.03);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
 }
 
 .icon-wrapper {
-    font-size: 3rem;
-    color: #38bdf8;
+    font-size: 3.5rem;
     margin-bottom: 1.5rem;
+    background: #f0f2f5;
+    width: 100px;
+    height: 100px;
+    line-height: 100px;
+    border-radius: 50%;
+    margin-left: auto;
+    margin-right: auto;
+    transition: transform 0.4s var(--bounce);
+}
+
+.game-card:nth-child(1) .icon-wrapper {
+    color: #FF7675;
+    background: #fff0f0;
+}
+
+/* Tetris */
+.game-card:nth-child(2) .icon-wrapper {
+    color: #74b9ff;
+    background: #f0f8ff;
+}
+
+/* Typing */
+.game-card:nth-child(3) .icon-wrapper {
+    color: #55efc4;
+    background: #f0fff0;
+}
+
+/* Jump */
+
+.game-card:hover .icon-wrapper {
+    transform: rotate(15deg) scale(1.1);
+}
+
+.game-card h2 {
+    font-size: 1.8rem;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+}
+
+.game-card p {
+    color: var(--text-sub);
+    margin-bottom: 1.5rem;
+    font-size: 1rem;
+    line-height: 1.5;
 }
 
 .play-btn {
     display: inline-block;
     text-decoration: none;
-    background: #38bdf8;
-    color: #0f172a;
-    padding: 10px 25px;
-    border-radius: 10px;
-    font-weight: bold;
-    margin-top: 1rem;
+    background: var(--text-main);
+    color: white;
+    padding: 12px 30px;
+    border-radius: 50px;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(45, 52, 54, 0.2);
+}
+
+.game-card:nth-child(1) .play-btn {
+    background: #FF7675;
+    box-shadow: 0 5px 15px rgba(255, 118, 117, 0.4);
+}
+
+.game-card:nth-child(2) .play-btn {
+    background: #74b9ff;
+    box-shadow: 0 5px 15px rgba(116, 185, 255, 0.4);
+}
+
+.game-card:nth-child(3) .play-btn {
+    background: #00cec9;
+    box-shadow: 0 5px 15px rgba(0, 206, 201, 0.4);
+}
+
+.play-btn:hover {
+    transform: scale(1.1);
+    filter: brightness(1.1);
 }
 
 .coming-soon {
-    opacity: 0.5;
-    border-style: dashed;
+    opacity: 0.7;
+    border: 3px dashed #dfe6e9;
+    background: rgba(255, 255, 255, 0.5);
+    box-shadow: none;
+}
+
+.coming-soon::before {
+    display: none;
+}
+
+.coming-soon:hover {
+    transform: none;
+    box-shadow: none;
 }
 
 footer {
     margin-top: auto;
     padding: 3rem 0;
-    color: #475569;
+    color: white;
+    font-size: 0.9rem;
+    opacity: 0.8;
 }
