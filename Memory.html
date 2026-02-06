@@ -190,12 +190,73 @@
             color: var(--main-color);
             margin-bottom: 10px;
         }
+
+        .refresh-btn {
+            background: var(--main-color);
+            border: none;
+            color: #fff;
+            padding: 6px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.8rem;
+            margin-top: 5px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 10px rgba(244, 114, 182, 0.3);
+        }
+
+        .refresh-btn:hover {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+
+        .slider-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 25px;
+            padding: 10px 20px;
+            background: rgba(244, 114, 182, 0.1);
+            border: 2px solid var(--main-color);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .slider-label {
+            color: var(--main-color);
+            font-weight: bold;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        #opacitySlider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: rgba(244, 114, 182, 0.2);
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        #opacitySlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--main-color);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(244, 114, 182, 0.5);
+        }
     </style>
 </head>
 
 <body>
     <div id="game-wrapper">
         <h1>메모리 매치 <span class="version">v1.1</span></h1>
+        <button class="refresh-btn" onclick="location.reload(true)">새로고침(컨트롤+에프5)</button>
 
         <div class="stats">
             <div class="stat-box">
@@ -214,6 +275,10 @@
             <h2 class="msg-title" id="overlay-msg" style="display: none;">준비?</h2>
             <p id="final-stats" style="display: none;"></p>
             <button class="start-btn" onclick="initGame()">게임 시작</button>
+        </div>
+        <div class="slider-area">
+            <span class="slider-label">투명도</span>
+            <input type="range" id="opacitySlider" min="30" max="100" value="100">
         </div>
     </div>
 
@@ -311,6 +376,11 @@
             finalStats.innerText = `${moves}회 이동 | ${timeEl.innerText}`;
             finalStats.style.display = 'block';
         }
+
+        // 투명도 조절
+        document.getElementById('opacitySlider').addEventListener('input', (e) => {
+            document.body.style.opacity = e.target.value / 100;
+        });
 
         // Show start screen initially
         overlay.style.display = 'flex';

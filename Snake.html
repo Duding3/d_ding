@@ -181,6 +181,65 @@
                 box-shadow: 0 0 0 rgba(74, 222, 128, 0.4);
             }
         }
+
+        .refresh-btn {
+            background: var(--main-color);
+            border: none;
+            color: #1a1a2e;
+            padding: 6px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.8rem;
+            margin-top: 5px;
+            transition: all 0.2s;
+        }
+
+        .refresh-btn:hover {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+
+        .slider-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: rgba(74, 222, 128, 0.1);
+            border: 2px solid var(--main-color);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .slider-label {
+            color: var(--main-color);
+            font-weight: bold;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        #opacitySlider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: rgba(74, 222, 128, 0.2);
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        #opacitySlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--main-color);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+        }
     </style>
 </head>
 
@@ -188,6 +247,7 @@
     <div id="game-wrapper">
         <div class="game-header">
             <h1>네온 스네이크 <span class="version">v1.1</span></h1>
+            <button class="refresh-btn" onclick="location.reload(true)">새로고침(컨트롤+에프5)</button>
             <div class="stats">
                 <div class="stat-box">
                     <div class="stat-label">현재 점수</div>
@@ -209,12 +269,11 @@
             </div>
         </div>
 
-        <div class="controls">
-            <div class="ctrl-btn" id="btn-up">▲</div>
-            <div class="ctrl-btn" id="btn-left">◀</div>
-            <div class="ctrl-btn" id="btn-down">▼</div>
-            <div class="ctrl-btn" id="btn-right">▶</div>
-        </div>
+    </div>
+    <div class="slider-area">
+        <span class="slider-label">투명도</span>
+        <input type="range" id="opacitySlider" min="30" max="100" value="100">
+    </div>
     </div>
 
     <script>
@@ -377,6 +436,10 @@
         bindBtn('btn-left', () => handleInput(-1, 0));
         bindBtn('btn-right', () => handleInput(1, 0));
 
+        // 투명도 조절
+        document.getElementById('opacitySlider').addEventListener('input', (e) => {
+            document.body.style.opacity = e.target.value / 100;
+        });
     </script>
 </body>
 

@@ -155,12 +155,72 @@
                 transform: scale(1);
             }
         }
+
+        .refresh-btn {
+            background: #4ade80;
+            border: none;
+            color: #1a1a2e;
+            padding: 6px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.8rem;
+            margin-top: 5px;
+            transition: all 0.2s;
+        }
+
+        .refresh-btn:hover {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+
+        .slider-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: rgba(74, 222, 128, 0.1);
+            border: 2px solid #4ade80;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .slider-label {
+            color: #4ade80;
+            font-weight: bold;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        #opacitySlider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: rgba(74, 222, 128, 0.2);
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        #opacitySlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #4ade80;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+        }
     </style>
 </head>
 
 <body>
     <div id="game-wrapper">
         <h1>서커스 아케이드 <span class="version">v1.1</span></h1>
+        <button class="refresh-btn" onclick="location.reload(true)">새로고침(컨트롤+에프5)</button>
 
         <div class="stats">
             <div class="stat-box">
@@ -183,6 +243,10 @@
 
         <div class="controls">
             <button class="jump-btn" id="btnJump">점프 !</button>
+        </div>
+        <div class="slider-area">
+            <span class="slider-label">투명도</span>
+            <input type="range" id="opacitySlider" min="30" max="100" value="100">
         </div>
     </div>
 
@@ -386,6 +450,11 @@
         document.getElementById('btnJump').onclick = jump;
 
         overlay.style.display = 'flex';
+
+        // 투명도 조절
+        document.getElementById('opacitySlider').addEventListener('input', (e) => {
+            document.body.style.opacity = e.target.value / 100;
+        });
     </script>
 </body>
 
