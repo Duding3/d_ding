@@ -36,65 +36,52 @@
 
         .hud-container {
             position: absolute;
-            top: 20px;
-            right: 10px;
-            /* Right aligned inside wrapper */
-            left: auto;
-            transform: none;
+            top: 15px;
+            right: 15px;
             display: flex;
             flex-direction: column;
-            /* Stack vertically */
-            gap: 10px;
-            z-index: 10;
-            width: auto;
-            max-width: 200px;
-            align-items: flex-end;
-            /* Align content to right */
+            gap: 8px;
+            z-index: 50;
+            pointer-events: none;
         }
 
         .hud-box {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 5px 10px;
-            /* Reduced padding */
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 12px;
             border-radius: 12px;
             color: #fff;
             text-align: right;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             display: flex;
             flex-direction: column;
             align-items: flex-end;
-            min-width: 100px;
-            /* Reduced min-width */
+            min-width: 90px;
         }
 
         .hud-label {
-            font-size: 0.7rem;
-            color: #ddd;
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.6);
             margin-bottom: 2px;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
-        /* Current Height - Large */
         #scoreHeight {
-            font-size: 1.5rem;
-            /* Reduced from 2.2rem */
+            font-size: 1.4rem;
             color: #4ade80;
+            line-height: 1;
         }
 
-        /* Max Height - Smaller */
         #scoreMax {
-            font-size: 0.9rem;
-            /* Reduced from 1.2rem */
+            font-size: 0.85rem;
             color: #fbbf24;
-            /* Yellowish for High Score */
+            line-height: 1;
         }
 
         .hud-value {
-            font-weight: bold;
-            text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            font-weight: 800;
         }
 
         .game-header {
@@ -230,6 +217,80 @@
             width: 100%;
             border-radius: 12px;
             overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Responsive Mobile Controls Overlay */
+        .controls-area {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 0 20px;
+            pointer-events: none;
+            z-index: 60;
+        }
+
+        .controls-left,
+        .controls-right {
+            display: flex;
+            gap: 15px;
+            pointer-events: auto;
+        }
+
+        .control-btn {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .control-btn:active {
+            transform: scale(0.9);
+            background: rgba(255, 255, 255, 0.3);
+            border-color: #4ade80;
+        }
+
+        .jump-btn {
+            width: 80px;
+            height: 80px;
+            background: rgba(74, 222, 128, 0.2);
+            border-color: rgba(74, 222, 128, 0.3);
+            font-size: 1rem;
+        }
+
+        .jump-btn:active {
+            background: rgba(74, 222, 128, 0.4);
+        }
+
+        @media (max-width: 480px) {
+            .control-btn {
+                width: 55px;
+                height: 55px;
+                font-size: 1rem;
+            }
+
+            .jump-btn {
+                width: 70px;
+                height: 70px;
+            }
         }
     </style>
 </head>
@@ -243,48 +304,48 @@
         </div>
 
         <div class="canvas-container">
+            <!-- Floating HUD -->
             <div class="hud-container">
                 <div class="hud-box">
-                    <div class="hud-label">현재 높이</div>
+                    <div class="hud-label">HEIGHT</div>
                     <div class="hud-value" id="scoreHeight">0m</div>
                 </div>
                 <div class="hud-box">
-                    <div class="hud-label">최고 높이</div>
+                    <div class="hud-label">BEST</div>
                     <div class="hud-value" id="scoreMax">0m</div>
                 </div>
             </div>
 
             <canvas id="gameCanvas" width="400" height="600"></canvas>
 
+            <!-- Floating Controls -->
+            <div class="controls-area">
+                <div class="controls-left">
+                    <button class="control-btn jump-btn" id="btnJump">점프</button>
+                </div>
+                <div class="controls-right">
+                    <button class="control-btn" id="btnLeft">◀</button>
+                    <button class="control-btn" id="btnRight">▶</button>
+                </div>
+            </div>
+
             <div id="startScreen">
                 <h1 style="font-size: 2.5rem; margin-bottom: 10px;">🟢 슬라임 점프</h1>
-                <span style="color: #666; margin-bottom: 20px; font-size: 0.9rem;">Ver 1.5 - Hills Update</span>
-                <p style="color: #aaa; margin-bottom: 20px;">스페이스바를 길게 눌러 차징하고<br>높이 점프하세요 !</p><button
-                    class="start-btn" onclick="startGame()">START</button>
+                <span style="color: #666; margin-bottom: 20px; font-size: 0.9rem;">Ver 1.0 - Responsive</span>
+                <p style="color: #aaa; margin-bottom: 20px;">스페이스바를 길게 눌러 차징하고<br>높이 점프하세요 !</p>
+                <button class="start-btn" onclick="startGame()">START</button>
             </div>
             <div class="game-over-screen" id="gameOverScreen">
                 <h2>GAME OVER</h2>
-                <p>최고 높이: <span id="finalScore">0</span>m</p><button class="start-btn" onclick="restartGame()">다시
-                    시작</button>
+                <p>최고 높이: <span id="finalScore">0</span>m</p>
+                <button class="start-btn" onclick="restartGame()">다시 시작</button>
             </div>
         </div>
     </div>
 
 
 
-    <div class="controls-info">
-        SPACE 짧게 = 작은 점프 | SPACE 길게 차징 = 높은 점프
-    </div>
 
-    <div class="controls-area">
-        <div class="controls-left">
-            <button class="control-btn jump-btn" id="btnJump">점프</button>
-        </div>
-        <div class="controls-right">
-            <button class="control-btn" id="btnLeft">◀</button>
-            <button class="control-btn" id="btnRight">▶</button>
-        </div>
-    </div>
 
     <div class="slider-area" style="margin-top: 20px; text-align: center; width: 100%;">
         <span class="slider-label" style="color: #ccc; font-size: 0.9rem;">투명도 </span>
