@@ -249,7 +249,7 @@
         let bestScore = localStorage.getItem('catchBest') || 0;
         let items = [];
         let player = { x: 0, w: 60, h: 20 };
-        let itemSpeed = 3;
+        let itemSpeed = 2;
         let lastTime = 0;
 
         bestEl.innerText = bestScore;
@@ -265,7 +265,7 @@
         function initGame() {
             score = 0;
             items = [];
-            itemSpeed = 3;
+            itemSpeed = 2;
             gameActive = true;
             overlay.style.display = 'none';
             scoreEl.innerText = score;
@@ -329,7 +329,7 @@
                         if (item.type === 'gift') {
                             score += 10;
                             scoreEl.innerText = score;
-                            itemSpeed += 0.05;
+                            itemSpeed += 0.02;
                             items.splice(i, 1);
                         } else {
                             gameOver();
