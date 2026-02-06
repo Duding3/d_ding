@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>루팡 - 다일러 테트리스 v2.8</title>
+    <title>루팡 - 다일러 테트리스 v2.9</title>
     <style>
         body {
             background: #1a1a2e;
@@ -29,7 +29,6 @@
             font-weight: bold; font-size: 0.75rem;
         }
 
-        /* 게임 전체를 감싸는 중앙 컨테이너 */
         #game-wrapper {
             display: flex;
             flex-direction: column;
@@ -37,12 +36,11 @@
             transition: opacity 0.1s;
         }
 
-        /* 메인 판과 넥스트 박스를 나란히 배치하는 구역 */
         .game-area {
             display: flex;
-            flex-direction: row; /* 가로 배치 */
+            flex-direction: row;
             align-items: flex-start;
-            gap: 15px; /* 판과 넥스트 사이 간격 */
+            gap: 15px;
         }
 
         canvas#tetris {
@@ -53,12 +51,11 @@
             height: 366px;
         }
 
-        /* 우측 사이드 패널 정렬 */
         .side-panel {
             display: flex;
             flex-direction: column;
             gap: 12px;
-            width: 70px; /* 사이드바 폭 고정 */
+            width: 70px;
         }
 
         .next-box {
@@ -75,7 +72,6 @@
         .stat-label { font-size: 0.6rem; color: #4ecca3; font-weight: bold; }
         .stat-value { font-size: 1rem; font-weight: bold; }
         
-        /* 모바일 조작부 */
         .mobile-controls {
             display: grid;
             grid-template-areas: ". up ." "left down right" "drop drop drop";
@@ -86,6 +82,8 @@
             color: #4ecca3; padding: 10px; border-radius: 8px;
             text-align: center; font-weight: bold; cursor: pointer; font-size: 0.8rem;
             min-width: 50px;
+            user-select: none;
+            -webkit-user-select: none;
         }
         .btn:active { background: #4ecca3; color: #1a1a2e; }
         .btn-up { grid-area: up; } .btn-left { grid-area: left; }
@@ -174,7 +172,7 @@ const keys = {
 };
 
 const DAS_DELAY = 160;
-const DAS_INTERVAL = 40;
+const DAS_INTERVAL = 45;
 
 function createPiece(type) {
     if (type === 'I') return [[0,1,0,0],[0,1,0,0],[0,1,0,0],[0,1,0,0]];
@@ -200,13 +198,7 @@ function getNextPiece() {
     return createPiece(bag.pop());
 }
 
-const player = {
-    pos: {x: 0, y: 0},
-    matrix: null,
-    queue: [],
-    score: 0,
-    level: 1
-};
+const player = { pos: {x: 0, y: 0}, matrix: null, queue: [], score: 0, level: 1 };
 
 function playerReset() {
     while (player.queue.length < 5) player.queue.push(getNextPiece());
@@ -368,34 +360,28 @@ function hardDrop() {
     arenaSweep();
 }
 
+// 🎮 입력 처리 (PC/모바일 공용)
 function handleInput(deltaTime) {
     if (isGameOver) return;
-    if (keys.left.pressed) {
-        if (keys.left.timer === 0) { player.pos.x--; if (collide(arena, player)) player.pos.x++; }
-        keys.left.timer += deltaTime;
-        if (keys.left.timer > DAS_DELAY) {
-            if (keys.left.timer > DAS_DELAY + DAS_INTERVAL) {
-                player.pos.x--; if (collide(arena, player)) player.pos.x++;
-                keys.left.timer = DAS_DELAY;
+    ['left', 'right', 'down'].forEach(dir => {
+        const k = keys[dir];
+        if (k.pressed) {
+            if (k.timer === 0) {
+                if (dir === 'left') { player.pos.x--; if (collide(arena, player)) player.pos.x++; }
+                if (dir === 'right') { player.pos.x++; if (collide(arena, player)) player.pos.x--; }
+                if (dir === 'down') { playerDrop(); }
             }
-        }
-    } else { keys.left.timer = 0; }
-
-    if (keys.right.pressed) {
-        if (keys.right.timer === 0) { player.pos.x++; if (collide(arena, player)) player.pos.x--; }
-        keys.right.timer += deltaTime;
-        if (keys.right.timer > DAS_DELAY) {
-            if (keys.right.timer > DAS_DELAY + DAS_INTERVAL) {
-                player.pos.x++; if (collide(arena, player)) player.pos.x--;
-                keys.right.timer = DAS_DELAY;
+            k.timer += deltaTime;
+            if (k.timer > DAS_DELAY) {
+                if (k.timer > DAS_DELAY + DAS_INTERVAL) {
+                    if (dir === 'left') { player.pos.x--; if (collide(arena, player)) player.pos.x++; }
+                    if (dir === 'right') { player.pos.x++; if (collide(arena, player)) player.pos.x--; }
+                    if (dir === 'down') { playerDrop(); }
+                    k.timer = DAS_DELAY;
+                }
             }
-        }
-    } else { keys.right.timer = 0; }
-
-    if (keys.down.pressed) {
-        keys.down.timer += deltaTime;
-        if (keys.down.timer > DAS_INTERVAL) { playerDrop(); keys.down.timer = 0; }
-    } else { keys.down.timer = 0; }
+        } else { k.timer = 0; }
+    });
 }
 
 function update(time = 0) {
@@ -414,6 +400,7 @@ opacitySlider.addEventListener('input', (e) => {
     gameWrapper.style.opacity = e.target.value / 100;
 });
 
+// ⌨️ 키보드 리스너
 document.addEventListener('keydown', event => {
     if (isGameOver) { location.reload(); return; }
     if (event.keyCode === 37) keys.left.pressed = true;
@@ -422,7 +409,6 @@ document.addEventListener('keydown', event => {
     if (event.keyCode === 38) playerRotate(1);
     if (event.keyCode === 32) { if (!keys.space.pressed) { hardDrop(); keys.space.pressed = true; } }
 });
-
 document.addEventListener('keyup', event => {
     if (event.keyCode === 37) keys.left.pressed = false;
     if (event.keyCode === 39) keys.right.pressed = false;
@@ -430,20 +416,33 @@ document.addEventListener('keyup', event => {
     if (event.keyCode === 32) keys.space.pressed = false;
 });
 
-const handleControl = (a) => {
-    if (isGameOver) location.reload();
-    if (a === 'left') { player.pos.x--; if (collide(arena, player)) player.pos.x++; }
-    if (a === 'right') { player.pos.x++; if (collide(arena, player)) player.pos.x--; }
-    if (a === 'down') playerDrop();
-    if (a === 'up') playerRotate(1);
-    if (a === 'drop') hardDrop();
+// 📱 모바일 터치 리스너 (연속 이동용)
+const bindMobileBtn = (id, keyName, isAction = false) => {
+    const el = document.getElementById(id);
+    const start = (e) => {
+        e.preventDefault();
+        if (isGameOver) { location.reload(); return; }
+        if (isAction) {
+            if (keyName === 'up') playerRotate(1);
+            if (keyName === 'drop') hardDrop();
+        } else {
+            keys[keyName].pressed = true;
+        }
+    };
+    const end = () => { if (!isAction) keys[keyName].pressed = false; };
+    
+    el.addEventListener('touchstart', start);
+    el.addEventListener('touchend', end);
+    el.addEventListener('mousedown', start);
+    el.addEventListener('mouseup', end);
+    el.addEventListener('mouseleave', end);
 };
 
-['left','right','down','up','drop'].forEach(id => {
-    const el = document.getElementById('ctrl-' + id);
-    el.addEventListener('touchstart', (e) => { e.preventDefault(); handleControl(id); });
-    el.addEventListener('mousedown', () => handleControl(id));
-});
+bindMobileBtn('ctrl-left', 'left');
+bindMobileBtn('ctrl-right', 'right');
+bindMobileBtn('ctrl-down', 'down');
+bindMobileBtn('ctrl-up', 'up', true);
+bindMobileBtn('ctrl-drop', 'drop', true);
 
 const arena = Array.from({length: 20}, () => new Array(12).fill(0));
 playerReset();
