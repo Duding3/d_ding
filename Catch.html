@@ -233,40 +233,41 @@
         }
 
         let spawnTimer = 0;
-        // 조작 업데이트 (느리게, 세세하게 조정 - 7 -> 4)
-        if (moveLeft) player.x = Math.max(0, player.x - 4);
-        if (moveRight) player.x = Math.min(canvas.width - player.w, player.x + 4);
+        function update(dt) {
+            // 조작 업데이트 (느리게, 세세하게 조정 - 7 -> 4)
+            if (moveLeft) player.x = Math.max(0, player.x - 4);
+            if (moveRight) player.x = Math.min(canvas.width - player.w, player.x + 4);
 
-        spawnTimer += dt;
-        if (spawnTimer > 1000 - Math.min(score, 500)) {
-            spawnItem();
-            spawnTimer = 0;
-        }
+            spawnTimer += dt;
+            if (spawnTimer > 1000 - Math.min(score, 500)) {
+                spawnItem();
+                spawnTimer = 0;
+            }
 
-        items.forEach((item, i) => {
-            item.y += itemSpeed;
+            items.forEach((item, i) => {
+                item.y += itemSpeed;
 
-            // Collision
-            if (item.y + item.h > canvas.height - 40 && item.y < canvas.height - 20) {
-                if (item.x + item.w > player.x && item.x < player.x + player.w) {
-                    if (item.type === 'gift') {
-                        score += 10;
-                        scoreEl.innerText = score;
-                        itemSpeed += 0.05;
-                        items.splice(i, 1);
-                    } else {
-                        gameOver();
+                // Collision
+                if (item.y + item.h > canvas.height - 40 && item.y < canvas.height - 20) {
+                    if (item.x + item.w > player.x && item.x < player.x + player.w) {
+                        if (item.type === 'gift') {
+                            score += 10;
+                            scoreEl.innerText = score;
+                            itemSpeed += 0.05;
+                            items.splice(i, 1);
+                        } else {
+                            gameOver();
+                        }
                     }
                 }
-            }
 
-            if (item.y > canvas.height) {
-                if (item.type === 'gift') {
-                    // score -= 5; // Penalty? Or just ignore.
+                if (item.y > canvas.height) {
+                    if (item.type === 'gift') {
+                        // score -= 5; // Penalty? Or just ignore.
+                    }
+                    items.splice(i, 1);
                 }
-                items.splice(i, 1);
-            }
-        });
+            });
         }
 
         function draw() {
