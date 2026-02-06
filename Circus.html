@@ -217,7 +217,7 @@
 
         function initGame() {
             score = 0;
-            speed = 5;
+            speed = 3.5; // Slowed down from 5
             obstacles = [];
             gameTime = 0;
             player.y = groundY - player.h;
@@ -297,7 +297,7 @@
                     obs.passed = true;
                     score += (obs.type === 'hoop' ? 20 : 10);
                     scoreEl.innerText = score;
-                    speed += 0.05;
+                    speed += 0.02; // Slower ramp up
                 }
             });
 
@@ -318,10 +318,11 @@
                 ctx.fillRect(i - (gameTime / 10 % 40), groundY, 40, 40);
             }
 
-            // Player (Circus Charlie)
-            ctx.fillStyle = '#4ade80';
-            ctx.shadowBlur = 10; ctx.shadowColor = '#4ade80';
-            ctx.fillRect(player.x, player.y, player.w, player.h);
+            // Player (Cute Lion 🦁)
+            ctx.font = `${player.h}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.fillText('🦁', player.x + player.w / 2, player.y + player.h);
+
 
             // Obstacles
             obstacles.forEach(obs => {
