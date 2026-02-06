@@ -381,19 +381,17 @@
 
         function update() {
             if (!gameActive) return;
-        #
-        }
 
-        // Swing logic
-        swingAngle += 0.02 * speed * swingDir;
-        if (swingAngle > Math.PI / 4) swingDir = -1;
-        if (swingAngle < -Math.PI / 4) swingDir = 1;
+            // Swing logic
+            swingAngle += 0.02 * speed * swingDir;
+            if (swingAngle > Math.PI / 4) swingDir = -1;
+            if (swingAngle < -Math.PI / 4) swingDir = 1;
 
-        // Simple horizontal movement for now or swing
-        currentBlock.x = CANVAS_WIDTH / 2 + Math.sin(swingAngle) * (CANVAS_WIDTH / 2.5) - currentBlock.w / 2;
+            // Simple horizontal movement for now or swing
+            currentBlock.x = CANVAS_WIDTH / 2 + Math.sin(swingAngle) * (CANVAS_WIDTH / 2.5) - currentBlock.w / 2;
 
-        draw();
-        requestAnimationFrame(update);
+            draw();
+            requestAnimationFrame(update);
         }
 
         function draw() {
