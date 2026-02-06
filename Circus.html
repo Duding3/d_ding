@@ -364,6 +364,7 @@
         function gameOver() {
             gameActive = false;
             msgEl.innerText = "GAME OVER";
+            msgEl.style.display = 'block'; // Ensure message is visible on Game Over
             overlay.style.display = 'flex';
             if (score > bestScore) {
                 bestScore = score;
