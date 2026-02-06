@@ -227,11 +227,11 @@
         const gameOverScreen = document.getElementById('gameOverScreen');
         const finalScoreEl = document.getElementById('finalScore');
 
-        // 게임 상수
-        const GRAVITY = 0.5;
+        // 게임 상수 (속도 느리게 조정)
+        const GRAVITY = 0.35;
         const MAX_CHARGE = 60;
-        const MIN_JUMP = -8;
-        const MAX_JUMP = -18;
+        const MIN_JUMP = -6;
+        const MAX_JUMP = -14;
         const PLAYER_SIZE = 30;
         const PLATFORM_HEIGHT = 15;
 
@@ -256,11 +256,11 @@
             platforms = [];
             generateInitialPlatforms();
 
-            // 플레이어를 시작 발판 위에 정확히 배치 (ground가 아닌 시작 발판)
-            const startPlatform = platforms[1]; // index 0은 ground, index 1이 시작 발판
+            // 플레이어를 바닥(ground) 위에 배치
+            const groundPlatform = platforms[0]; // index 0이 ground
             player = {
-                x: startPlatform.x + startPlatform.width / 2 - PLAYER_SIZE / 2,
-                y: startPlatform.y - PLAYER_SIZE,
+                x: canvas.width / 2 - PLAYER_SIZE / 2,
+                y: groundPlatform.y - PLAYER_SIZE,
                 vx: 0,
                 vy: 0,
                 width: PLAYER_SIZE,
@@ -311,7 +311,7 @@
                 width: width,
                 height: PLATFORM_HEIGHT,
                 type: isMoving ? 'moving' : 'static',
-                moveSpeed: isMoving ? (1 + Math.random() * 1.5) * (Math.random() < 0.5 ? 1 : -1) : 0,
+                moveSpeed: isMoving ? (0.5 + Math.random() * 1) * (Math.random() < 0.5 ? 1 : -1) : 0,
                 originalX: x
             });
         }
@@ -718,8 +718,9 @@
             }
             if (camera.y < 0) camera.y = 0;
 
-            // 게임오버 체크 - 바닥 발판 아래로 떨어지면
-            if (player.y > canvas.height) {
+            // 게임오버 체크 - 카메라 화면 아래로 떨어지면
+            const screenY = player.y + camera.y;
+            if (screenY > canvas.height + 50) {
                 endGame();
             }
 
