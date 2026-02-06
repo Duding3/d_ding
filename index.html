@@ -12,8 +12,9 @@
     <header>
         <h1>🎮 JiHye Mini-Game</h1>
         <p>냥냥?!</p>
-        <button id="refresh-btn" class="refresh-btn">
-            <i class="fas fa-sync-alt"></i> 페이지 새로고침
+        
+        <button id="update-refresh-btn" class="update-refresh-btn">
+            <i class="fas fa-sync-alt"></i> 빠른 업뎃용 새로고침
         </button>
     </header>
 
@@ -50,8 +51,11 @@
     </footer>
 
     <script>
-        document.getElementById('refresh-btn').addEventListener('click', function() {
-            location.reload(true); // 캐시를 무시하고 새로고침 시도
+        // 캐시를 무시하고 페이지를 새로 불러오는 로직
+        document.getElementById('update-refresh-btn').addEventListener('click', function() {
+            // URL 뒤에 현재 시간을 붙여서 브라우저가 새로운 페이지로 인식하게 강제함
+            const currentUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            window.location.href = currentUrl + '?update=' + new Date().getTime();
         });
     </script>
 
