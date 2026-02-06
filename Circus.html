@@ -198,7 +198,7 @@
         let score = 0;
         let bestScore = localStorage.getItem('circusBest') || 0;
         let groundY = 0;
-        let player = { x: 50, y: 0, w: 30, h: 40, vy: 0, jumping: false };
+        let player = { x: 50, y: 0, w: 30, h: 40, vy: 0, jumping: false, jumpCount: 0 };
         let obstacles = [];
         let nextObstacleTime = 0;
         let gameTime = 0;
@@ -231,7 +231,7 @@
         }
 
         function spawnObstacle() {
-            const types = ['hoop', 'ball', 'fire', 'cactus'];
+            const types = ['hoop', 'ball', 'fire', 'cactus', 'eagle'];
             const type = types[Math.floor(Math.random() * types.length)];
             const obs = {
                 x: canvas.width + 50,
@@ -239,9 +239,10 @@
                 w: type === 'hoop' ? 40 : 35,
                 h: type === 'hoop' ? 85 : 35,
                 passed: false,
-                emoji: type === 'fire' ? '🔥' : (type === 'cactus' ? '🌵' : '⚽')
+                emoji: type === 'fire' ? '🔥' : (type === 'cactus' ? '🌵' : (type === 'eagle' ? '🦅' : '⚽'))
             };
             if (type === 'hoop') obs.y = groundY - 95;
+            else if (type === 'eagle') obs.y = groundY - 110; // High flying eagle
             else obs.y = groundY - 35;
 
             obstacles.push(obs);
@@ -260,12 +261,13 @@
         function update() {
             // Gravity - Slowed down for floatier jump
             if (player.jumping) {
-                player.vy += 0.3; // Slower gravity (was 0.45)
+                player.vy += 0.22; // Even slower gravity (was 0.3)
                 player.y += player.vy;
                 if (player.y > groundY - player.h) {
                     player.y = groundY - player.h;
                     player.jumping = false;
                     player.vy = 0;
+                    player.jumpCount = 0; // Reset jump count
                 }
             }
 
@@ -371,9 +373,10 @@
         }
 
         function jump() {
-            if (!player.jumping && gameActive) {
+            if (gameActive && player.jumpCount < 2) {
                 player.jumping = true;
-                player.vy = -7; // Slower jump power (was -9)
+                player.vy = -6; // Slower jump power (was -7)
+                player.jumpCount++;
             }
         }
 
