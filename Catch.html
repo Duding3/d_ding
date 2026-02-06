@@ -302,6 +302,16 @@
                 // 폭탄은 특정 높이(150) 이하에서만 보이도록 (급습 효과)
                 if (item.type === 'bomb' && item.y < 150) return;
 
+                // 반짝임 효과 (페이크 변신 시)
+                if (item.sparkle > 0) {
+                    ctx.save();
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#fff';
+                    ctx.font = '30px Arial';
+                    ctx.fillText('✨', item.x + item.w / 2, item.y + item.h / 2);
+                    ctx.restore();
+                }
+
                 ctx.fillText(item.emoji, item.x + item.w / 2, item.y + item.h / 2 + 10);
             });
         }

@@ -33,7 +33,9 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: calc(var(--unit) * 0.8);
+            gap: calc(var(--unit) * 1.5);
+            /* Improved spacing from 0.8 */
+            padding-top: calc(var(--unit) * 1);
             position: relative;
             width: 100%;
             max-width: 500px;
@@ -82,7 +84,8 @@
         .grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
+            gap: 15px;
+            margin-top: calc(var(--unit) * 0.5);
             perspective: 1000px;
             padding: 10px;
         }
