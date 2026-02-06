@@ -203,28 +203,35 @@
             box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
         }
 
-        .pause-btn {
+        .drop-btn {
             position: fixed;
             bottom: 20px;
             right: 20px;
-            width: 50px;
-            height: 50px;
-            background: var(--main-color);
+            width: 80px;
+            height: 80px;
+            background: rgba(239, 68, 68, 0.1);
             color: #fff;
-            border: none;
+            border: 2px solid rgba(239, 68, 68, 0.1);
             border-radius: 50%;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.2rem;
-            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+            font-size: 1.5rem;
             z-index: 100;
             transition: all 0.2s;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .pause-btn:active {
+        .drop-btn:active {
             transform: scale(0.9);
+            background: rgba(239, 68, 68, 0.2);
+        }
+
+        .drop-btn i {
+            opacity: 0.1;
+            /* Subtle icon */
         }
     </style>
 </head>
@@ -261,8 +268,8 @@
             <input type="range" id="opacitySlider" min="30" max="100" value="100">
         </div>
 
-        <button id="pause-btn" class="pause-btn" onclick="event.stopPropagation(); togglePause()">
-            <i id="pause-icon" class="fas fa-pause"></i>
+        <button id="drop-btn" class="drop-btn" onclick="event.stopPropagation(); handleTap()">
+            <i class="fas fa-arrow-down"></i>
         </button>
     </div>
 
@@ -281,7 +288,6 @@
         canvas.height = CANVAS_HEIGHT;
 
         let gameActive = false;
-        let isPaused = false;
         let score = 0;
         let highScore = localStorage.getItem('stackHighScore') || 0;
         highScoreEl.innerText = highScore;
@@ -303,8 +309,6 @@
             score = 0;
             cameraY = 0;
             speed = 1.2;
-            isPaused = false;
-            updatePauseUI();
             newBlock();
         }
 
@@ -322,7 +326,7 @@
         }
 
         function handleTap() {
-            if (!gameActive || isPaused) return;
+            if (!gameActive) return;
 
             const prev = blocks[blocks.length - 1];
             const dropX = currentBlock.x;
@@ -376,18 +380,20 @@
         }
 
         function update() {
-            if (!gameActive || isPaused) return;
+            if (!gameActive) return;
+        #
+        }
 
-            // Swing logic
-            swingAngle += 0.02 * speed * swingDir;
-            if (swingAngle > Math.PI / 4) swingDir = -1;
-            if (swingAngle < -Math.PI / 4) swingDir = 1;
+        // Swing logic
+        swingAngle += 0.02 * speed * swingDir;
+        if (swingAngle > Math.PI / 4) swingDir = -1;
+        if (swingAngle < -Math.PI / 4) swingDir = 1;
 
-            // Simple horizontal movement for now or swing
-            currentBlock.x = CANVAS_WIDTH / 2 + Math.sin(swingAngle) * (CANVAS_WIDTH / 2.5) - currentBlock.w / 2;
+        // Simple horizontal movement for now or swing
+        currentBlock.x = CANVAS_WIDTH / 2 + Math.sin(swingAngle) * (CANVAS_WIDTH / 2.5) - currentBlock.w / 2;
 
-            draw();
-            requestAnimationFrame(update);
+        draw();
+        requestAnimationFrame(update);
         }
 
         function draw() {
@@ -429,31 +435,19 @@
             ctx.restore();
         }
 
-        function togglePause() {
-            if (!gameActive) return;
-            isPaused = !isPaused;
-            updatePauseUI();
-            if (!isPaused) requestAnimationFrame(update);
-        }
-
-        function updatePauseUI() {
-            const icon = document.getElementById('pause-icon');
-            icon.className = isPaused ? 'fas fa-play' : 'fas fa-pause';
-        }
-
         // Opacity
         document.getElementById('opacitySlider').oninput = (e) => {
-            document.body.opacity = e.target.value / 100;
+            document.body.style.opacity = e.target.value / 100;
         };
 
-        // Keyboard support
+        // Keyboard support (Spacebar for drop)
         window.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
                 e.preventDefault();
                 if (!gameActive) {
                     startGame();
                 } else {
-                    togglePause();
+                    handleTap();
                 }
             }
         });
