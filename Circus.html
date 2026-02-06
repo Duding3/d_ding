@@ -319,13 +319,19 @@
                 ctx.fillRect(i - (gameTime / 10 % 40), groundY, 40, 40);
             }
 
-            // Player (Bright Clown 🤡 with Neon Aura)
-            ctx.shadowBlur = 20;
-            ctx.shadowColor = '#ffff00'; // Bright Yellow glow
+            // Player (Bright Clown 🤡 with Neon Aura - Solidified)
+            ctx.shadowBlur = 25;
+            ctx.shadowColor = '#ffff00';
+            ctx.fillStyle = '#ffff00'; // Solid backing color
+            ctx.beginPath();
+            ctx.arc(player.x + player.w / 2, player.y + player.h / 2, player.w / 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.shadowBlur = 0;
             ctx.font = `${player.h * 1.2}px Arial`;
             ctx.textAlign = 'center';
             ctx.fillText('🤡', player.x + player.w / 2, player.y + player.h);
-            ctx.shadowBlur = 0;
+
 
 
             // Obstacles
