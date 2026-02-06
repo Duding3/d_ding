@@ -465,7 +465,7 @@
         const startScreen = document.getElementById('start-screen');
         const opacitySlider = document.getElementById('opacitySlider');
 
-        const colors = [null, '#4ade80', '#fbbf24', '#3b82f6', '#f472b6', '#ef4444', '#a855f7', '#06b6d4'];
+        const colors = [null, '#4ade80', '#fbbf24', '#3b82f6', '#f472b6', '#ef4444', '#a855f7', '#06b6d4', '#777'];
         let isGameOver = false;
         let gameStarted = false; // 🌟 게임 시작 여부 플래그
         let dropCounter = 0; let dropInterval = 800; let lastTime = 0; let bag = []; let calculatedUnit = 20;
@@ -579,6 +579,23 @@
             }
             updateStats();
         }
+        function spawnGarbage() {
+            // Shift all rows up
+            arena.shift();
+            // Create a garbage row with one random hole
+            const row = new Array(arena[0].length).fill(8); // Index 8 is gray
+            const hole = Math.floor(Math.random() * arena[0].length);
+            row[hole] = 0;
+            arena.push(row);
+
+            // If player is now colliding, it's game over
+            if (gameStarted && collide(arena, player)) {
+                isGameOver = true;
+                gameStarted = false;
+                document.getElementById('finalScore').innerText = player.score;
+                document.getElementById('game-over-screen').style.display = 'flex';
+            }
+        }
         function updateStats() {
             document.getElementById('score').innerText = player.score;
             // 최고 스코어 업데이트
@@ -594,11 +611,13 @@
                 overlay.classList.add('show');
                 setTimeout(() => overlay.classList.remove('show'), 600);
 
-                // 게임판 초기화 로직 삭제됨 (사용자 요청)
+                // Add garbage line on level up
+                spawnGarbage();
             }
             player.level = newLevel;
             document.getElementById('level').innerText = player.level;
-            dropInterval = Math.max(80, 800 - (player.level - 1) * 110);
+            // More aggressive speed scaling (starts at 800, reduces by 130 per level, min 50ms)
+            dropInterval = Math.max(50, 800 - (player.level - 1) * 130);
         }
         function playerDrop() { player.pos.y++; if (collide(arena, player)) { player.pos.y--; merge(arena, player); playerReset(); arenaSweep(); } dropCounter = 0; }
         function merge(arena, player) { player.matrix.forEach((row, y) => { row.forEach((value, x) => { if (value !== 0) arena[y + player.pos.y][x + player.pos.x] = value; }); }); }
