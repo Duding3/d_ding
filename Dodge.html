@@ -304,6 +304,12 @@
 
         let keys = {};
 
+        // Fixed Timestep Loop Variables
+        let lastTime = 0;
+        let accumulator = 0;
+        const step = 1000 / 60; // 60 FPS (16.67ms)
+        const stepSeconds = step / 1000; // Convert to seconds for calculations
+
         function spawnBullet() {
             if (!gameActive) return;
             const side = Math.floor(Math.random() * 4);
@@ -376,7 +382,9 @@
             particles = [];
             overlay.style.display = 'none';
             lastItemSpawn = 0;
-            requestAnimationFrame(update);
+            lastTime = 0;
+            accumulator = 0;
+            requestAnimationFrame(gameLoop);
         }
 
         function gameOver() {
@@ -394,10 +402,31 @@
             }
         }
 
-        function update(timestamp) {
+        function gameLoop(timestamp) {
             if (!gameActive) return;
 
-            score += 1 / 60;
+            if (!lastTime) lastTime = timestamp;
+            let deltaTime = timestamp - lastTime;
+            lastTime = timestamp;
+
+            // Limit deltaTime to prevent spiraling (e.g. tab backgrounded)
+            if (deltaTime > 100) deltaTime = 100;
+
+            accumulator += deltaTime;
+
+            while (accumulator >= step) {
+                update();
+                accumulator -= step;
+            }
+
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function update() {
+            if (!gameActive) return;
+
+            score += stepSeconds;
             scoreEl.innerText = score.toFixed(1) + 's';
 
             // Exponential Spawn Rate: Extremely slow density increase (Score/120)
@@ -423,7 +452,7 @@
 
             // Move bullets
             bullets.forEach((b, i) => {
-                b.time += 0.016;
+                b.time += stepSeconds;
                 if (b.type === 'sine') {
                     const perpX = -b.baseVy;
                     const perpY = b.baseVx;
@@ -500,14 +529,11 @@
 
             // Update particles
             particles.forEach((p, i) => {
-                p.x += p.vx;
-                p.y += p.vy;
+                p.x += p.vx * stepSeconds * 60; // Normalize to 60 FPS equivalent
+                p.y += p.vy * stepSeconds * 60;
                 p.life -= 0.02;
                 if (p.life <= 0) particles.splice(i, 1);
             });
-
-            draw();
-            requestAnimationFrame(update);
         }
 
         function draw() {

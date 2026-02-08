@@ -470,6 +470,8 @@
         let gameStarted = false; // 🌟 게임 시작 여부 플래그
         let dropCounter = 0; let dropInterval = 800; let lastTime = 0; let bag = []; let calculatedUnit = 20;
         let highScore = localStorage.getItem('tetrisHighScore') || 0; // 로드된 최고 스코어
+        let garbageTimer = 0; // Timer for garbage spawning
+        let garbageInterval = 15000; // Initial garbage spawn interval (15 seconds)
         document.getElementById('highScore').innerText = highScore;
 
         function resizeGame() {
@@ -493,6 +495,8 @@
             isGameOver = false;
             startScreen.style.display = 'none'; // 시작 화면 숨김
             document.getElementById('game-over-screen').style.display = 'none';
+            garbageTimer = 0; // Reset garbage timer
+            garbageInterval = 15000; // Reset to initial interval
             playerReset();
             updateStats();
             update();
@@ -604,7 +608,7 @@
                 localStorage.setItem('tetrisHighScore', highScore);
                 document.getElementById('highScore').innerText = highScore;
             }
-            const newLevel = Math.floor(player.score / 150) + 1;
+            const newLevel = Math.floor(player.score / 100) + 1; // Faster level-up: 150 -> 100
             if (newLevel > player.level) {
                 // 레벨업 애니메이션
                 const overlay = document.getElementById('levelUpOverlay');
@@ -613,6 +617,9 @@
 
                 // Add garbage line on level up
                 spawnGarbage();
+
+                // Update garbage spawn rate based on level
+                garbageInterval = Math.max(3000, 15000 - (player.level - 1) * 1000); // Faster with higher level
             }
             player.level = newLevel;
             document.getElementById('level').innerText = player.level;
@@ -642,7 +649,18 @@
         function update(time = 0) {
             if (!gameStarted) { draw(); return; }
             const deltaTime = time - lastTime; lastTime = time;
-            if (!isGameOver) { handleInput(deltaTime); dropCounter += deltaTime; if (dropCounter > dropInterval) playerDrop(); }
+            if (!isGameOver) {
+                handleInput(deltaTime);
+                dropCounter += deltaTime;
+                if (dropCounter > dropInterval) playerDrop();
+
+                // Garbage spawning timer
+                garbageTimer += deltaTime;
+                if (garbageTimer > garbageInterval) {
+                    spawnGarbage();
+                    garbageTimer = 0;
+                }
+            }
             draw(); requestAnimationFrame(update);
         }
 

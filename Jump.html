@@ -1297,6 +1297,16 @@
             // Rising water mechanic
             waterLevel -= waterRiseSpeed; // Water rises (Y decreases)
 
+            // Camera following logic for water
+            // If camera moves up (camera.y increases), water should follow to stay visible at bottom
+            // Screen Bottom World Y = canvas.height - camera.y
+            const screenBottomWorldY = canvas.height - camera.y;
+
+            // If water is below the screen bottom (plus small buffer), pull it up
+            if (waterLevel > screenBottomWorldY) {
+                waterLevel = screenBottomWorldY;
+            }
+
             // Check if player touches water (world coordinates)
             const playerBottom = player.y + player.height;
             if (playerBottom >= waterLevel) {

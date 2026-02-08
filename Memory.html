@@ -136,8 +136,20 @@
         }
 
         .card.matched {
+            transform: rotateY(180deg);
+            /* Explicitly keep flipped */
             animation: matchPop 0.5s ease-out forwards;
             pointer-events: none;
+            /* Ensure matched cards stay visible and highlighted */
+            opacity: 1 !important;
+            z-index: 10;
+        }
+
+        /* Keep the highlight on the back face of matched cards */
+        .card.matched .card-back {
+            box-shadow: 0 0 15px var(--main-color);
+            border-color: var(--main-color);
+            background: linear-gradient(135deg, rgba(244, 114, 182, 0.4) 0%, rgba(244, 114, 182, 0.2) 100%);
         }
 
         @keyframes matchPop {
@@ -147,13 +159,11 @@
 
             50% {
                 transform: rotateY(180deg) scale(1.1);
-                box-shadow: 0 0 20px var(--main-color);
             }
 
             100% {
                 transform: rotateY(180deg) scale(1);
                 opacity: 1;
-                /* Keep matched cards fully visible */
             }
         }
 
@@ -385,7 +395,9 @@
                 flippedCards = [];
                 isLock = false;
 
-                if (matchedPairs === emojis.length) win();
+                if (matchedPairs === emojis.length) {
+                    setTimeout(win, 1000); // 1초 뒤 승리 화면 (카드를 볼 시간 제공)
+                }
             } else {
                 setTimeout(() => {
                     c1.classList.remove('flipped');
