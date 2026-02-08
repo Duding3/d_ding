@@ -302,6 +302,12 @@
 
         const BLOCK_HEIGHT = 40;
 
+        // Fixed Timestep Loop Variables
+        let lastTime = 0;
+        let accumulator = 0;
+        const step = 1000 / 60; // 60 FPS (16.67ms)
+        const stepSeconds = step / 1000; // Convert to seconds for calculations
+
         function init() {
             blocks = [];
             baseBlock.y = CANVAS_HEIGHT - 60;
@@ -309,15 +315,25 @@
             score = 0;
             cameraY = 0;
             speed = 0.6;
+            lastTime = 0;
+            accumulator = 0;
             newBlock();
         }
 
         function newBlock() {
             const prev = blocks[blocks.length - 1];
-            // Dynamic width scaling: Max width decreases as score increases
-            const maxWidth = Math.max(60, 220 - Math.floor(score / 5) * 15);
-            const minWidth = Math.max(30, 80 - Math.floor(score / 10) * 5);
-            const nextW = minWidth + Math.random() * (maxWidth - minWidth);
+
+            let nextW;
+            // 25% chance of super slim block for surprise!
+            if (Math.random() < 0.25) {
+                // Slim block: 30-60px
+                nextW = 30 + Math.random() * 30;
+            } else {
+                // Normal block with dynamic scaling
+                const maxWidth = Math.max(70, 220 - Math.floor(score / 5) * 15);
+                const minWidth = Math.max(40, 90 - Math.floor(score / 10) * 5);
+                nextW = minWidth + Math.random() * (maxWidth - minWidth);
+            }
 
             currentBlock = {
                 x: 0,
@@ -328,6 +344,21 @@
             };
             swingAngle = -Math.PI / 4;
             swingDir = 1;
+        }
+
+        function checkStability(currentBlock, prevBlock) {
+            const currentCenter = currentBlock.x + currentBlock.w / 2;
+            const prevCenter = prevBlock.x + prevBlock.w / 2;
+            const offset = currentCenter - prevCenter; // Signed offset
+            const absOffset = Math.abs(offset);
+            const threshold = prevBlock.w * 0.5; // 50% overhang allowed
+
+            if (absOffset > threshold) {
+                return { state: 'topple', direction: offset > 0 ? 1 : -1 }; // Will fall
+            } else if (absOffset > prevBlock.w * 0.3) {
+                return { state: 'tilt', direction: offset > 0 ? 1 : -1 }; // Warning tilt
+            }
+            return { state: 'stable', direction: 0 };
         }
 
         function handleTap() {
@@ -344,8 +375,22 @@
                 return;
             }
 
-            // Preserving the random spawned size as requested
-            blocks.push({ ...currentBlock });
+            // Add block with physics properties
+            const placedBlock = { ...currentBlock };
+            blocks.push(placedBlock);
+
+            // Check stability
+            const stability = checkStability(placedBlock, prev);
+
+            if (stability.state === 'topple') {
+                // Block will fall
+                placedBlock.isToppling = true;
+                placedBlock.rotationSpeed = stability.direction * 0.02; // Initial rotation speed
+                placedBlock.fallSpeed = 0;
+            } else if (stability.state === 'tilt') {
+                // Slight tilt but stable
+                placedBlock.rotation = stability.direction * 0.05; // Small tilt angle
+            }
 
             score++;
             scoreEl.innerText = score;
@@ -363,7 +408,7 @@
             init();
             gameActive = true;
             overlay.style.display = 'none';
-            requestAnimationFrame(update);
+            requestAnimationFrame(gameLoop);
         }
 
         function gameOver() {
@@ -379,19 +424,69 @@
             }
         }
 
+        function updatePhysics() {
+            // Update all toppling blocks
+            for (let i = 1; i < blocks.length; i++) {
+                const block = blocks[i];
+
+                if (block.isToppling) {
+                    // Apply rotation
+                    block.rotation += block.rotationSpeed;
+                    block.rotationSpeed += 0.001; // Angular acceleration
+
+                    // Apply gravity
+                    block.fallSpeed += 0.5; // Gravity
+                    block.y += block.fallSpeed;
+
+                    // Horizontal drift based on rotation
+                    block.x += block.rotationSpeed * 10;
+
+                    // Check if block has fallen off screen
+                    if (block.y > CANVAS_HEIGHT + 100) {
+                        gameOver();
+                        return;
+                    }
+                }
+            }
+        }
+
+        function gameLoop(timestamp) {
+            if (!gameActive) return;
+
+            if (!lastTime) lastTime = timestamp;
+            let deltaTime = timestamp - lastTime;
+            lastTime = timestamp;
+
+            // Limit deltaTime to prevent spiraling
+            if (deltaTime > 100) deltaTime = 100;
+
+            accumulator += deltaTime;
+
+            while (accumulator >= step) {
+                update();
+                accumulator -= step;
+            }
+
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
         function update() {
             if (!gameActive) return;
 
-            // Swing logic
-            swingAngle += 0.02 * speed * swingDir;
-            if (swingAngle > Math.PI / 4) swingDir = -1;
-            if (swingAngle < -Math.PI / 4) swingDir = 1;
+            // Update swing only if currently swinging (before placement)
+            if (blocks[blocks.length - 1] && !blocks[blocks.length - 1].isToppling) {
+                swingAngle += swingDir * speed * stepSeconds;
+                if (swingAngle > Math.PI / 4 || swingAngle < -Math.PI / 4) {
+                    swingDir *= -1;
+                }
 
-            // Simple horizontal movement for now or swing
-            currentBlock.x = CANVAS_WIDTH / 2 + Math.sin(swingAngle) * (CANVAS_WIDTH / 2.5) - currentBlock.w / 2;
+                const swingRadius = CANVAS_WIDTH / 2 - currentBlock.w / 2;
+                currentBlock.x = (CANVAS_WIDTH / 2 - currentBlock.w / 2) + Math.sin(swingAngle) * swingRadius;
+            }
 
-            draw();
-            requestAnimationFrame(update);
+            // Update physics for toppling blocks
+            updatePhysics();
         }
 
         function draw() {
@@ -400,17 +495,27 @@
             ctx.save();
             ctx.translate(0, cameraY);
 
-            // Draw blocks
+            // Draw all blocks with rotation
             blocks.forEach((b, i) => {
-                ctx.fillStyle = b.color;
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = 'rgba(0,0,0,0.1)';
-                ctx.fillRect(b.x, b.y, b.w, b.h);
+                const y = b.y; // y is already in world coordinates, cameraY translation handles it
+                ctx.save();
 
-                // Bevel
-                ctx.fillStyle = 'rgba(255,255,255,0.2)';
-                ctx.fillRect(b.x, b.y, b.w, 5);
-                ctx.shadowBlur = 0;
+                // Apply rotation transform
+                if (b.rotation !== 0) {
+                    const centerX = b.x + b.w / 2;
+                    const centerY = y + b.h / 2;
+                    ctx.translate(centerX, centerY);
+                    ctx.rotate(b.rotation);
+                    ctx.translate(-centerX, -centerY);
+                }
+
+                ctx.fillStyle = b.color;
+                ctx.fillRect(b.x, y, b.w, b.h);
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(b.x, y, b.w, b.h);
+
+                ctx.restore();
             });
 
             // Draw current swinging block

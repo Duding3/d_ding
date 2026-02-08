@@ -116,10 +116,12 @@
             border-radius: 12px;
             box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
             width: 100%;
+            max-width: 400px;
             height: auto;
-            aspect-ratio: 400/600;
+            aspect-ratio: 2/3;
             display: block;
             background: rgba(0, 0, 0, 0.2);
+            margin: 0 auto;
         }
 
         .controls-info {
@@ -209,6 +211,8 @@
         .canvas-container {
             position: relative;
             width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
             overflow: hidden;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
         }
@@ -395,8 +399,8 @@
         // Physics Re-tuning for Faster Gameplay (v1.7 Hyper)
         const GRAVITY = 0.45; // 0.35 -> 0.45 (Snappier)
         const MAX_CHARGE = 60;
-        const MIN_JUMP = -12; // -8 -> -12 (Faster)
-        const MAX_JUMP = -20; // -13 -> -20 (Faster)
+        const MIN_JUMP = -8;  // Reduced from -12 for lower jumps
+        const MAX_JUMP = -14; // Reduced from -20 for lower jumps
         const PLAYER_SIZE = 30;
         const PLATFORM_HEIGHT = 15;
 
@@ -407,7 +411,9 @@
             platforms,
             camera,
             score,
-            maxHeight;
+            maxHeight,
+            waterLevel,
+            waterRiseSpeed;
         let highScore = Number(localStorage.getItem('jumpHighScore')) || 0; // 최고 스코어 로드
         let isCharging = false;
         let chargeTime = 0;
@@ -442,7 +448,8 @@
                 vy: 0,
                 width: PLAYER_SIZE,
                 height: PLAYER_SIZE,
-                onGround: true
+                onGround: true,
+                landingSquish: 0 // For bouncy landing effect
             }
 
                 ;
@@ -455,9 +462,11 @@
 
             camera = {
                 y: 0
-            }
+            };
 
-                ;
+            // Rising water - starts visible at bottom, rises slowly
+            waterLevel = canvas.height; // Start at bottom of screen
+            waterRiseSpeed = 0.15; // Faster rise (about 9px/sec)
         }
 
         function generateInitialPlatforms() {
@@ -499,15 +508,14 @@
                     const rand = Math.random();
                     if (rand < 0.1) type = 'red'; // 10% Red (Vanish)
                     else if (rand < 0.2) type = 'shiny'; // 10% Shiny (Trigger Move)
+                    else if (rand < 0.35) type = 'jumppad'; // 15% Jump Pad (High Jump)
                 }
             } else {
-                if (isMoving) type = 'moving'; // 움직이는 발판은 처음부터? Or also gated? 
-                // User asked "Block gimmicks add gradually after 5000m". 
-                // Assuming standard moving is okay, but user meant Red/Shiny. 
-                // Let's keep moving platforms, but gate the Red/Shiny.
+                if (isMoving) type = 'moving';
+                else if (Math.random() < 0.15) type = 'jumppad'; // 15% Jump Pad even in early game
             }
 
-            const width = 60 + Math.random() * 60;
+            const width = 40 + Math.random() * 40;  // Reduced from 60-120 to 40-80
             const x = Math.random() * (canvas.width - width);
 
             platforms.push({
@@ -518,7 +526,7 @@
                 height: PLATFORM_HEIGHT,
                 type: type,
                 type: type,
-                moveSpeed: (type === 'moving') ? (1.5 + Math.random() * 2.5) * (Math.random() < 0.5 ? 1 : -1) : 0, // 1.5 ~ 4.0
+                moveSpeed: (type === 'moving') ? (3.0 + Math.random() * 3.0) * (Math.random() < 0.5 ? 1 : -1) : 0, // Faster: 3.0 ~ 6.0
                 originalX: x,
                 decayTimer: 0,
                 maxDecay: 60, // 1 second approx
@@ -813,6 +821,12 @@
                     else ctx.fillStyle = '#ef4444';
                 } else if (p.type === 'shiny') {
                     ctx.fillStyle = '#fef08a';
+                } else if (p.type === 'jumppad') {
+                    // Jump Pad - Orange gradient
+                    const grad = ctx.createLinearGradient(p.x, screenY, p.x, screenY + p.height);
+                    grad.addColorStop(0, '#fb923c');
+                    grad.addColorStop(1, '#f97316');
+                    ctx.fillStyle = grad;
                 }
 
                 ctx.beginPath();
@@ -848,8 +862,33 @@
                     ctx.lineTo(p.x + p.width / 2, screenY + p.height / 2 + 4);
                     ctx.fill();
                 }
+
+                // Jump Pad - Spring icon
+                if (p.type === 'jumppad') {
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 2;
+                    const centerX = p.x + p.width / 2;
+                    const centerY = screenY + p.height / 2;
+                    // Spring coils
+                    ctx.beginPath();
+                    ctx.moveTo(centerX, centerY - 5);
+                    ctx.lineTo(centerX - 3, centerY - 2);
+                    ctx.lineTo(centerX + 3, centerY);
+                    ctx.lineTo(centerX - 3, centerY + 2);
+                    ctx.lineTo(centerX, centerY + 5);
+                    ctx.stroke();
+                    // Up arrow
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath();
+                    ctx.moveTo(centerX, centerY - 8);
+                    ctx.lineTo(centerX - 4, centerY - 4);
+                    ctx.lineTo(centerX + 4, centerY - 4);
+                    ctx.fill();
+                }
             });
         }
+
+
 
         function shadeColor(color, percent) {
             const num = parseInt(color.replace('#', ''), 16);
@@ -860,16 +899,50 @@
             return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 + (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 + (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
         }
 
+        function drawWater() {
+            // Convert world coordinates to screen coordinates
+            const screenWaterY = waterLevel + camera.y;
+
+            // Only draw if water is visible on screen
+            if (screenWaterY < canvas.height) {
+                // Water gradient
+                const gradient = ctx.createLinearGradient(0, screenWaterY, 0, canvas.height);
+                gradient.addColorStop(0, 'rgba(59, 130, 246, 0.6)');
+                gradient.addColorStop(1, 'rgba(37, 99, 235, 0.8)');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, screenWaterY, canvas.width, canvas.height - screenWaterY);
+
+                // Animated waves
+                ctx.strokeStyle = 'rgba(96, 165, 250, 0.8)';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                const time = Date.now() * 0.002;
+                for (let x = 0; x <= canvas.width; x += 5) {
+                    const y = screenWaterY + Math.sin(x * 0.05 + time) * 3;
+                    if (x === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+        }
+
         function drawSlime() {
             const screenY = player.y + camera.y;
             const centerX = player.x + player.width / 2;
             const centerY = screenY + player.height / 2;
 
-            // 차징 효과
+            // 차징 효과 + 착지 효과
             let squish = 1;
 
             if (isCharging && player.onGround) {
-                squish = 1 - (chargeTime / MAX_CHARGE) * 0.3;
+                squish = 1 - (chargeTime / MAX_CHARGE) * 0.4; // Increased from 0.3 for more squish
+            }
+
+            // 착지 시 띠용 효과 (Landing bounce)
+            if (player.landingSquish > 0) {
+                squish = Math.min(squish, 1 - player.landingSquish * 0.3);
+                player.landingSquish *= 0.85; // Decay
+                if (player.landingSquish < 0.05) player.landingSquish = 0;
             }
 
             // 슬라임 그림자
@@ -956,8 +1029,7 @@
                 ctx.fillRect(barX + 1, barY + 1, (barWidth - 2) * chargePercent, barHeight - 2);
 
                 // 원형 이펙트도 유지
-                ctx.strokeStyle = `rgba(74, 222, 128, $ {
-                        chargePercent
+                ctx.strokeStyle = `rgba(74, 222, 128, ${chargePercent
                     })`;
                 ctx.lineWidth = 2;
                 ctx.beginPath();
@@ -1010,7 +1082,20 @@
             // 수평 이동
             player.x += player.vx;
 
-            // 좌우 벽 충돌
+            // 좌우 화면 밖으로 나가면 게임오버
+            if (player.x + player.width < 0 || player.x > canvas.width) {
+                endGame();
+                return;
+            }
+
+            // 화면 아래로 떨어지면 게임오버 (이미 지나온 발판으로 떨어지는 경우)
+            const playerScreenY = player.y + camera.y;
+            if (playerScreenY > canvas.height + 50) {
+                endGame();
+                return;
+            }
+
+            // 좌우 벽 충돌 (게임오버 전에 멈추기)
             if (player.x < 0) player.x = 0;
             if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
 
@@ -1040,12 +1125,24 @@
                         player.onGround = true;
                         landedOnPlatform = p;
 
+                        // 착지 시 띠용 효과 추가 (Landing bounce effect)
+                        const landingSpeed = Math.abs(player.vy);
+                        if (landingSpeed > 5) {
+                            player.landingSquish = Math.min(landingSpeed / 15, 1);
+                        }
+
                         // 안전한 착지 높이 업데이트
                         // Red Platform doesn't count as safe? Maybe it does for a second.
                         // But if it vanishes, it's unsafe. 
                         // Let's only update highestLandedY if it's NOT red.
                         if (p.type !== 'red' && p.y < highestLandedY) {
                             highestLandedY = p.y;
+                        }
+
+                        // Jump Pad Boost!
+                        if (p.type === 'jumppad') {
+                            player.vy = -18; // Super jump! (normal jump is -12)
+                            player.onGround = false; // Immediately launch
                         }
 
                         // Shiny Trigger
@@ -1196,6 +1293,15 @@
             if (-highestPlatformY + canvas.height < maxHeight + 500) {
                 addPlatform(maxHeight + 500);
             }
+
+            // Rising water mechanic
+            waterLevel -= waterRiseSpeed; // Water rises (Y decreases)
+
+            // Check if player touches water (world coordinates)
+            const playerBottom = player.y + player.height;
+            if (playerBottom >= waterLevel) {
+                endGame();
+            }
         }
 
         function update() {
@@ -1337,9 +1443,10 @@
             drawBackground();
 
             // Draw Slime behind platforms? No, front.
-            // Canvas layering: Background -> Platforms -> Slime -> Score
+            // Canvas layering: Background -> Platforms -> Water -> Slime -> Score
 
             drawPlatforms();
+            drawWater(); // Draw water before slime
             drawSlime();
             // drawScore(); // DOM HUD used
         }
@@ -1424,8 +1531,8 @@
                 }
             }
 
-            if (e.code === 'ArrowLeft') player.vx = -7; // 5 -> 7
-            if (e.code === 'ArrowRight') player.vx = 7;
+            if (e.code === 'ArrowLeft') player.vx = -5; // 7 -> 5 (Slower)
+            if (e.code === 'ArrowRight') player.vx = 5; // 7 -> 5 (Slower)
         });
 
         document.addEventListener('keyup', (e) => {
@@ -1472,7 +1579,7 @@
         }
 
         btnLeft.addEventListener('touchstart', (e) => {
-            e.preventDefault(); player.vx = -7;
+            e.preventDefault(); player.vx = -5;
         });
 
         btnLeft.addEventListener('touchend', (e) => {
@@ -1480,7 +1587,7 @@
         });
 
         btnRight.addEventListener('touchstart', (e) => {
-            e.preventDefault(); player.vx = 7;
+            e.preventDefault(); player.vx = 5;
         });
 
         btnRight.addEventListener('touchend', (e) => {
@@ -1503,7 +1610,7 @@
 
         // Mouse support for testing on desktop
         btnLeft.addEventListener('mousedown', (e) => {
-            player.vx = -7;
+            player.vx = -5;
         });
 
         btnLeft.addEventListener('mouseup', (e) => {
@@ -1515,7 +1622,7 @@
         });
 
         btnRight.addEventListener('mousedown', (e) => {
-            player.vx = 7;
+            player.vx = 5;
         });
 
         btnRight.addEventListener('mouseup', (e) => {

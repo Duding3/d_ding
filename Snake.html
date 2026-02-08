@@ -296,6 +296,11 @@
         let worms = [];
         let wormSpawnTimer = 0;
 
+        // Fixed Timestep Loop Variables
+        let accumulator = 0;
+        const step = 1000 / 60; // 60 FPS (16.67ms)
+        const stepSeconds = step / 1000;
+
         document.getElementById('highScore').innerText = highScore;
 
         function initCanvas() {
@@ -321,6 +326,8 @@
             gameActive = true;
             nextMove = { dx: 1, dy: 0 }; // Initial direction
             dx = 1; dy = 0;
+            accumulator = 0;
+            lastTime = 0;
             requestAnimationFrame(gameLoop);
         }
 
@@ -352,11 +359,24 @@
         function gameLoop(time) {
             if (!gameActive) return;
 
-            if (time - lastTime > speed) {
-                lastTime = time;
-                update(time);
-                draw();
+            if (!lastTime) lastTime = time;
+            let deltaTime = time - lastTime;
+
+            // Limit deltaTime to prevent spiraling
+            if (deltaTime > 100) deltaTime = 100;
+
+            accumulator += deltaTime;
+
+            // Fixed timestep update for consistent game logic
+            while (accumulator >= step) {
+                if (time - lastTime >= speed) {
+                    update(time);
+                    draw();
+                    lastTime = time;
+                }
+                accumulator -= step;
             }
+
             requestAnimationFrame(gameLoop);
         }
 
@@ -489,14 +509,18 @@
             if (e.key === 'ArrowRight') handleInput(1, 0);
         });
 
-        document.getElementById('btn-up').onclick = () => handleInput(0, -1);
-        document.getElementById('btn-down').onclick = () => handleInput(0, 1);
-        document.getElementById('btn-left').onclick = () => handleInput(-1, 0);
-        document.getElementById('btn-right').onclick = () => handleInput(1, 0);
+
+        // Commented out - buttons don't exist in HTML
+        // document.getElementById('btn-up').onclick = () => handleInput(0, -1);
+        // document.getElementById('btn-down').onclick = () => handleInput(0, 1);
+        // document.getElementById('btn-left').onclick = () => handleInput(-1, 0);
+        // document.getElementById('btn-right').onclick = () => handleInput(1, 0);
+
 
         // Touch events for mobile buttons
         const bindBtn = (id, fn) => {
             const el = document.getElementById(id);
+            if (!el) return; // Skip if element doesn't exist
             el.addEventListener('touchstart', (e) => { e.preventDefault(); fn(); });
             el.onclick = fn;
         };
