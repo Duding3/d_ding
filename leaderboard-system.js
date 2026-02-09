@@ -30,12 +30,13 @@
     return new Promise((resolve, reject) => {
       const existing = document.querySelector('script[src="' + src + '"]');
       if (existing) {
-        if (existing.dataset.loaded === "1") {
+        // If the script tag already exists in HTML, treat it as usable immediately.
+        // Waiting for a new "load" event here can hang because the event may have already fired.
+        if (existing.dataset.loaded === "1" || existing.readyState === "loaded" || existing.readyState === "complete") {
           resolve();
           return;
         }
-        existing.addEventListener("load", () => resolve(), { once: true });
-        existing.addEventListener("error", () => reject(new Error("Failed to load: " + src)), { once: true });
+        resolve();
         return;
       }
 
@@ -49,24 +50,6 @@
       script.onerror = () => reject(new Error("Failed to load: " + src));
       document.head.appendChild(script);
     });
-  }
-
-  async function probeDatabaseUrl(url) {
-    if (!url) return false;
-    const target = url.replace(/\/+$/, "") + "/.json";
-    try {
-      const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
-      const timer = controller ? setTimeout(() => controller.abort(), 3000) : null;
-      const res = await fetch(target, {
-        method: "GET",
-        signal: controller ? controller.signal : undefined
-      });
-      if (timer) clearTimeout(timer);
-      // 200/401/403 are considered reachable. 404 means wrong DB URL/instance.
-      return res.status === 200 || res.status === 401 || res.status === 403;
-    } catch (err) {
-      return false;
-    }
   }
 
   async function ensureFirebase() {
@@ -85,13 +68,6 @@
       firebaseReady = Boolean(window.firebase && window.firebase.apps && window.firebase.apps.length > 0);
       if (firebaseReady) {
         initAuth();
-        const app = window.firebase.apps[0];
-        const dbUrl = app && app.options ? app.options.databaseURL : "";
-        const ok = await probeDatabaseUrl(dbUrl);
-        if (!ok) {
-          firebaseDisabledReason = "Realtime Database URL is unreachable";
-          firebaseReady = false;
-        }
       }
     } catch (err) {
       firebaseReady = false;
