@@ -308,9 +308,9 @@
         const opacitySlider = document.getElementById('opacitySlider');
 
         // Game Constants
-        let GAME_SPEED_START = 8;
-        let GAME_SPEED_MAX = 30;
-        let SPEED_INCREMENT = 0.0006;
+        let GAME_SPEED_START = 10;
+        let GAME_SPEED_MAX = 36;
+        let SPEED_INCREMENT = 0.0011;
         let GRAVITY = 0.6;
         let JUMP_FORCE = -10;
         let GROUND_Y = 0;
@@ -446,8 +446,8 @@
                     this.width = 40;
                     this.height = 30;
                     const hTier = Math.random();
-                    if (hTier < 0.4) this.y = GROUND_Y - 40;
-                    else if (hTier < 0.8) this.y = GROUND_Y - 65;
+                    if (hTier < 0.65) this.y = GROUND_Y - 40;
+                    else if (hTier < 0.9) this.y = GROUND_Y - 65;
                     else this.y = GROUND_Y - 80;
                     this.color = '#acacac';
                 }
@@ -584,15 +584,15 @@
 
         function spawnObstacle(dt) {
             spawnCounter += dt * 16.67;
-            const spawnInterval = Math.max(500, 2000 - gameSpeed * 50);
+            const spawnInterval = Math.max(320, 1500 - gameSpeed * 60);
 
-            if (spawnCounter > spawnInterval || Math.random() < 0.005 * dt) {
+            if (spawnCounter > spawnInterval || Math.random() < 0.01 * dt) {
                 if (obstacles.length > 0) {
                     const lastObstacle = obstacles[obstacles.length - 1];
-                    if (canvas.width - lastObstacle.x < 250 + (gameSpeed * 10)) return;
+                    if (canvas.width - lastObstacle.x < 170 + (gameSpeed * 7)) return;
                 }
                 const roll = Math.random();
-                if (score > 300 && roll > 0.85) obstacles.push(new Obstacle('bird'));
+                if (score > 120 && roll > 0.7) obstacles.push(new Obstacle('bird'));
                 else if (roll > 0.5) obstacles.push(new Obstacle('cactusLarge'));
                 else obstacles.push(new Obstacle('cactusSmall'));
                 spawnCounter = 0;

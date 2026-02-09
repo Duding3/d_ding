@@ -480,18 +480,6 @@
       info.style.margin = "0 0 16px";
       info.style.opacity = "0.92";
 
-      const input = document.createElement("input");
-      input.type = "text";
-      input.maxLength = 12;
-      input.placeholder = "이름 입력";
-      input.value = (getCurrentUser() && getCurrentUser().displayName) || localStorage.getItem(NAME_KEY) || "";
-      input.style.width = "100%";
-      input.style.padding = "12px";
-      input.style.borderRadius = "10px";
-      input.style.border = "1px solid rgba(255,255,255,0.2)";
-      input.style.background = "rgba(255,255,255,0.08)";
-      input.style.color = "#fff";
-
       const identity = document.createElement("p");
       identity.style.margin = "10px 0 0";
       identity.style.fontSize = "0.9rem";
@@ -502,17 +490,6 @@
       btnWrap.style.gap = "10px";
       btnWrap.style.marginTop = "14px";
 
-      const saveBtn = document.createElement("button");
-      saveBtn.textContent = "기록 저장";
-      saveBtn.style.flex = "1";
-      saveBtn.style.padding = "12px";
-      saveBtn.style.border = "none";
-      saveBtn.style.borderRadius = "10px";
-      saveBtn.style.background = "#f59e0b";
-      saveBtn.style.color = "#111827";
-      saveBtn.style.fontWeight = "700";
-      saveBtn.style.cursor = "pointer";
-
       const skipBtn = document.createElement("button");
       skipBtn.textContent = "닫기";
       skipBtn.style.flex = "1";
@@ -522,92 +499,50 @@
       skipBtn.style.background = "transparent";
       skipBtn.style.color = "#fff";
       skipBtn.style.cursor = "pointer";
-
-      const authBtn = document.createElement("button");
-      authBtn.style.width = "100%";
-      authBtn.style.marginTop = "10px";
-      authBtn.style.padding = "10px";
-      authBtn.style.border = "1px solid rgba(255,255,255,0.28)";
-      authBtn.style.borderRadius = "10px";
-      authBtn.style.background = "rgba(255,255,255,0.07)";
-      authBtn.style.color = "#fff";
-      authBtn.style.cursor = "pointer";
-
-      btnWrap.appendChild(saveBtn);
       btnWrap.appendChild(skipBtn);
       box.appendChild(title);
       box.appendChild(info);
-      box.appendChild(input);
       box.appendChild(identity);
-      box.appendChild(authBtn);
       box.appendChild(btnWrap);
       wrap.appendChild(box);
       document.body.appendChild(wrap);
 
       makeConfetti(wrap);
       playFanfare();
-      setTimeout(() => input.focus(), 80);
 
       const close = (saved) => {
         wrap.remove();
         resolve(saved);
       };
 
-      const syncIdentityUi = () => {
-        const user = getCurrentUser();
-        if (user) {
-          identity.textContent = `Google 로그인: ${user.displayName || "사용자"}`;
-          authBtn.textContent = "Google 로그아웃";
-          input.value = user.displayName || input.value;
-          input.disabled = true;
-          input.style.opacity = "0.7";
-        } else {
-          identity.textContent = "Google 로그인 시 계정 이름으로 저장됩니다.";
-          authBtn.textContent = "Google 로그인";
-          input.disabled = false;
-          input.style.opacity = "1";
-        }
-      };
-      syncIdentityUi();
-
-      saveBtn.addEventListener("click", async () => {
-        const name = sanitizeName(input.value);
-        try {
-          await saveScore(gameId, name, score);
-          close(true);
-        } catch (err) {
-          if (err && err.code === "auth-required") {
-            identity.textContent = "랭킹 저장은 Google 로그인 사용자만 가능합니다.";
-            return;
-          }
-          if (err && err.code === "firebase-unavailable") {
-            identity.textContent = "서버 연결 후 다시 시도해주세요. (현재 저장 불가)";
-            return;
-          }
-          identity.textContent = "저장 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
-        }
-      });
-
-      input.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") saveBtn.click();
-      });
-
       skipBtn.addEventListener("click", () => close(false));
-      authBtn.addEventListener("click", async () => {
-        authBtn.disabled = true;
-        try {
-          if (getCurrentUser()) await signOutUser();
-          else await signInWithGoogle();
-          syncIdentityUi();
-        } catch (err) {
-          identity.textContent = "Google 로그인 처리 중 오류가 발생했습니다.";
-        } finally {
-          authBtn.disabled = false;
-        }
-      });
       wrap.addEventListener("click", (e) => {
         if (e.target === wrap) close(false);
       });
+
+      (async () => {
+        const user = getCurrentUser();
+        if (user) {
+          identity.textContent = `자동 등록 중... (${user.displayName || "Google 사용자"})`;
+        } else {
+          identity.textContent = "로그인 정보 확인 중...";
+        }
+
+        try {
+          await saveScore(gameId, "", score);
+          const savedUser = getCurrentUser();
+          const savedName = (savedUser && savedUser.displayName) || "Google 사용자";
+          identity.textContent = `자동 등록 완료: ${savedName}`;
+        } catch (err) {
+          if (err && err.code === "auth-required") {
+            identity.textContent = "Google 로그인 사용자만 자동 등록됩니다.";
+          } else if (err && err.code === "firebase-unavailable") {
+            identity.textContent = "서버 연결 문제로 자동 등록에 실패했습니다.";
+          } else {
+            identity.textContent = "자동 등록 중 오류가 발생했습니다.";
+          }
+        }
+      })();
     });
   }
 
