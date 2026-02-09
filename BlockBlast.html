@@ -858,6 +858,14 @@
                 highScoreEl.innerText = highScore;
             }
 
+            overlay.innerHTML = `
+                <div class="game-over-text" style="font-size: 3rem; margin-bottom: 20px; text-shadow: 0 0 20px rgba(239, 68, 68, 0.6);">GAME OVER</div>
+                <div class="final-score" style="font-size: 1.5rem; margin-bottom: 30px;">최종 점수: <span style="color: var(--main-color);">${score}</span></div>
+                <p style="color: #aaa; margin-bottom: 30px;">더 이상 배치할 수 없습니다!</p>
+                <button class="start-btn" onclick="startGame()">다시 시작</button>
+            `;
+            overlay.style.display = 'flex'; // Show immediately!
+
             checkRanking(score);
         }
 
@@ -984,21 +992,11 @@
         const saveRankBtn = document.getElementById('save-rank-btn');
 
         function checkRanking(finalScore) {
-            if (finalScore <= 0) {
-                overlay.innerHTML = `
-                    <div class="game-over-text" style="font-size: 3rem; margin-bottom: 20px; text-shadow: 0 0 20px rgba(239, 68, 68, 0.6);">GAME OVER</div>
-                    <div class="final-score" style="font-size: 1.5rem; margin-bottom: 30px;">최종 점수: <span style="color: var(--main-color);">${score}</span></div>
-                    <p style="color: #aaa; margin-bottom: 30px;">더 이상 배치할 수 없습니다!</p>
-                    <button class="start-btn" onclick="startGame()">다시 시작</button>
-                `;
-                overlay.style.display = 'flex';
-                return;
-            }
+            if (finalScore <= 0) return; // Already showing game over
 
             const gameId = 'BlockBlast';
             if (typeof database === 'undefined') {
                 console.error("Firebase Database not initialized.");
-                overlay.style.display = 'flex';
                 return;
             }
 
@@ -1009,18 +1007,9 @@
 
                 if (rankings.length < 3 || finalScore > rankings[rankings.length - 1].score) {
                     showRankingModal();
-                } else {
-                    overlay.innerHTML = `
-                        <div class="game-over-text" style="font-size: 3rem; margin-bottom: 20px; text-shadow: 0 0 20px rgba(239, 68, 68, 0.6);">GAME OVER</div>
-                        <div class="final-score" style="font-size: 1.5rem; margin-bottom: 30px;">최종 점수: <span style="color: var(--main-color);">${score}</span></div>
-                        <p style="color: #aaa; margin-bottom: 30px;">더 이상 배치할 수 없습니다!</p>
-                        <button class="start-btn" onclick="startGame()">다시 시작</button>
-                    `;
-                    overlay.style.display = 'flex';
                 }
             }).catch((error) => {
                 console.error("Firebase error:", error);
-                overlay.style.display = 'flex';
             });
         }
 

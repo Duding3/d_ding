@@ -623,6 +623,7 @@
                 isGameOver = true;
                 gameStarted = false;
                 document.getElementById('finalScore').innerText = player.score;
+                document.getElementById('game-over-screen').style.display = 'flex'; // Show immediately!
                 checkRanking(player.score);
             }
         }
@@ -717,6 +718,7 @@
                 isGameOver = true;
                 gameStarted = false;
                 document.getElementById('finalScore').innerText = player.score;
+                document.getElementById('game-over-screen').style.display = 'flex'; // Show immediately!
                 checkRanking(player.score);
             }
         }
@@ -840,15 +842,11 @@
         const gameOverScreen = document.getElementById('game-over-screen');
 
         function checkRanking(finalScore) {
-            if (finalScore <= 0) {
-                gameOverScreen.style.display = 'flex';
-                return;
-            }
+            if (finalScore <= 0) return; // Already showing game over
 
             const gameId = 'Tetris';
             if (typeof database === 'undefined') {
                 console.error("Firebase Database not initialized.");
-                gameOverScreen.style.display = 'flex';
                 return;
             }
 
@@ -859,18 +857,15 @@
 
                 if (rankings.length < 3 || finalScore > rankings[rankings.length - 1].score) {
                     showRankingModal();
-                } else {
-                    gameOverScreen.style.display = 'flex';
                 }
             }).catch((error) => {
                 console.error("Firebase error:", error);
-                gameOverScreen.style.display = 'flex';
             });
         }
 
         function showRankingModal() {
             rankingModal.style.display = 'flex';
-            gameOverScreen.style.display = 'none';
+            document.getElementById('game-over-screen').style.display = 'none';
             rankingInput.value = '';
             rankingInput.focus();
         }

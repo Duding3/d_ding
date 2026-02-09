@@ -663,6 +663,7 @@
             ctx.fillStyle = '#202124';
             let w = dino.isDucking ? dino.widthDuck : dino.width;
             ctx.fillRect(dino.x + w - 12, dino.y + 5, 4, 4);
+            gameOverScreen.style.display = 'block'; // Show Game Over immediately!
             checkRanking(score);
         }
 
@@ -672,15 +673,11 @@
         const saveRankBtn = document.getElementById('save-rank-btn');
 
         function checkRanking(finalScore) {
-            if (finalScore <= 0) {
-                gameOverScreen.style.display = 'block';
-                return;
-            }
+            if (finalScore <= 0) return; // Already showing game over
 
             const gameId = 'Dino';
             if (typeof database === 'undefined') {
                 console.error("Firebase Database not initialized.");
-                gameOverScreen.style.display = 'block';
                 return;
             }
 
@@ -691,12 +688,10 @@
 
                 if (rankings.length < 3 || finalScore > rankings[rankings.length - 1].score) {
                     showRankingModal();
-                } else {
-                    gameOverScreen.style.display = 'block';
                 }
+                // No else, because gameOverScreen is already visible
             }).catch((error) => {
                 console.error("Firebase error:", error);
-                gameOverScreen.style.display = 'block';
             });
         }
 

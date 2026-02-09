@@ -743,6 +743,8 @@
         function gameOver() {
             gameActive = false;
             msg.innerText = "GAME OVER";
+            msg.style.display = 'block';
+            overlay.style.display = 'flex'; // Show immediately!
 
             if (score > highScore) {
                 highScore = score;
@@ -794,17 +796,11 @@
         const saveRankBtn = document.getElementById('save-rank-btn');
 
         function checkRanking(finalScore) {
-            if (finalScore <= 0) {
-                msg.style.display = 'block';
-                overlay.style.display = 'flex';
-                return;
-            }
+            if (finalScore <= 0) return; // Already showing game over
 
             const gameId = 'Snake';
             if (typeof database === 'undefined') {
                 console.error("Firebase Database not initialized.");
-                msg.style.display = 'block';
-                overlay.style.display = 'flex';
                 return;
             }
 
@@ -815,14 +811,9 @@
 
                 if (rankings.length < 3 || finalScore > rankings[rankings.length - 1].score) {
                     showRankingModal();
-                } else {
-                    msg.style.display = 'block';
-                    overlay.style.display = 'flex';
                 }
             }).catch((error) => {
                 console.error("Firebase error:", error);
-                msg.style.display = 'block';
-                overlay.style.display = 'flex';
             });
         }
 

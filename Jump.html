@@ -1582,7 +1582,8 @@
         function endGame() {
             gameOver = true;
             finalScoreEl.textContent = Math.floor(maxHeight);
-            document.querySelector('.hud-container').style.display = 'none'; // Hide HUD on Game Over
+            gameOverScreen.style.display = 'flex'; // Show Game Over immediately!
+            document.querySelector('.hud-container').style.display = 'none';
 
             checkRanking(Math.floor(maxHeight));
         }
@@ -1593,15 +1594,11 @@
         const saveRankBtn = document.getElementById('save-rank-btn');
 
         function checkRanking(finalScore) {
-            if (finalScore <= 0) {
-                gameOverScreen.style.display = 'flex';
-                return;
-            }
+            if (finalScore <= 0) return; // Already showing game over
 
             const gameId = 'Jump';
             if (typeof database === 'undefined') {
                 console.error("Firebase Database not initialized.");
-                gameOverScreen.style.display = 'flex';
                 return;
             }
 
@@ -1612,12 +1609,10 @@
 
                 if (rankings.length < 3 || finalScore > rankings[rankings.length - 1].score) {
                     showRankingModal();
-                } else {
-                    gameOverScreen.style.display = 'flex';
                 }
+                // No else, because gameOverScreen is already visible
             }).catch((error) => {
                 console.error("Firebase error:", error);
-                gameOverScreen.style.display = 'flex';
             });
         }
 
