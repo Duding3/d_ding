@@ -38,13 +38,13 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            transition: opacity 0.3s;
         }
 
         .game-header {
             width: 100%;
             display: flex;
             justify-content: center;
-            /* Center title */
             align-items: baseline;
             margin-bottom: 10px;
             position: relative;
@@ -119,7 +119,6 @@
 
         #start-screen {
             display: flex;
-            /* Initially visible via JS */
             flex-direction: column;
             align-items: center;
         }
@@ -194,7 +193,6 @@
             accent-color: var(--accent-color);
         }
 
-        /* Mobile controls overlay */
         .mobile-controls {
             display: none;
             position: absolute;
@@ -225,7 +223,6 @@
             height: 40%;
         }
 
-
         @media (max-width: 600px) {
             .mobile-controls {
                 display: block;
@@ -234,8 +231,6 @@
             .controls-hint {
                 display: none;
             }
-
-            /* Hide text hint on mobile */
         }
 
         #ranking-modal {
@@ -286,91 +281,88 @@
         #save-rank-btn:hover {
             opacity: 0.9;
         }
+    </style>
+</head>
 
-        #ranking-modal {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(32, 33, 36, 0.95);
-            padding: 30px;
-            border-radius: 12px;
-            text-align: center;
-            border: 2px solid var(--accent-color);
-            z-index: 30;
-            display: none;
-            /* Hidden by default */
-            flex-direction: column;
-            gap: 15px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-            min-width: 300px;
-        }
+<body>
+    <div id="game-wrapper">
+        <div class="game-header">
+            <h1>달려달려 <span class="version">v1.1</span></h1>
+            <button class="refresh-btn" onclick="location.reload()">새로고침</button>
+        </div>
+        <div id="game-container">
+            <canvas id="gameCanvas"></canvas>
+            <div class="ui-overlay">
+                <span class="high-score">HI <span id="highScoreVal">00000</span></span>
+                <span id="currentScoreVal">00000</span>
+            </div>
+            <div id="start-screen">
+                <button class="action-btn" id="start-btn">GAME START</button>
+            </div>
+            <div id="game-over-screen">
+                <h2>GAME OVER</h2>
+                <button id="restart-btn">
+                    <svg id="restart-icon" viewBox="0 0 24 24">
+                        <path
+                            d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
+                    </svg>
+                </button>
+            </div>
+            <div id="ranking-modal">
+                <h2>🏆 순위권 진입!</h2>
+                <p>축하합니다! 상위 3위에 들었습니다.</p>
+                <input type="text" id="ranking-input" placeholder="이름 입력 (최대 10자)" maxlength="10">
+                <button id="save-rank-btn">기록 저장</button>
+            </div>
+            <div class="mobile-controls">
+                <div class="touch-zone jump-zone" id="jumpZone"></div>
+                <div class="touch-zone duck-zone" id="duckZone"></div>
+            </div>
+        </div>
+        <div class="controls-section">
+            <div class="controls-hint">SPACE / ↑ : 점프 | ↓ : 숙이기</div>
+            <div class="slider-area">
+                <span class="slider-label">투명도</span>
+                <input type="range" id="opacitySlider" min="10" max="100" value="100">
+            </div>
+        </div>
+    </div>
 
-        #ranking-modal h2 {
-            margin: 0;
-            font-size: 1.8rem;
-            color: #ffd700;
-        }
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const highScoreEl = document.getElementById('highScoreVal');
+        const currentScoreEl = document.getElementById('currentScoreVal');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const startScreen = document.getElementById('start-screen');
+        const restartBtn = document.getElementById('restart-btn');
+        const startBtn = document.getElementById('start-btn');
+        const container = document.getElementById('game-container');
+        const wrapper = document.getElementById('game-wrapper');
+        const opacitySlider = document.getElementById('opacitySlider');
 
-        #ranking-input {
-            padding: 10px;
-            font-size: 1.2rem;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid var(--accent-color);
-            color: white;
-            border-radius: 4px;
-            text-align: center;
-        }
-
-        #save-rank-btn {
-            padding: 10px 20px;
-            font-size: 1.1rem;
-            background: var(--accent-color);
-            color: #202124;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        #save-rank-btn:hover {
-            opacity: 0.9;
-        }
-
-        </head><body><div id="game-wrapper"><div class="game-header"><h1>달려달려 <span class="version">v1.1</span></h1><button class="refresh-btn" onclick="location.reload()">새로고침</button></div><div id="game-container"><canvas id="gameCanvas"></canvas><div class="ui-overlay"><span class="high-score">HI <span id="highScoreVal">00000</span></span><span id="currentScoreVal">00000</span></div><div id="start-screen"><button class="action-btn" id="start-btn">GAME START</button></div><div id="game-over-screen"><h2>GAME OVER</h2><button id="restart-btn"><svg id="restart-icon" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" /></svg></button></div><div id="ranking-modal"><h2>🏆 순위권 진입 !</h2><p>축하합니다 ! 상위 3위에 들었습니다.</p><input type="text" id="ranking-input" placeholder="이름 입력 (최대 10자)" maxlength="10"><button id="save-rank-btn">기록 저장</button></div><div class="mobile-controls"><div class="touch-zone jump-zone" id="jumpZone"></div><div class="touch-zone duck-zone" id="duckZone"></div></div></div><div class="controls-section"><div class="controls-hint">SPACE / ↑ : 점프 | ↓ : 숙이기 </div><div class="slider-area"><span class="slider-label">투명도</span><input type="range" id="opacitySlider" min="10" max="100" value="100"></div></div></div><script>const canvas=document.getElementById('gameCanvas');
-        const ctx=canvas.getContext('2d');
-        const highScoreEl=document.getElementById('highScoreVal');
-        const currentScoreEl=document.getElementById('currentScoreVal');
-        const gameOverScreen=document.getElementById('game-over-screen');
-        const startScreen=document.getElementById('start-screen');
-        const restartBtn=document.getElementById('restart-btn');
-        const startBtn=document.getElementById('start-btn');
-        const container=document.getElementById('game-container');
-        const wrapper=document.getElementById('game-wrapper');
-        const opacitySlider=document.getElementById('opacitySlider');
-
-        // Game Constants - SLOWER SPEED
-        let GAME_SPEED_START=4; // Start very slow like original Chrome Dino
-        let GAME_SPEED_MAX=20;
-        let SPEED_INCREMENT=0.0003; // Very gradual speed increase
-
-        let GRAVITY=0.6;
-        let JUMP_FORCE=-10; // Adjusted for slower speed
-        let GROUND_Y=0;
+        // Game Constants
+        let GAME_SPEED_START = 4;
+        let GAME_SPEED_MAX = 20;
+        let SPEED_INCREMENT = 0.0003;
+        let GRAVITY = 0.6;
+        let JUMP_FORCE = -10;
+        let GROUND_Y = 0;
 
         // Game State
-        let gameSpeed=GAME_SPEED_START;
-        let score=0;
-        let highScore=localStorage.getItem('dinoHighScore') || 0;
-        let isGameOver=false;
-        let isPlaying=false;
-        let frame=0;
-        let obstacles=[];
-        let clouds=[];
-        let jumpReleased=true; // New flag for jump control
+        let gameSpeed = GAME_SPEED_START;
+        let score = 0;
+        let highScore = localStorage.getItem('dinoHighScore') || 0;
+        let isGameOver = false;
+        let isPlaying = false;
+        let frame = 0;
+        let obstacles = [];
+        let clouds = [];
+        let jumpReleased = true;
+        let keys = {};
 
         // Dino Object
-        const dino= {
+        const dino = {
             x: 50,
             y: 0,
             width: 44,
@@ -384,167 +376,118 @@
             color: '#acacac',
 
             draw() {
-                ctx.fillStyle=this.color;
-
-                let w=this.isDucking ? this.widthDuck: this.width;
-                let h=this.isDucking ? this.duckHeight: this.height;
+                ctx.fillStyle = this.color;
+                let w = this.isDucking ? this.widthDuck : this.width;
+                let h = this.isDucking ? this.duckHeight : this.height;
 
                 if (this.isDucking) {
                     ctx.fillRect(this.x, this.y, w, h);
-                    ctx.fillStyle='#202124';
+                    ctx.fillStyle = '#202124';
                     ctx.fillRect(this.x + w - 15, this.y + 5, 4, 4);
-                }
-
-                else {
+                } else {
                     ctx.fillRect(this.x, this.y, w, h);
-                    ctx.fillStyle='#202124';
+                    ctx.fillStyle = '#202124';
                     ctx.fillRect(this.x + w - 12, this.y + 5, 4, 4);
-                    ctx.fillStyle='#acacac';
+                    ctx.fillStyle = '#acacac';
                     ctx.fillRect(this.x + w - 10, this.y + 18, 6, 4);
                 }
 
-                if ( !this.isJumping) {
-                    ctx.fillStyle='#acacac';
-
-                    // Slower animation based on speed
-                    if (Math.floor(frame / (12 - gameSpeed / 2)) % 2===0) {
+                if (!this.isJumping) {
+                    ctx.fillStyle = '#acacac';
+                    if (Math.floor(frame / (12 - gameSpeed / 2)) % 2 === 0) {
                         ctx.fillRect(this.x + 5, this.y + h, 6, 4);
                         ctx.fillRect(this.x + w - 10, this.y + h, 6, 8);
-                    }
-
-                    else {
+                    } else {
                         ctx.fillRect(this.x + 5, this.y + h, 6, 8);
                         ctx.fillRect(this.x + w - 10, this.y + h, 6, 4);
                     }
-                }
-
-                else {
-                    ctx.fillStyle='#acacac';
+                } else {
+                    ctx.fillStyle = '#acacac';
                     ctx.fillRect(this.x + 5, this.y + h, 6, 4);
                     ctx.fillRect(this.x + w - 10, this.y + h, 6, 4);
                 }
-            }
-
-            ,
+            },
 
             update() {
-
-                // Jump Logic with Release Check
                 if ((keys['Space'] || keys['ArrowUp']) && jumpReleased) {
                     this.jump();
-                    jumpReleased=false; // Prevent continuous jump
-                }
-
-                else {
+                    jumpReleased = false;
+                } else {
                     if (this.isJumping && this.dy < -5 && !keys['Space'] && !keys['ArrowUp']) {
-                        this.dy+=3; // Variable jump height
+                        this.dy += 3;
                     }
                 }
 
                 if (keys['ArrowDown']) {
-                    this.isDucking=true;
-                    if (this.isJumping) this.dy+=2;
+                    this.isDucking = true;
+                    if (this.isJumping) this.dy += 2;
+                } else {
+                    this.isDucking = false;
                 }
 
-                else {
-                    this.isDucking=false;
-                }
-
-                this.y+=this.dy;
+                this.y += this.dy;
 
                 if (this.y + (this.isDucking ? this.duckHeight : this.height) < GROUND_Y) {
-                    this.dy+=GRAVITY;
-                    this.isJumping=true;
+                    this.dy += GRAVITY;
+                    this.isJumping = true;
+                } else {
+                    this.dy = 0;
+                    this.isJumping = false;
+                    this.y = GROUND_Y - (this.isDucking ? this.duckHeight : this.height);
                 }
-
-                else {
-                    this.dy=0;
-                    this.isJumping=false;
-                    this.y=GROUND_Y - (this.isDucking ? this.duckHeight : this.height);
-                    // jumpReleased logic is handled in keyup/touchend
-                }
-            }
-
-            ,
+            },
 
             jump() {
-                if ( !this.isJumping) {
-                    this.dy=JUMP_FORCE;
-                    this.isJumping=true;
+                if (!this.isJumping) {
+                    this.dy = JUMP_FORCE;
+                    this.isJumping = true;
                 }
             }
-        }
-
-        ;
+        };
 
         class Obstacle {
             constructor(type) {
-                this.type=type;
-                this.markedForDeletion=false;
-                this.x=canvas.width;
-
-                if (type==='cactusSmall') {
-                    this.width=20+Math.random() * 20;
-                    this.height=35+Math.random() * 10;
-                    this.y=GROUND_Y - this.height;
-                    this.color='#acacac';
-                }
-
-                else if (type==='cactusLarge') {
-                    this.width=30+Math.random() * 20;
-                    this.height=50+Math.random() * 10;
-                    this.y=GROUND_Y - this.height;
-                    this.color='#acacac';
-                }
-
-                else if (type==='bird') {
-                    this.width=40;
-                    this.height=30;
-                    const heightTier=Math.random();
-
-                    if (heightTier < 0.4) {
-                        this.y=GROUND_Y - 40;
-                    }
-
-                    else if (heightTier < 0.8) {
-                        this.y=GROUND_Y - 65;
-                    }
-
-                    else {
-                        this.y=GROUND_Y - 80;
-                    }
-
-                    this.color='#acacac';
-                    this.flapState=0;
+                this.type = type;
+                this.markedForDeletion = false;
+                this.x = canvas.width;
+                if (type === 'cactusSmall') {
+                    this.width = 20 + Math.random() * 20;
+                    this.height = 35 + Math.random() * 10;
+                    this.y = GROUND_Y - this.height;
+                    this.color = '#acacac';
+                } else if (type === 'cactusLarge') {
+                    this.width = 30 + Math.random() * 20;
+                    this.height = 50 + Math.random() * 10;
+                    this.y = GROUND_Y - this.height;
+                    this.color = '#acacac';
+                } else if (type === 'bird') {
+                    this.width = 40;
+                    this.height = 30;
+                    const hTier = Math.random();
+                    if (hTier < 0.4) this.y = GROUND_Y - 40;
+                    else if (hTier < 0.8) this.y = GROUND_Y - 65;
+                    else this.y = GROUND_Y - 80;
+                    this.color = '#acacac';
+                    this.flapState = 0;
                 }
             }
 
             update() {
-                this.x -=gameSpeed;
-                if (this.x + this.width < 0) this.markedForDeletion=true;
-                if (this.type==='bird' && frame % 15===0) this.flapState=this.flapState===0 ? 1: 0;
+                this.x -= gameSpeed;
+                if (this.x + this.width < 0) this.markedForDeletion = true;
+                if (this.type === 'bird' && frame % 15 === 0) this.flapState = this.flapState === 0 ? 1 : 0;
             }
 
             draw() {
-                ctx.fillStyle=this.color;
-
-                if (this.type==='bird') {
+                ctx.fillStyle = this.color;
+                if (this.type === 'bird') {
                     ctx.fillRect(this.x, this.y + 10, this.width, this.height - 10);
-
-                    if (this.flapState===0) {
-                        ctx.fillRect(this.x + 10, this.y, 10, 10);
-                    }
-
-                    else {
-                        ctx.fillRect(this.x + 10, this.y + 15, 10, 10);
-                    }
-
+                    if (this.flapState === 0) ctx.fillRect(this.x + 10, this.y, 10, 10);
+                    else ctx.fillRect(this.x + 10, this.y + 15, 10, 10);
                     ctx.fillRect(this.x - 5, this.y + 12, 5, 5);
-                }
-
-                else {
+                } else {
                     ctx.fillRect(this.x, this.y, this.width, this.height);
-                    ctx.fillStyle='#202124';
+                    ctx.fillStyle = '#202124';
                     ctx.fillRect(this.x + this.width / 2 - 2, this.y + 5, 4, this.height - 10);
                 }
             }
@@ -552,135 +495,109 @@
 
         class Cloud {
             constructor() {
-                this.x=canvas.width;
-                this.y=Math.random() * (canvas.height / 2);
-                this.width=60+Math.random() * 40;
-                this.height=20+Math.random() * 10;
-                this.speed=(gameSpeed * 0.1)+Math.random() * 0.2;
+                this.x = canvas.width;
+                this.y = Math.random() * (canvas.height / 2);
+                this.width = 60 + Math.random() * 40;
+                this.height = 20 + Math.random() * 10;
+                this.speed = (gameSpeed * 0.1) + Math.random() * 0.2;
             }
 
             update() {
-                this.x -=this.speed;
-                if (this.x + this.width < 0) this.x=canvas.width+Math.random() * 500;
+                this.x -= this.speed;
+                if (this.x + this.width < 0) this.x = canvas.width + Math.random() * 500;
             }
 
             draw() {
-                ctx.fillStyle='#3a3a3a';
+                ctx.fillStyle = '#3a3a3a';
                 ctx.fillRect(this.x, this.y, this.width, this.height);
                 ctx.fillRect(this.x + 10, this.y - 10, this.width / 2, 10);
             }
         }
 
         function init() {
-            canvas.width=container.clientWidth;
-            canvas.height=container.clientHeight;
-            GROUND_Y=canvas.height - 20;
-
-            highScoreEl.innerText=padScore(highScore);
-
-            clouds=[];
-
-            for (let i=0; i < 3; i++) {
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            GROUND_Y = canvas.height - 20;
+            highScoreEl.innerText = padScore(highScore);
+            clouds = [];
+            for (let i = 0; i < 3; i++) {
                 clouds.push(new Cloud());
-                clouds[i].x=Math.random() * canvas.width;
+                clouds[i].x = Math.random() * canvas.width;
             }
-
-            startScreen.style.display='flex';
+            startScreen.style.display = 'flex';
         }
 
         function startGame() {
-            startScreen.style.display='none';
+            startScreen.style.display = 'none';
             resetGame();
             animate();
         }
 
         function resetGame() {
-            gameSpeed=GAME_SPEED_START;
-            score=0;
-            isGameOver=false;
-            obstacles=[];
-            frame=0;
-            dino.y=GROUND_Y - dino.height;
-            dino.dy=0;
-            gameOverScreen.style.display='none';
-            isPlaying=true;
-            currentScoreEl.innerText="00000";
+            gameSpeed = GAME_SPEED_START;
+            score = 0;
+            isGameOver = false;
+            obstacles = [];
+            frame = 0;
+            dino.y = GROUND_Y - dino.height;
+            dino.dy = 0;
+            gameOverScreen.style.display = 'none';
+            isPlaying = true;
+            currentScoreEl.innerText = "00000";
         }
 
-        let keys= {}
+        window.addEventListener('keydown', e => {
+            keys[e.code] = true;
+            if (['Space', 'ArrowUp', 'ArrowDown'].includes(e.code)) e.preventDefault();
+        });
 
-        ;
+        window.addEventListener('keyup', e => {
+            keys[e.code] = false;
+            if (['Space', 'ArrowUp'].includes(e.code)) jumpReleased = true;
+        });
 
-        window.addEventListener('keydown', e=> {
-                keys[e.code]=true;
-                if (['Space', 'ArrowUp', 'ArrowDown'].includes(e.code)) e.preventDefault();
-            });
+        const jumpZone = document.getElementById('jumpZone');
+        const duckZone = document.getElementById('duckZone');
 
-        window.addEventListener('keyup', e=> {
-                keys[e.code]=false;
+        jumpZone.addEventListener('touchstart', e => {
+            e.preventDefault();
+            keys['Space'] = true;
+            if (jumpReleased) {
+                dino.jump();
+                jumpReleased = false;
+            }
+        });
 
-                // Reset jumpReleased on key up
-                if (['Space', 'ArrowUp'].includes(e.code)) {
-                    jumpReleased=true;
-                }
-            });
+        jumpZone.addEventListener('touchend', e => {
+            e.preventDefault();
+            keys['Space'] = false;
+            jumpReleased = true;
+        });
 
-        const jumpZone=document.getElementById('jumpZone');
-        const duckZone=document.getElementById('duckZone');
+        duckZone.addEventListener('touchstart', e => {
+            e.preventDefault();
+            keys['ArrowDown'] = true;
+        });
 
-        jumpZone.addEventListener('touchstart', (e)=> {
-                e.preventDefault();
-                keys['Space']=true;
+        duckZone.addEventListener('touchend', e => {
+            e.preventDefault();
+            keys['ArrowDown'] = false;
+        });
 
-                if (jumpReleased) {
-                    dino.jump();
-                    jumpReleased=false;
-                }
-            });
-
-        jumpZone.addEventListener('touchend', (e)=> {
-                e.preventDefault();
-                keys['Space']=false;
-                jumpReleased=true;
-            });
-
-        duckZone.addEventListener('touchstart', (e)=> {
-                e.preventDefault(); keys['ArrowDown']=true;
-            });
-
-        duckZone.addEventListener('touchend', (e)=> {
-                e.preventDefault(); keys['ArrowDown']=false;
-            });
-
-        // Opacity Slider
-        opacitySlider.addEventListener('input', (e)=> {
-                wrapper.style.opacity=e.target.value / 100;
-            });
+        opacitySlider.addEventListener('input', e => {
+            wrapper.style.opacity = e.target.value / 100;
+        });
 
         function spawnObstacle() {
-            if (frame % Math.floor(1200 / gameSpeed)===0 || Math.random() < 0.005) {
-
-                // Adjusted spawn rate
+            if (frame % Math.floor(1200 / gameSpeed) === 0 || Math.random() < 0.005) {
                 if (obstacles.length > 0) {
-                    const lastObstacle=obstacles[obstacles.length - 1];
-                    if (canvas.width - lastObstacle.x < 350 + (gameSpeed * 15)) return; // Increased safe distance
+                    const lastObstacle = obstacles[obstacles.length - 1];
+                    if (canvas.width - lastObstacle.x < 350 + (gameSpeed * 15)) return;
                 }
-
-                const typeRoll=Math.random();
-
-                if (score > 300 && typeRoll > 0.85) {
-                    // Birds appear later
-                    obstacles.push(new Obstacle('bird'));
-                }
-
-                else if (typeRoll > 0.5) {
-                    // 3:3:4 ratio roughly
-                    obstacles.push(new Obstacle('cactusLarge'));
-                }
-
-                else {
-                    obstacles.push(new Obstacle('cactusSmall'));
-                }
+                const roll = Math.random();
+                if (score > 300 && roll > 0.85) obstacles.push(new Obstacle('bird'));
+                else if (roll > 0.5) obstacles.push(new Obstacle('cactusLarge'));
+                else obstacles.push(new Obstacle('cactusSmall'));
             }
         }
 
@@ -689,130 +606,117 @@
         }
 
         function animate() {
-            if ( !isPlaying) return;
-
+            if (!isPlaying) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            ctx.strokeStyle='#535353';
-            ctx.lineWidth=2;
+            ctx.strokeStyle = '#535353';
+            ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(0, GROUND_Y);
             ctx.lineTo(canvas.width, GROUND_Y);
             ctx.stroke();
 
-            clouds.forEach(cloud=> {
-                    cloud.update(); cloud.draw();
-                });
+            clouds.forEach(cloud => {
+                cloud.update();
+                cloud.draw();
+            });
 
             dino.update();
             dino.draw();
-
             spawnObstacle();
 
-            for (let i=obstacles.length - 1; i >=0; i--) {
-                let obs=obstacles[i];
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                let obs = obstacles[i];
                 obs.update();
                 obs.draw();
-
-                const dinoW=dino.isDucking ? dino.widthDuck: dino.width;
-                const dinoH=dino.isDucking ? dino.duckHeight: dino.height;
-                const dinoY=dino.y;
-                const pad=6;
-
-                if (dino.x + pad < obs.x + obs.width - pad && dino.x + dinoW - pad > obs.x + pad && dinoY + pad < obs.y + obs.height - pad && dinoY + dinoH - pad > obs.y + pad) {
+                const dinoW = dino.isDucking ? dino.widthDuck : dino.width;
+                const dinoH = dino.isDucking ? dino.duckHeight : dino.height;
+                const pad = 6;
+                if (dino.x + pad < obs.x + obs.width - pad && dino.x + dinoW - pad > obs.x + pad && dino.y + pad < obs.y + obs.height - pad && dino.y + dinoH - pad > obs.y + pad) {
                     gameOver();
                 }
             }
 
-            obstacles=obstacles.filter(o=> !o.markedForDeletion);
+            obstacles = obstacles.filter(o => !o.markedForDeletion);
 
-            if (frame % 8===0) {
-                // Slower scoring
+            if (frame % 8 === 0) {
                 score++;
-                currentScoreEl.innerText=padScore(score);
-
+                currentScoreEl.innerText = padScore(score);
                 if (score > highScore) {
-                    highScore=score;
-                    highScoreEl.innerText=padScore(highScore);
+                    highScore = score;
+                    highScoreEl.innerText = padScore(highScore);
                     localStorage.setItem('dinoHighScore', highScore);
                 }
             }
 
-            if (gameSpeed < GAME_SPEED_MAX) gameSpeed+=SPEED_INCREMENT;
-
+            if (gameSpeed < GAME_SPEED_MAX) gameSpeed += SPEED_INCREMENT;
             frame++;
-            if ( !isGameOver) requestAnimationFrame(animate);
+            if (!isGameOver) requestAnimationFrame(animate);
         }
 
         function gameOver() {
-            isGameOver=true;
-            isPlaying=false;
-
-            ctx.fillStyle='#202124';
-            let w=dino.isDucking ? dino.widthDuck: dino.width;
+            isGameOver = true;
+            isPlaying = false;
+            ctx.fillStyle = '#202124';
+            let w = dino.isDucking ? dino.widthDuck : dino.width;
             ctx.fillRect(dino.x + w - 12, dino.y + 5, 4, 4);
-
             checkRanking(score);
         }
 
         // Ranking Logic
-        const rankingModal=document.getElementById('ranking-modal');
-        const rankingInput=document.getElementById('ranking-input');
-        const saveRankBtn=document.getElementById('save-rank-btn');
+        const rankingModal = document.getElementById('ranking-modal');
+        const rankingInput = document.getElementById('ranking-input');
+        const saveRankBtn = document.getElementById('save-rank-btn');
 
         function checkRanking(finalScore) {
-            const gameId='Dino';
-            const key='ranking_'+gameId;
-            let rankings=JSON.parse(localStorage.getItem(key)) || [];
-
-            rankings.sort((a, b)=> b.score - a.score);
-
+            const gameId = 'Dino';
+            const key = 'ranking_' + gameId;
+            let rankings = JSON.parse(localStorage.getItem(key)) || [];
+            rankings.sort((a, b) => b.score - a.score);
             if (rankings.length < 3 || finalScore > rankings[rankings.length - 1].score) {
                 if (finalScore > 0) {
                     showRankingModal();
                     return;
                 }
             }
-
-            gameOverScreen.style.display='block';
+            gameOverScreen.style.display = 'block';
         }
 
         function showRankingModal() {
-            rankingModal.style.display='flex';
-            gameOverScreen.style.display='none';
-            rankingInput.value='';
+            rankingModal.style.display = 'flex';
+            gameOverScreen.style.display = 'none';
+            rankingInput.value = '';
             rankingInput.focus();
         }
 
-        saveRankBtn.addEventListener('click', ()=> {
-                const name=rankingInput.value.trim() || '익명';
-                const gameId='Dino';
-                const key='ranking_' + gameId;
-                let rankings=JSON.parse(localStorage.getItem(key)) || [];
-
-                rankings.push({
-                    name: name, score: score, date: new Date().toLocaleDateString()
-                });
-            rankings.sort((a, b)=> b.score - a.score);
-            rankings=rankings.slice(0, 3);
-
+        saveRankBtn.addEventListener('click', () => {
+            const name = rankingInput.value.trim() || '익명';
+            const gameId = 'Dino';
+            const key = 'ranking_' + gameId;
+            let rankings = JSON.parse(localStorage.getItem(key)) || [];
+            rankings.push({ name: name, score: score, date: new Date().toLocaleDateString() });
+            rankings.sort((a, b) => b.score - a.score);
+            rankings = rankings.slice(0, 3);
             localStorage.setItem(key, JSON.stringify(rankings));
-
             alert('랭킹이 저장되었습니다!');
-            window.location.href='Ranking.html';
+            window.location.href = 'Ranking.html';
         });
 
-        restartBtn.addEventListener('click', ()=> {
-                resetGame(); animate();
-            });
+        restartBtn.addEventListener('click', () => {
+            resetGame();
+            animate();
+        });
+
         startBtn.addEventListener('click', startGame);
 
-        window.addEventListener('resize', ()=> {
-                canvas.width=container.clientWidth;
-                canvas.height=container.clientHeight;
-                GROUND_Y=canvas.height - 20;
-                dino.y=GROUND_Y - (dino.isDucking ? dino.duckHeight : dino.height);
-            });
+        window.addEventListener('resize', () => {
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            GROUND_Y = canvas.height - 20;
+            dino.y = GROUND_Y - (dino.isDucking ? dino.duckHeight : dino.height);
+        });
 
         init();
-        </script></body></html>
+    </script>
+</body>
+
+</html>
