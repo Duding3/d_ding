@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="app-version" content="2">
     <title>JiHye Mini-Games</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -12,15 +13,21 @@
 <body>
 
     <header>
-        <h1>🎮 JiHye Mini-Games</h1>
+        <h1>🎮 JiHye Mini-Games <span id="home-version-badge"></span></h1>
         <p>냥냥?! 아직 테스트중인 게임들 수정 ing</p>
 
-        <button id="update-refresh-btn" class="update-refresh-btn">
-            <i class="fas fa-sync-alt"></i> 새로고침
-        </button>
-        <a href="hall-of-fame.html" class="ranking-btn">
-            <i class="fas fa-crown"></i> 명예의 전당
-        </a>
+        <div class="home-header-actions">
+            <button id="update-refresh-btn" class="update-refresh-btn">
+                <i class="fas fa-sync-alt"></i> 새로고침
+            </button>
+            <a href="hall-of-fame.html" class="ranking-btn">
+                <i class="fas fa-crown"></i> 명예의 전당
+            </a>
+            <button id="home-auth-btn" class="ranking-btn auth-btn">
+                <i class="fab fa-google"></i> Google 로그인
+            </button>
+        </div>
+        <p id="home-auth-status" class="home-auth-status">로그인 상태 확인 중...</p>
     </header>
 
     <main class="game-container">
@@ -134,10 +141,55 @@
         <p>&copy; 2026 Jihye Mini-Games. All rights reserved.</p>
     </footer>
 
+    <script src="leaderboard-system.js"></script>
     <script>
+        const homeVersion = document.querySelector('meta[name="app-version"]')?.content || '1';
+        document.title = `JiHye Mini-Games v${homeVersion}`;
+        const versionBadge = document.getElementById('home-version-badge');
+        if (versionBadge) versionBadge.textContent = `v${homeVersion}`;
+
         document.getElementById('update-refresh-btn').addEventListener('click', function () {
             const currentUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
             window.location.href = currentUrl + '?update=' + new Date().getTime();
+        });
+
+        const homeAuthBtn = document.getElementById('home-auth-btn');
+        const homeAuthStatus = document.getElementById('home-auth-status');
+
+        function renderHomeAuth(user) {
+            if (!homeAuthBtn || !homeAuthStatus) return;
+            if (user) {
+                const name = user.displayName || 'Google 사용자';
+                homeAuthBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> 로그아웃';
+                homeAuthStatus.textContent = `로그인됨: ${name}`;
+            } else {
+                homeAuthBtn.innerHTML = '<i class="fab fa-google"></i> Google 로그인';
+                homeAuthStatus.textContent = '로그인되지 않음';
+            }
+        }
+
+        if (window.LeaderboardSystem) {
+            window.LeaderboardSystem.onAuthChange(renderHomeAuth);
+        } else if (homeAuthStatus) {
+            homeAuthStatus.textContent = '로그인 모듈 로드 실패';
+        }
+
+        homeAuthBtn?.addEventListener('click', async function () {
+            if (!window.LeaderboardSystem) return;
+            homeAuthBtn.disabled = true;
+            try {
+                if (window.LeaderboardSystem.getCurrentUser()) {
+                    await window.LeaderboardSystem.signOutUser();
+                } else {
+                    await window.LeaderboardSystem.signInWithGoogle();
+                }
+            } catch (e) {
+                if (homeAuthStatus) {
+                    homeAuthStatus.textContent = '로그인 처리 중 오류가 발생했습니다.';
+                }
+            } finally {
+                homeAuthBtn.disabled = false;
+            }
         });
     </script>
 

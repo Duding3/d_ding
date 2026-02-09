@@ -91,6 +91,12 @@ header h1 {
     text-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
+#home-version-badge {
+    font-size: 1rem;
+    color: #facc15;
+    vertical-align: middle;
+}
+
 header p {
     color: var(--text-muted);
     font-size: 1.1rem;
@@ -98,9 +104,16 @@ header p {
     letter-spacing: 0.05em;
 }
 
+.home-header-actions {
+    margin-top: 2rem;
+    display: inline-flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
 /* Update/Refresh Button */
 .update-refresh-btn {
-    margin-top: 2rem;
     background: rgba(255, 255, 255, 0.05);
     color: var(--text-main);
     border: 1px solid var(--glass-border);
@@ -126,8 +139,6 @@ header p {
 }
 
 .ranking-btn {
-    margin-top: 1rem; /* Space between buttons if stacked, or margins if inline */
-    margin-left: 10px;
     background: rgba(255, 215, 0, 0.1); /* Gold tint */
     color: #ffd700;
     border: 1px solid rgba(255, 215, 0, 0.3);
@@ -286,6 +297,24 @@ header p {
     transform: none;
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
     border-color: var(--glass-border);
+}
+
+.auth-btn {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.4);
+    color: #bfdbfe;
+}
+
+.auth-btn:hover {
+    background: rgba(59, 130, 246, 0.28);
+    border-color: rgba(96, 165, 250, 0.8);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.25);
+}
+
+.home-auth-status {
+    margin-top: 0.9rem;
+    color: var(--text-muted);
+    font-size: 0.95rem;
 }
 
 footer {
