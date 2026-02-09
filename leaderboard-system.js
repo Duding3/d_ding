@@ -547,8 +547,11 @@
   }
 
   async function checkAndCelebrate(gameId, score) {
+    if (!GAME_META[gameId]) return false;
     const normalized = normalizeScore(score);
     if (normalized === null) return false;
+    await ensureFirebase();
+    if (!getCurrentUser()) return false;
 
     const lockKey = "hof_checked_" + gameId + "_" + normalized;
     if (sessionStorage.getItem(lockKey) === "1") return false;

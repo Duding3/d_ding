@@ -195,10 +195,11 @@
 
         .mobile-controls {
             display: none;
-            position: absolute;
-            bottom: 20px;
-            left: 0;
-            width: 100%;
+            position: fixed;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+            width: min(100vw, 800px);
             height: auto;
             z-index: 100;
             padding: 0 20px;
@@ -241,6 +242,10 @@
         }
 
         @media (max-width: 600px) {
+            #game-wrapper {
+                padding-bottom: 130px;
+            }
+
             .mobile-controls {
                 display: flex;
             }
@@ -250,7 +255,7 @@
             }
 
             #game-container {
-                height: 350px;
+                height: 320px;
             }
         }
     </style>
@@ -280,10 +285,6 @@
                     </svg>
                 </button>
             </div>
-            <div class="mobile-controls">
-                <button class="mobile-btn btn-left" id="mobile-duck">숙이기</button>
-                <button class="mobile-btn btn-right" id="mobile-jump">점프</button>
-            </div>
         </div>
         <div class="controls-section">
             <div class="controls-hint">SPACE / ↑ : 점프 | ↓ : 숙이기</div>
@@ -292,6 +293,10 @@
                 <input type="range" id="opacitySlider" min="10" max="100" value="100">
             </div>
         </div>
+    </div>
+    <div class="mobile-controls">
+        <button class="mobile-btn btn-left" id="mobile-duck">숙이기</button>
+        <button class="mobile-btn btn-right" id="mobile-jump">점프</button>
     </div>
 
     <script>
@@ -308,9 +313,9 @@
         const opacitySlider = document.getElementById('opacitySlider');
 
         // Game Constants
-        let GAME_SPEED_START = 9;
-        let GAME_SPEED_MAX = 34;
-        let SPEED_INCREMENT = 0.0009;
+        let GAME_SPEED_START = 7;
+        let GAME_SPEED_MAX = 24;
+        let SPEED_INCREMENT = 0.00065;
         let GRAVITY = 0.6;
         let JUMP_FORCE = -10;
         let GROUND_Y = 0;
