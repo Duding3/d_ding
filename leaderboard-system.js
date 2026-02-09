@@ -178,6 +178,19 @@
     if (typeof callback !== "function") return () => {};
     authSubscribers.push(callback);
     callback(getCurrentUser());
+
+    // Trigger Firebase/Auth initialization so initial login state is restored
+    // even before any game-score API is called on the page.
+    ensureFirebase()
+      .then((ready) => {
+        if (!ready) return;
+        initAuth();
+        if (authSubscribers.includes(callback)) {
+          callback(getCurrentUser());
+        }
+      })
+      .catch(() => {});
+
     return () => {
       const idx = authSubscribers.indexOf(callback);
       if (idx >= 0) authSubscribers.splice(idx, 1);

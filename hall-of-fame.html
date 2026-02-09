@@ -164,6 +164,7 @@
             <button class="btn" id="refreshBtn"><i class="fas fa-sync-alt"></i> 새로고침</button>
         </div>
     </div>
+    <p class="admin-status" id="authStatus">로그인 상태 확인 중...</p>
 
     <section class="grid" id="rankingGrid"></section>
     <div class="admin-panel">
@@ -176,7 +177,10 @@
         const resetRankingBtn = document.getElementById("resetRankingBtn");
         const adminStatus = document.getElementById("adminStatus");
         const authBtn = document.getElementById("authBtn");
+        const authStatus = document.getElementById("authStatus");
         let autoRefreshHandle = null;
+        let cardsInitialized = false;
+        let initialLoadDone = false;
         const FALLBACK_META = {
             jump: { name: "슬라임 점프", unit: "m" },
             tetris: { name: "테트리스", unit: "" },
@@ -210,6 +214,7 @@
                 card.appendChild(ul);
                 grid.appendChild(card);
             }
+            cardsInitialized = true;
         }
 
         async function fillCard(gameId, gameMeta) {
@@ -223,6 +228,11 @@
                 top3 = await window.LeaderboardSystem.getTopScores(gameId, 3);
             }
             const unit = gameMeta.unit ? ` ${gameMeta.unit}` : "";
+            const previousRows = Array.from(ul.querySelectorAll(".rank-item")).map((node) => node.textContent || "");
+            const hasPreviousScore = previousRows.some((txt) => txt.includes("위") && !txt.includes("기록 없음") && !txt.includes("불러오는 중"));
+            if (hasPreviousScore && top3.length === 0) {
+                return;
+            }
 
             ul.innerHTML = "";
             for (let i = 0; i < 3; i++) {
@@ -238,10 +248,25 @@
             }
         }
 
+        async function warmupFirstLoad() {
+            if (initialLoadDone) return;
+            if (window.LeaderboardSystem && typeof window.LeaderboardSystem.ensureFirebase === "function") {
+                try {
+                    await window.LeaderboardSystem.ensureFirebase();
+                } catch (e) {
+                    // no-op
+                }
+            }
+            initialLoadDone = true;
+        }
+
         async function renderAll() {
+            await warmupFirstLoad();
             const meta = (window.LeaderboardSystem && window.LeaderboardSystem.GAME_META) || FALLBACK_META;
             const gameIds = Object.keys(meta);
-            renderCardsSkeleton(meta);
+            if (!cardsInitialized) {
+                renderCardsSkeleton(meta);
+            }
 
             for (const gameId of gameIds) {
                 try {
@@ -251,7 +276,9 @@
                     if (!card) continue;
                     const ul = card.querySelector(".rank-list");
                     if (!ul) continue;
-                    ul.innerHTML = `<li class="rank-item"><span><strong>오류</strong> <span class="muted">랭킹 로드 실패</span></span><span class="muted">-</span></li>`;
+                    if (!ul.children.length) {
+                        ul.innerHTML = `<li class="rank-item"><span><strong>오류</strong> <span class="muted">랭킹 로드 실패</span></span><span class="muted">-</span></li>`;
+                    }
                 }
             }
         }
@@ -261,10 +288,14 @@
             window.LeaderboardSystem.onAuthChange((user) => {
                 if (user) {
                     authBtn.textContent = `로그아웃 (${user.displayName || "Google"})`;
+                    authStatus.textContent = `로그인됨: ${user.displayName || "Google 사용자"}`;
                 } else {
                     authBtn.textContent = "Google 로그인";
+                    authStatus.textContent = "로그인되지 않음";
                 }
             });
+        } else if (authStatus) {
+            authStatus.textContent = "로그인 모듈 로드 실패";
         }
 
         authBtn.addEventListener("click", async () => {
@@ -338,6 +369,7 @@
 
         // Initial load when entering hall-of-fame
         refreshWithStamp();
+        window.addEventListener("load", refreshWithStamp, { once: true });
         startAutoRefresh();
 
         // Refresh again when returning from another tab/page
