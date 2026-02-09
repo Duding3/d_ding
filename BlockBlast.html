@@ -390,13 +390,74 @@
             }
         }
 
-        /* Particles */
         .particle {
             position: absolute;
             background: #fff;
             border-radius: 50%;
             pointer-events: none;
             z-index: 50;
+        }
+
+        #save-rank-btn:hover {
+            opacity: 0.9;
+        }
+
+        #ranking-modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(26, 26, 46, 0.95);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 250;
+            padding: 20px;
+            box-sizing: border-box;
+            border: 2px solid var(--main-color);
+            border-radius: 12px;
+            text-align: center;
+            gap: 15px;
+        }
+
+        #ranking-modal h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: #ffd700;
+        }
+
+        #ranking-modal p {
+            font-size: 1rem;
+            color: #fff;
+            margin: 0;
+        }
+
+        #ranking-input {
+            width: 80%;
+            padding: 10px;
+            font-size: 1.1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--main-color);
+            color: white;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        #save-rank-btn {
+            padding: 10px 20px;
+            font-size: 1.1rem;
+            background: var(--main-color);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #save-rank-btn:hover {
+            opacity: 0.9;
         }
     </style>
 </head>
@@ -426,6 +487,12 @@
                 <h2 id="msg" style="color: var(--main-color); margin-bottom: 10px;">블록블라스트</h2>
                 <p style="color: #aaa; margin-bottom: 20px; text-align: center;">블록을 배치해서<br>가로/세로 줄을 완성하세요!</p>
                 <button class="start-btn" onclick="startGame()">게임 시작</button>
+            </div>
+            <div id="ranking-modal">
+                <h2>🏆 순위권 진입!</h2>
+                <p>축하합니다! 상위 3위에 들었습니다.</p>
+                <input type="text" id="ranking-input" placeholder="이름 입력 (최대 10자)" maxlength="10">
+                <button id="save-rank-btn">기록 저장</button>
             </div>
         </div>
 
@@ -780,13 +847,14 @@
 
         function gameOver() {
             gameActive = false;
-            overlay.innerHTML = `
-                <div class="game-over-text" style="font-size: 3rem; margin-bottom: 20px; text-shadow: 0 0 20px rgba(239, 68, 68, 0.6);">GAME OVER</div>
-                <div class="final-score" style="font-size: 1.5rem; margin-bottom: 30px;">최종 점수: <span style="color: var(--main-color);">${score}</span></div>
-                <p style="color: #aaa; margin-bottom: 30px;">더 이상 배치할 수 없습니다!</p>
-                <button class="start-btn" onclick="startGame()">다시 시작</button>
-            `;
-            overlay.style.display = 'flex';
+
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('blockBlastHigh', highScore);
+                highScoreEl.innerText = highScore;
+            }
+
+            checkRanking(score);
         }
 
         function showPreview(x, y) {
@@ -904,6 +972,57 @@
         // 투명도
         document.getElementById('opacitySlider').addEventListener('input', (e) => {
             document.body.style.opacity = e.target.value / 100;
+        });
+
+        // Ranking Logic
+        const rankingModal = document.getElementById('ranking-modal');
+        const rankingInput = document.getElementById('ranking-input');
+        const saveRankBtn = document.getElementById('save-rank-btn');
+
+        function checkRanking(finalScore) {
+            const gameId = 'BlockBlast';
+            const key = 'ranking_' + gameId;
+            let rankings = JSON.parse(localStorage.getItem(key)) || [];
+
+            rankings.sort((a, b) => b.score - a.score);
+
+            if (rankings.length < 3 || finalScore > rankings[rankings.length - 1].score) {
+                if (finalScore > 0) {
+                    showRankingModal();
+                    return;
+                }
+            }
+
+            overlay.innerHTML = `
+                <div class="game-over-text" style="font-size: 3rem; margin-bottom: 20px; text-shadow: 0 0 20px rgba(239, 68, 68, 0.6);">GAME OVER</div>
+                <div class="final-score" style="font-size: 1.5rem; margin-bottom: 30px;">최종 점수: <span style="color: var(--main-color);">${score}</span></div>
+                <p style="color: #aaa; margin-bottom: 30px;">더 이상 배치할 수 없습니다!</p>
+                <button class="start-btn" onclick="startGame()">다시 시작</button>
+            `;
+            overlay.style.display = 'flex';
+        }
+
+        function showRankingModal() {
+            rankingModal.style.display = 'flex';
+            overlay.style.display = 'none';
+            rankingInput.value = '';
+            rankingInput.focus();
+        }
+
+        saveRankBtn.addEventListener('click', () => {
+            const name = rankingInput.value.trim() || '익명';
+            const gameId = 'BlockBlast';
+            const key = 'ranking_' + gameId;
+            let rankings = JSON.parse(localStorage.getItem(key)) || [];
+
+            rankings.push({ name: name, score: score, date: new Date().toLocaleDateString() });
+            rankings.sort((a, b) => b.score - a.score);
+            rankings = rankings.slice(0, 3);
+
+            localStorage.setItem(key, JSON.stringify(rankings));
+
+            alert('랭킹이 저장되었습니다!');
+            window.location.href = 'Ranking.html';
         });
 
         // 초기 보드 렌더링

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JiHye Mini-Game Rankings</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            color: #4ade80;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+        }
+
+        .subtitle {
+            color: #a0a0a0;
+            font-size: 1.1rem;
+        }
+
+        .ranking-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .game-rank-card {
+            background: #2d2d2d;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border: 1px solid #3d3d3d;
+        }
+
+        .game-rank-card h2 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #4ade80;
+            font-size: 1.3rem;
+            border-bottom: 1px solid #3d3d3d;
+            padding-bottom: 10px;
+        }
+
+        .rank-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .rank-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #3d3d3d;
+        }
+
+        .rank-item:last-child {
+            border-bottom: none;
+        }
+
+        .rank-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .rank-badge {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .rank-1 {
+            background: #ffd700;
+            color: #000;
+        }
+
+        .rank-2 {
+            background: #c0c0c0;
+            color: #000;
+        }
+
+        .rank-3 {
+            background: #cd7f32;
+            color: #000;
+        }
+
+        .player-name {
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .score {
+            font-family: 'Consolas', monospace;
+            color: #4ade80;
+            font-weight: bold;
+        }
+
+        .no-data {
+            text-align: center;
+            color: #666;
+            padding: 20px 0;
+            font-style: italic;
+        }
+
+        .back-btn {
+            margin-top: 40px;
+            background: #4ade80;
+            color: #000;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            background: #22c55e;
+            transform: translateY(-2px);
+        }
+
+        .reset-all-btn {
+            background: transparent;
+            border: 1px solid #ef4444;
+            color: #ef4444;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .reset-all-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>🏆 명예의 전당 (Hall of Fame)</h1>
+        <p class="subtitle">각 게임의 전설적인 기록들</p>
+    </header>
+
+    <div class="ranking-container" id="ranking-grid">
+        <!-- Javascript will populate ranking cards here -->
+    </div>
+
+    <a href="index.html" class="back-btn">
+        <i class="fas fa-home"></i> 메인으로 돌아가기
+    </a>
+
+    <button class="reset-all-btn" onclick="resetAllRankings()">
+        <i class="fas fa-trash-alt"></i> 랭킹 초기화 (개발용)
+    </button>
+
+    <script>
+        const games = [
+            { id: 'Jump', name: '슬라임 점프', icon: 'fa-arrow-up' },
+            { id: 'Tetris', name: '테트리스', icon: 'fa-shapes' },
+            { id: 'Typing', name: '타자 연습', icon: 'fa-keyboard' },
+            { id: 'Snake', name: '네온 스네이크', icon: 'fa-wave-square' },
+            { id: 'Memory', name: '메모리 매치', icon: 'fa-cat' }, // Special icon logic maybe
+            { id: 'BlockBlast', name: '블록블라스트', icon: 'fa-th' },
+            { id: 'Catch', name: '클라운 캐치', icon: 'fa-hands' }, // Moved
+            { id: 'Stack', name: '퍼펙트 타워', icon: 'fa-layer-group' },
+            { id: 'Dodge', name: '코스믹 닷지', icon: 'fa-meteor' },
+            { id: 'Dino', name: '달려달려', icon: 'fa-dragon' }
+        ];
+
+        const rankingGrid = document.getElementById('ranking-grid');
+        const DATA_KEY_PREFIX = 'ranking_'; // e.g., ranking_Jump
+
+        function loadRankings() {
+            rankingGrid.innerHTML = ''; // Clear existing
+
+            games.forEach(game => {
+                const card = document.createElement('div');
+                card.className = 'game-rank-card';
+
+                const title = document.createElement('h2');
+                title.innerHTML = `<i class="fas ${game.icon}"></i> ${game.name}`;
+                card.appendChild(title);
+
+                // Get data from localStorage
+                // Data format: [ {name: 'ABC', score: 1000, date: '...'}, ... ]
+                let data = localStorage.getItem(DATA_KEY_PREFIX + game.id);
+                data = data ? JSON.parse(data) : [];
+
+                // Sort (Highest Score First usually, but Typing might be different? assume all High Score for now)
+                // actually sorting should happen on save, but double check here
+                if (data.length === 0) {
+                    const noData = document.createElement('div');
+                    noData.className = 'no-data';
+                    noData.innerText = '아직 기록이 없습니다.';
+                    card.appendChild(noData);
+                } else {
+                    const list = document.createElement('ul');
+                    list.className = 'rank-list';
+
+                    data.slice(0, 3).forEach((entry, index) => {
+                        const li = document.createElement('li');
+                        li.className = 'rank-item';
+
+                        li.innerHTML = `
+                            <div class="rank-info">
+                                <div class="rank-badge rank-${index + 1}">${index + 1}</div>
+                                <span class="player-name">${escapeHtml(entry.name)}</span>
+                            </div>
+                            <span class="score">${entry.score.toLocaleString()}</span>
+                        `;
+                        list.appendChild(li);
+                    });
+                    card.appendChild(list);
+                }
+
+                rankingGrid.appendChild(card);
+            });
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function resetAllRankings() {
+            const pwd = prompt('초기화 비밀번호를 입력하세요:');
+            if (pwd !== '0512') {
+                if (pwd !== null) alert('비밀번호가 틀렸습니다.');
+                return;
+            }
+
+            if (confirm('정말 모든 랭킹 데이터를 삭제하시겠습니까?')) {
+                games.forEach(game => {
+                    localStorage.removeItem(DATA_KEY_PREFIX + game.id);
+                    // Also clear legacy keys
+                    localStorage.removeItem(game.id + 'HighScore');
+                    localStorage.removeItem('tetrisHighScore');
+                    localStorage.removeItem('dinoHighScore');
+                });
+                alert('초기화 완료!');
+                loadRankings();
+            }
+        }
+
+        loadRankings();
+    </script>
+</body>
+
+</html>

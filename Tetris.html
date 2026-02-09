@@ -403,6 +403,64 @@
             box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
             border: 2px solid #fff;
         }
+
+        #ranking-modal {
+            position: absolute;
+            top: 0;
+            left: calc(var(--side-width) + calc(var(--unit) * 1.0));
+            width: var(--board-width);
+            height: calc(var(--unit) * 20);
+            background: rgba(26, 26, 46, 0.95);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            padding: calc(var(--unit) * 1);
+            box-sizing: border-box;
+            border: 2px solid var(--main-color);
+            border-radius: 4px;
+            text-align: center;
+            gap: calc(var(--unit) * 0.5);
+        }
+
+        #ranking-modal h2 {
+            margin: 0;
+            font-size: calc(var(--unit) * 1.2);
+            color: #ffd700;
+        }
+
+        #ranking-modal p {
+            font-size: calc(var(--unit) * 0.5);
+            color: #fff;
+            margin: 0;
+        }
+
+        #ranking-input {
+            width: 80%;
+            padding: calc(var(--unit) * 0.3);
+            font-size: calc(var(--unit) * 0.6);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--main-color);
+            color: white;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        #save-rank-btn {
+            padding: calc(var(--unit) * 0.4) calc(var(--unit) * 1);
+            font-size: calc(var(--unit) * 0.6);
+            background: var(--main-color);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #save-rank-btn:hover {
+            opacity: 0.9;
+        }
     </style>
 </head>
 
@@ -426,6 +484,13 @@
                 <h2>GAME OVER</h2>
                 <p>최고 점수: <span id="finalScore">0</span></p>
                 <button class="start-btn" onclick="resetGame()">다시 시작</button>
+            </div>
+
+            <div id="ranking-modal">
+                <h2>🏆 순위권 진입!</h2>
+                <p>축하합니다! 상위 3위에 들었습니다.</p>
+                <input type="text" id="ranking-input" placeholder="이름 입력 (최대 10자)" maxlength="10">
+                <button id="save-rank-btn">기록 저장</button>
             </div>
 
             <div class="level-up-overlay" id="levelUpOverlay">
@@ -554,7 +619,7 @@
                 isGameOver = true;
                 gameStarted = false;
                 document.getElementById('finalScore').innerText = player.score;
-                document.getElementById('game-over-screen').style.display = 'flex';
+                checkRanking(player.score);
             }
         }
         function drawGrid() {
@@ -648,7 +713,7 @@
                 isGameOver = true;
                 gameStarted = false;
                 document.getElementById('finalScore').innerText = player.score;
-                document.getElementById('game-over-screen').style.display = 'flex';
+                checkRanking(player.score);
             }
         }
         function updateStats() {
@@ -757,6 +822,53 @@
             el.addEventListener('touchstart', start); el.addEventListener('touchend', end); el.addEventListener('mousedown', start); el.addEventListener('mouseup', end);
         };
         bindMobileBtn('ctrl-left', 'left'); bindMobileBtn('ctrl-right', 'right'); bindMobileBtn('ctrl-down', 'down'); bindMobileBtn('ctrl-up', 'up', true); bindMobileBtn('ctrl-drop', 'drop', true);
+
+        // Ranking Logic
+        const rankingModal = document.getElementById('ranking-modal');
+        const rankingInput = document.getElementById('ranking-input');
+        const saveRankBtn = document.getElementById('save-rank-btn');
+        const gameOverScreen = document.getElementById('game-over-screen');
+
+        function checkRanking(finalScore) {
+            const gameId = 'Tetris';
+            const key = 'ranking_' + gameId;
+            let rankings = JSON.parse(localStorage.getItem(key)) || [];
+
+            rankings.sort((a, b) => b.score - a.score);
+
+            if (rankings.length < 3 || finalScore > rankings[rankings.length - 1].score) {
+                if (finalScore > 0) {
+                    showRankingModal();
+                    return;
+                }
+            }
+
+            gameOverScreen.style.display = 'flex';
+        }
+
+        function showRankingModal() {
+            rankingModal.style.display = 'flex';
+            gameOverScreen.style.display = 'none';
+            rankingInput.value = '';
+            rankingInput.focus();
+        }
+
+        saveRankBtn.addEventListener('click', () => {
+            const name = rankingInput.value.trim() || '익명';
+            const gameId = 'Tetris';
+            const key = 'ranking_' + gameId;
+            let rankings = JSON.parse(localStorage.getItem(key)) || [];
+
+            rankings.push({ name: name, score: player.score, date: new Date().toLocaleDateString() });
+            rankings.sort((a, b) => b.score - a.score);
+            rankings = rankings.slice(0, 3);
+
+            localStorage.setItem(key, JSON.stringify(rankings));
+
+            alert('랭킹이 저장되었습니다!');
+            window.location.href = 'Ranking.html';
+        });
+
         const arena = Array.from({ length: 20 }, () => new Array(12).fill(0)); draw(); // 초기 화면 그리기
     </script>
 </body>

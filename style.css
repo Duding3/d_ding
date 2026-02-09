@@ -125,6 +125,32 @@ header p {
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
+.ranking-btn {
+    margin-top: 1rem; /* Space between buttons if stacked, or margins if inline */
+    margin-left: 10px;
+    background: rgba(255, 215, 0, 0.1); /* Gold tint */
+    color: #ffd700;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    padding: 0.8rem 1.5rem;
+    border-radius: 50px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.ranking-btn:hover {
+    background: rgba(255, 215, 0, 0.2);
+    border-color: rgba(255, 215, 0, 0.6);
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+}
+
 /* Game Grid */
 .game-container {
     display: grid;
