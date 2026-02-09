@@ -19,6 +19,7 @@
   let firebaseLoadAttempted = false;
   let firebaseDisabledReason = "";
   let authInitDone = false;
+  let authStateKnown = false;
   let currentUser = null;
   const authSubscribers = [];
 
@@ -99,6 +100,7 @@
     authInitDone = true;
     try {
       window.firebase.auth().onAuthStateChanged((user) => {
+        authStateKnown = true;
         currentUser = user || null;
         emitAuthState();
       });
@@ -177,19 +179,20 @@
   function onAuthChange(callback) {
     if (typeof callback !== "function") return () => {};
     authSubscribers.push(callback);
-    callback(getCurrentUser());
-
-    // Trigger Firebase/Auth initialization so initial login state is restored
-    // even before any game-score API is called on the page.
     ensureFirebase()
       .then((ready) => {
-        if (!ready) return;
+        if (!ready) {
+          if (authSubscribers.includes(callback)) callback(null);
+          return;
+        }
         initAuth();
-        if (authSubscribers.includes(callback)) {
+        if (authStateKnown && authSubscribers.includes(callback)) {
           callback(getCurrentUser());
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        if (authSubscribers.includes(callback)) callback(null);
+      });
 
     return () => {
       const idx = authSubscribers.indexOf(callback);

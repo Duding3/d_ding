@@ -160,7 +160,7 @@
         <h1><i class="fas fa-crown"></i> 명예의 전당</h1>
         <div class="actions">
             <a class="btn" href="index.html"><i class="fas fa-arrow-left"></i> 메인으로</a>
-            <button class="btn" id="authBtn">Google 로그인</button>
+            <button class="btn" id="authBtn" disabled>로그인 확인 중...</button>
             <button class="btn" id="refreshBtn"><i class="fas fa-sync-alt"></i> 새로고침</button>
         </div>
     </div>
@@ -286,6 +286,7 @@
         document.getElementById("refreshBtn").addEventListener("click", renderAll);
         if (window.LeaderboardSystem) {
             window.LeaderboardSystem.onAuthChange((user) => {
+                authBtn.disabled = false;
                 if (user) {
                     authBtn.textContent = `로그아웃 (${user.displayName || "Google"})`;
                     authStatus.textContent = `로그인됨: ${user.displayName || "Google 사용자"}`;
@@ -296,6 +297,7 @@
             });
         } else if (authStatus) {
             authStatus.textContent = "로그인 모듈 로드 실패";
+            authBtn.disabled = false;
         }
 
         authBtn.addEventListener("click", async () => {

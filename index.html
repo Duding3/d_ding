@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="app-version" content="4">
+    <meta name="app-version" content="5">
     <title>JiHye Mini-Games</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -23,8 +23,8 @@
             <a href="hall-of-fame.html" class="ranking-btn">
                 <i class="fas fa-crown"></i> 명예의 전당
             </a>
-            <button id="home-auth-btn" class="ranking-btn auth-btn">
-                <i class="fab fa-google"></i> Google 로그인
+            <button id="home-auth-btn" class="ranking-btn auth-btn" disabled>
+                <i class="fas fa-spinner"></i> 로그인 확인 중...
             </button>
         </div>
         <p id="home-auth-status" class="home-auth-status">로그인 상태 확인 중...</p>
@@ -158,6 +158,7 @@
 
         function renderHomeAuth(user) {
             if (!homeAuthBtn || !homeAuthStatus) return;
+            homeAuthBtn.disabled = false;
             if (user) {
                 const name = user.displayName || 'Google 사용자';
                 homeAuthBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> 로그아웃';
