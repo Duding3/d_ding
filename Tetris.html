@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>다일러 테트리스 v1.1</title>
+    <title>다일러 테트리스 v1.2</title>
     <style>
         :root {
             --unit: min(6.5vh, 5vw, 40px);
@@ -578,6 +578,14 @@
             context.fillRect(0, 0, 12, 20);
             drawGrid();
             drawMatrix(arena, { x: 0, y: 0 });
+
+            // Draw particles
+            particles.forEach(p => {
+                context.globalAlpha = p.life;
+                context.fillStyle = p.color;
+                context.fillRect(p.x, p.y, 0.15, 0.15); // Small square particles
+                context.globalAlpha = 1.0;
+            });
             if (gameStarted) {
                 const ghostPos = getGhostPosition(); drawMatrix(player.matrix, ghostPos, context, true); drawMatrix(player.matrix, player.pos);
             }
@@ -594,11 +602,35 @@
             for (let y = 0; y < m.length; ++y) { for (let x = 0; x < m[y].length; ++x) { if (m[y][x] !== 0 && (arena[y + o.y] && arena[y + o.y][x + o.x]) !== 0) return true; } }
             return false;
         }
+        let particles = [];
+
+        function createParticles(x, y, color) {
+            for (let i = 0; i < 12; i++) {
+                particles.push({
+                    x: x + 0.5, // Center of block
+                    y: y + 0.5,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: (Math.random() - 0.5) * 0.5,
+                    life: 1.0,
+                    color: color
+                });
+            }
+        }
+
         function arenaSweep() {
             let rowCount = 1;
             outer: for (let y = arena.length - 1; y > 0; --y) {
                 for (let x = 0; x < arena[y].length; ++x) if (arena[y][x] === 0) continue outer;
-                const row = arena.splice(y, 1)[0].fill(0); arena.unshift(row); ++y; player.score += rowCount * 10; rowCount *= 2;
+
+                // Spawn particles for cleared row
+                const row = arena[y];
+                for (let x = 0; x < row.length; x++) {
+                    if (row[x] !== 0) {
+                        createParticles(x, y, colors[row[x]]);
+                    }
+                }
+
+                const clearedRow = arena.splice(y, 1)[0].fill(0); arena.unshift(clearedRow); ++y; player.score += rowCount * 10; rowCount *= 2;
             }
             updateStats();
         }
@@ -634,16 +666,16 @@
                 overlay.classList.add('show');
                 setTimeout(() => overlay.classList.remove('show'), 600);
 
-                // Add garbage line on level up
-                spawnGarbage();
+                // Add garbage line on level up (Only Level 2+)
+                if (newLevel >= 2) spawnGarbage();
 
                 // Update garbage spawn rate based on level
                 garbageInterval = Math.max(3000, 15000 - (player.level - 1) * 1000); // Faster with higher level
             }
             player.level = newLevel;
             document.getElementById('level').innerText = player.level;
-            // More aggressive speed scaling (starts at 800, reduces by 130 per level, min 50ms)
-            dropInterval = Math.max(50, 800 - (player.level - 1) * 130);
+            // More gentle speed scaling (starts at 1000ms, reduces by 100ms per level, min 100ms)
+            dropInterval = Math.max(100, 1000 - (player.level - 1) * 100);
         }
         function playerDrop() { player.pos.y++; if (collide(arena, player)) { player.pos.y--; merge(arena, player); playerReset(); arenaSweep(); } dropCounter = 0; }
         function merge(arena, player) { player.matrix.forEach((row, y) => { row.forEach((value, x) => { if (value !== 0) arena[y + player.pos.y][x + player.pos.x] = value; }); }); }
@@ -673,11 +705,22 @@
                 dropCounter += deltaTime;
                 if (dropCounter > dropInterval) playerDrop();
 
-                // Garbage spawning timer
-                garbageTimer += deltaTime;
-                if (garbageTimer > garbageInterval) {
-                    spawnGarbage();
-                    garbageTimer = 0;
+                // Garbage spawning timer (Only Level 2+)
+                if (player.level >= 2) {
+                    garbageTimer += deltaTime;
+                    if (garbageTimer > garbageInterval) {
+                        spawnGarbage();
+                        garbageTimer = 0;
+                    }
+                }
+
+                // Update particles
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    p.life -= deltaTime * 0.002; // Decrease life based on time
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    if (p.life <= 0) particles.splice(i, 1);
                 }
             }
             draw(); requestAnimationFrame(update);
