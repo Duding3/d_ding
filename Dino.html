@@ -196,96 +196,64 @@
         .mobile-controls {
             display: none;
             position: absolute;
-            top: 0;
+            bottom: 20px;
             left: 0;
             width: 100%;
-            height: 100%;
-            z-index: 10;
+            height: auto;
+            z-index: 100;
+            padding: 0 20px;
+            box-sizing: border-box;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .touch-zone {
-            position: absolute;
-            width: 50%;
-            height: 100%;
+        .mobile-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(172, 172, 172, 0.2);
+            backdrop-filter: blur(10px);
+            border: 2px solid var(--accent-color);
+            color: var(--accent-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            touch-action: none;
+            user-select: none;
+            transition: all 0.1s;
         }
 
-        .jump-zone {
-            right: 0;
-            top: 0;
-            width: 100%;
-            height: 60%;
+        .mobile-btn:active {
+            transform: scale(0.9);
+            background: rgba(172, 172, 172, 0.4);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
         }
 
-        .duck-zone {
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 40%;
+        .btn-left {
+            margin-right: auto;
+        }
+
+        .btn-right {
+            margin-left: auto;
         }
 
         @media (max-width: 600px) {
             .mobile-controls {
-                display: block;
+                display: flex;
             }
 
             .controls-hint {
                 display: none;
             }
-        }
 
-        #ranking-modal {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(32, 33, 36, 0.95);
-            padding: 30px;
-            border-radius: 12px;
-            text-align: center;
-            border: 2px solid var(--accent-color);
-            z-index: 30;
-            display: none;
-            flex-direction: column;
-            gap: 15px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-            min-width: 300px;
-        }
-
-        #ranking-modal h2 {
-            margin: 0;
-            font-size: 1.8rem;
-            color: #ffd700;
-        }
-
-        #ranking-input {
-            padding: 10px;
-            font-size: 1.2rem;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid var(--accent-color);
-            color: white;
-            border-radius: 4px;
-            text-align: center;
-        }
-
-        #save-rank-btn {
-            padding: 10px 20px;
-            font-size: 1.1rem;
-            background: var(--accent-color);
-            color: #202124;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        #save-rank-btn:hover {
-            opacity: 0.9;
+            #game-container {
+                height: 350px;
+            }
         }
     </style>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="firebase-config.js"></script>
 </head>
 
 <body>
@@ -312,15 +280,9 @@
                     </svg>
                 </button>
             </div>
-            <div id="ranking-modal">
-                <h2>🏆 순위권 진입!</h2>
-                <p>축하합니다! 상위 3위에 들었습니다.</p>
-                <input type="text" id="ranking-input" placeholder="이름 입력 (최대 10자)" maxlength="10">
-                <button id="save-rank-btn">기록 저장</button>
-            </div>
             <div class="mobile-controls">
-                <div class="touch-zone jump-zone" id="jumpZone"></div>
-                <div class="touch-zone duck-zone" id="duckZone"></div>
+                <button class="mobile-btn btn-left" id="mobile-duck">숙이기</button>
+                <button class="mobile-btn btn-right" id="mobile-jump">점프</button>
             </div>
         </div>
         <div class="controls-section">
@@ -346,9 +308,9 @@
         const opacitySlider = document.getElementById('opacitySlider');
 
         // Game Constants
-        let GAME_SPEED_START = 4;
-        let GAME_SPEED_MAX = 20;
-        let SPEED_INCREMENT = 0.0003;
+        let GAME_SPEED_START = 8;
+        let GAME_SPEED_MAX = 30;
+        let SPEED_INCREMENT = 0.0006;
         let GRAVITY = 0.6;
         let JUMP_FORCE = -10;
         let GROUND_Y = 0;
@@ -586,10 +548,10 @@
             if (['Space', 'ArrowUp'].includes(e.code)) jumpReleased = true;
         });
 
-        const jumpZone = document.getElementById('jumpZone');
-        const duckZone = document.getElementById('duckZone');
+        const mobileJump = document.getElementById('mobile-jump');
+        const mobileDuck = document.getElementById('mobile-duck');
 
-        jumpZone.addEventListener('touchstart', e => {
+        mobileJump.addEventListener('touchstart', e => {
             e.preventDefault();
             keys['Space'] = true;
             if (jumpReleased) {
@@ -598,18 +560,18 @@
             }
         });
 
-        jumpZone.addEventListener('touchend', e => {
+        mobileJump.addEventListener('touchend', e => {
             e.preventDefault();
             keys['Space'] = false;
             jumpReleased = true;
         });
 
-        duckZone.addEventListener('touchstart', e => {
+        mobileDuck.addEventListener('touchstart', e => {
             e.preventDefault();
             keys['ArrowDown'] = true;
         });
 
-        duckZone.addEventListener('touchend', e => {
+        mobileDuck.addEventListener('touchend', e => {
             e.preventDefault();
             keys['ArrowDown'] = false;
         });
