@@ -169,6 +169,10 @@
             background: rgba(239, 68, 68, 0.1);
         }
     </style>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="firebase-config.js"></script>
 </head>
 
 <body>
@@ -208,49 +212,57 @@
         const DATA_KEY_PREFIX = 'ranking_'; // e.g., ranking_Jump
 
         function loadRankings() {
-            rankingGrid.innerHTML = ''; // Clear existing
+            if (typeof database === 'undefined') {
+                console.error("Firebase Database not initialized.");
+                rankingGrid.innerHTML = '<p class="no-data">Firebase 설정이 필요합니다. firebase-config.js 파일을 확인해주세요.</p>';
+                return;
+            }
 
-            games.forEach(game => {
-                const card = document.createElement('div');
-                card.className = 'game-rank-card';
+            database.ref('rankings').once('value').then((snapshot) => {
+                const globalRankings = snapshot.val() || {};
+                rankingGrid.innerHTML = '';
 
-                const title = document.createElement('h2');
-                title.innerHTML = `<i class="fas ${game.icon}"></i> ${game.name}`;
-                card.appendChild(title);
+                games.forEach(game => {
+                    const card = document.createElement('div');
+                    card.className = 'game-rank-card';
 
-                // Get data from localStorage
-                // Data format: [ {name: 'ABC', score: 1000, date: '...'}, ... ]
-                let data = localStorage.getItem(DATA_KEY_PREFIX + game.id);
-                data = data ? JSON.parse(data) : [];
+                    const title = document.createElement('h2');
+                    title.innerHTML = `<i class="fas ${game.icon}"></i> ${game.name}`;
+                    card.appendChild(title);
 
-                // Sort (Highest Score First usually, but Typing might be different? assume all High Score for now)
-                // actually sorting should happen on save, but double check here
-                if (data.length === 0) {
-                    const noData = document.createElement('div');
-                    noData.className = 'no-data';
-                    noData.innerText = '아직 기록이 없습니다.';
-                    card.appendChild(noData);
-                } else {
-                    const list = document.createElement('ul');
-                    list.className = 'rank-list';
+                    let data = globalRankings[game.id] || [];
+                    // Ensure sorted
+                    data.sort((a, b) => b.score - a.score);
 
-                    data.slice(0, 3).forEach((entry, index) => {
-                        const li = document.createElement('li');
-                        li.className = 'rank-item';
+                    if (data.length === 0) {
+                        const noData = document.createElement('div');
+                        noData.className = 'no-data';
+                        noData.innerText = '아직 기록이 없습니다.';
+                        card.appendChild(noData);
+                    } else {
+                        const list = document.createElement('ul');
+                        list.className = 'rank-list';
 
-                        li.innerHTML = `
-                            <div class="rank-info">
-                                <div class="rank-badge rank-${index + 1}">${index + 1}</div>
-                                <span class="player-name">${escapeHtml(entry.name)}</span>
-                            </div>
-                            <span class="score">${entry.score.toLocaleString()}</span>
-                        `;
-                        list.appendChild(li);
-                    });
-                    card.appendChild(list);
-                }
+                        data.slice(0, 3).forEach((entry, index) => {
+                            const li = document.createElement('li');
+                            li.className = 'rank-item';
 
-                rankingGrid.appendChild(card);
+                            li.innerHTML = `
+                                <div class="rank-info">
+                                    <div class="rank-badge rank-${index + 1}">${index + 1}</div>
+                                    <span class="player-name">${escapeHtml(entry.name)}</span>
+                                </div>
+                                <span class="score">${(entry.score || 0).toLocaleString()}</span>
+                            `;
+                            list.appendChild(li);
+                        });
+                        card.appendChild(list);
+                    }
+                    rankingGrid.appendChild(card);
+                });
+            }).catch(err => {
+                console.error("Firebase fetch error:", err);
+                rankingGrid.innerHTML = '<p class="no-data">랭킹 데이터를 불러올 수 없습니다. Firebase 설정을 확인해주세요.</p>';
             });
         }
 
@@ -271,16 +283,13 @@
                 return;
             }
 
-            if (confirm('정말 모든 랭킹 데이터를 삭제하시겠습니까?')) {
-                games.forEach(game => {
-                    localStorage.removeItem(DATA_KEY_PREFIX + game.id);
-                    // Also clear legacy keys
-                    localStorage.removeItem(game.id + 'HighScore');
-                    localStorage.removeItem('tetrisHighScore');
-                    localStorage.removeItem('dinoHighScore');
+            if (confirm('정말 모든 온라인 랭킹 데이터를 삭제하시겠습니까? (로컬 데이터는 삭제되지 않습니다)')) {
+                database.ref('rankings').remove().then(() => {
+                    alert('온라인 랭킹 초기화 완료!');
+                    loadRankings();
+                }).catch(err => {
+                    alert('오류 발생: ' + err.message);
                 });
-                alert('초기화 완료!');
-                loadRankings();
             }
         }
 

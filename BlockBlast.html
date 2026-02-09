@@ -460,6 +460,10 @@
             opacity: 0.9;
         }
     </style>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="firebase-config.js"></script>
 </head>
 
 <body>
@@ -980,26 +984,44 @@
         const saveRankBtn = document.getElementById('save-rank-btn');
 
         function checkRanking(finalScore) {
-            const gameId = 'BlockBlast';
-            const key = 'ranking_' + gameId;
-            let rankings = JSON.parse(localStorage.getItem(key)) || [];
-
-            rankings.sort((a, b) => b.score - a.score);
-
-            if (rankings.length < 3 || finalScore > rankings[rankings.length - 1].score) {
-                if (finalScore > 0) {
-                    showRankingModal();
-                    return;
-                }
+            if (finalScore <= 0) {
+                overlay.innerHTML = `
+                    <div class="game-over-text" style="font-size: 3rem; margin-bottom: 20px; text-shadow: 0 0 20px rgba(239, 68, 68, 0.6);">GAME OVER</div>
+                    <div class="final-score" style="font-size: 1.5rem; margin-bottom: 30px;">최종 점수: <span style="color: var(--main-color);">${score}</span></div>
+                    <p style="color: #aaa; margin-bottom: 30px;">더 이상 배치할 수 없습니다!</p>
+                    <button class="start-btn" onclick="startGame()">다시 시작</button>
+                `;
+                overlay.style.display = 'flex';
+                return;
             }
 
-            overlay.innerHTML = `
-                <div class="game-over-text" style="font-size: 3rem; margin-bottom: 20px; text-shadow: 0 0 20px rgba(239, 68, 68, 0.6);">GAME OVER</div>
-                <div class="final-score" style="font-size: 1.5rem; margin-bottom: 30px;">최종 점수: <span style="color: var(--main-color);">${score}</span></div>
-                <p style="color: #aaa; margin-bottom: 30px;">더 이상 배치할 수 없습니다!</p>
-                <button class="start-btn" onclick="startGame()">다시 시작</button>
-            `;
-            overlay.style.display = 'flex';
+            const gameId = 'BlockBlast';
+            if (typeof database === 'undefined') {
+                console.error("Firebase Database not initialized.");
+                overlay.style.display = 'flex';
+                return;
+            }
+
+            const dbRef = database.ref('rankings/' + gameId);
+            dbRef.once('value').then((snapshot) => {
+                let rankings = snapshot.val() || [];
+                rankings.sort((a, b) => b.score - a.score);
+
+                if (rankings.length < 3 || finalScore > rankings[rankings.length - 1].score) {
+                    showRankingModal();
+                } else {
+                    overlay.innerHTML = `
+                        <div class="game-over-text" style="font-size: 3rem; margin-bottom: 20px; text-shadow: 0 0 20px rgba(239, 68, 68, 0.6);">GAME OVER</div>
+                        <div class="final-score" style="font-size: 1.5rem; margin-bottom: 30px;">최종 점수: <span style="color: var(--main-color);">${score}</span></div>
+                        <p style="color: #aaa; margin-bottom: 30px;">더 이상 배치할 수 없습니다!</p>
+                        <button class="start-btn" onclick="startGame()">다시 시작</button>
+                    `;
+                    overlay.style.display = 'flex';
+                }
+            }).catch((error) => {
+                console.error("Firebase error:", error);
+                overlay.style.display = 'flex';
+            });
         }
 
         function showRankingModal() {
@@ -1012,17 +1034,26 @@
         saveRankBtn.addEventListener('click', () => {
             const name = rankingInput.value.trim() || '익명';
             const gameId = 'BlockBlast';
-            const key = 'ranking_' + gameId;
-            let rankings = JSON.parse(localStorage.getItem(key)) || [];
+            const dbRef = database.ref('rankings/' + gameId);
 
-            rankings.push({ name: name, score: score, date: new Date().toLocaleDateString() });
-            rankings.sort((a, b) => b.score - a.score);
-            rankings = rankings.slice(0, 3);
+            dbRef.once('value').then((snapshot) => {
+                let rankings = snapshot.val() || [];
+                rankings.push({
+                    name: name,
+                    score: score,
+                    date: new Date().toLocaleDateString()
+                });
+                rankings.sort((a, b) => b.score - a.score);
+                rankings = rankings.slice(0, 3);
 
-            localStorage.setItem(key, JSON.stringify(rankings));
-
-            alert('랭킹이 저장되었습니다!');
-            window.location.href = 'Ranking.html';
+                return dbRef.set(rankings);
+            }).then(() => {
+                alert('랭킹이 저장되었습니다!');
+                window.location.href = 'Ranking.html';
+            }).catch((error) => {
+                console.error("Firebase save error:", error);
+                alert('랭킹 저장 중 오류가 발생했습니다.');
+            });
         });
 
         // 초기 보드 렌더링

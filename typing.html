@@ -393,6 +393,10 @@
             transform: scale(1.05);
         }
     </style>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="firebase-config.js"></script>
 </head>
 
 <body oncontextmenu="return false">
@@ -991,20 +995,32 @@
         const saveRankBtn = document.getElementById('save-rank-btn');
 
         function checkRanking(finalScore) {
-            const gameId = 'Typing';
-            const key = 'ranking_' + gameId;
-            let rankings = JSON.parse(localStorage.getItem(key)) || [];
-
-            rankings.sort((a, b) => b.score - a.score);
-
-            if (rankings.length < 3 || finalScore > rankings[rankings.length - 1].score) {
-                if (finalScore > 10) { // Only count if CPM > 10 to avoid 0/empty saves
-                    showRankingModal(finalScore);
-                    return;
-                }
+            if (finalScore <= 10) { // CPM too low, don't rank
+                setTimeout(render, 50);
+                return;
             }
 
-            setTimeout(render, 50);
+            const gameId = 'Typing';
+            if (typeof database === 'undefined') {
+                console.error("Firebase Database not initialized.");
+                setTimeout(render, 50);
+                return;
+            }
+
+            const dbRef = database.ref('rankings/' + gameId);
+            dbRef.once('value').then((snapshot) => {
+                let rankings = snapshot.val() || [];
+                rankings.sort((a, b) => b.score - a.score);
+
+                if (rankings.length < 3 || finalScore > rankings[rankings.length - 1].score) {
+                    showRankingModal(finalScore);
+                } else {
+                    setTimeout(render, 50);
+                }
+            }).catch((error) => {
+                console.error("Firebase error:", error);
+                setTimeout(render, 50);
+            });
         }
 
         let pendingScore = 0;
@@ -1019,17 +1035,26 @@
         saveRankBtn.addEventListener('click', () => {
             const name = rankingInput.value.trim() || '익명';
             const gameId = 'Typing';
-            const key = 'ranking_' + gameId;
-            let rankings = JSON.parse(localStorage.getItem(key)) || [];
+            const dbRef = database.ref('rankings/' + gameId);
 
-            rankings.push({ name: name, score: pendingScore, date: new Date().toLocaleDateString() });
-            rankings.sort((a, b) => b.score - a.score);
-            rankings = rankings.slice(0, 3);
+            dbRef.once('value').then((snapshot) => {
+                let rankings = snapshot.val() || [];
+                rankings.push({
+                    name: name,
+                    score: pendingScore,
+                    date: new Date().toLocaleDateString()
+                });
+                rankings.sort((a, b) => b.score - a.score);
+                rankings = rankings.slice(0, 3);
 
-            localStorage.setItem(key, JSON.stringify(rankings));
-
-            alert('랭킹이 저장되었습니다!');
-            window.location.href = 'Ranking.html';
+                return dbRef.set(rankings);
+            }).then(() => {
+                alert('랭킹이 저장되었습니다!');
+                window.location.href = 'Ranking.html';
+            }).catch((error) => {
+                console.error("Firebase save error:", error);
+                alert('랭킹 저장 중 오류가 발생했습니다.');
+            });
         });
 
         render();

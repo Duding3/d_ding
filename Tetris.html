@@ -462,6 +462,10 @@
             opacity: 0.9;
         }
     </style>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="firebase-config.js"></script>
 </head>
 
 <body>
@@ -830,20 +834,32 @@
         const gameOverScreen = document.getElementById('game-over-screen');
 
         function checkRanking(finalScore) {
-            const gameId = 'Tetris';
-            const key = 'ranking_' + gameId;
-            let rankings = JSON.parse(localStorage.getItem(key)) || [];
-
-            rankings.sort((a, b) => b.score - a.score);
-
-            if (rankings.length < 3 || finalScore > rankings[rankings.length - 1].score) {
-                if (finalScore > 0) {
-                    showRankingModal();
-                    return;
-                }
+            if (finalScore <= 0) {
+                gameOverScreen.style.display = 'flex';
+                return;
             }
 
-            gameOverScreen.style.display = 'flex';
+            const gameId = 'Tetris';
+            if (typeof database === 'undefined') {
+                console.error("Firebase Database not initialized.");
+                gameOverScreen.style.display = 'flex';
+                return;
+            }
+
+            const dbRef = database.ref('rankings/' + gameId);
+            dbRef.once('value').then((snapshot) => {
+                let rankings = snapshot.val() || [];
+                rankings.sort((a, b) => b.score - a.score);
+
+                if (rankings.length < 3 || finalScore > rankings[rankings.length - 1].score) {
+                    showRankingModal();
+                } else {
+                    gameOverScreen.style.display = 'flex';
+                }
+            }).catch((error) => {
+                console.error("Firebase error:", error);
+                gameOverScreen.style.display = 'flex';
+            });
         }
 
         function showRankingModal() {
@@ -856,17 +872,26 @@
         saveRankBtn.addEventListener('click', () => {
             const name = rankingInput.value.trim() || '익명';
             const gameId = 'Tetris';
-            const key = 'ranking_' + gameId;
-            let rankings = JSON.parse(localStorage.getItem(key)) || [];
+            const dbRef = database.ref('rankings/' + gameId);
 
-            rankings.push({ name: name, score: player.score, date: new Date().toLocaleDateString() });
-            rankings.sort((a, b) => b.score - a.score);
-            rankings = rankings.slice(0, 3);
+            dbRef.once('value').then((snapshot) => {
+                let rankings = snapshot.val() || [];
+                rankings.push({
+                    name: name,
+                    score: player.score,
+                    date: new Date().toLocaleDateString()
+                });
+                rankings.sort((a, b) => b.score - a.score);
+                rankings = rankings.slice(0, 3);
 
-            localStorage.setItem(key, JSON.stringify(rankings));
-
-            alert('랭킹이 저장되었습니다!');
-            window.location.href = 'Ranking.html';
+                return dbRef.set(rankings);
+            }).then(() => {
+                alert('랭킹이 저장되었습니다!');
+                window.location.href = 'Ranking.html';
+            }).catch((error) => {
+                console.error("Firebase save error:", error);
+                alert('랭킹 저장 중 오류가 발생했습니다.');
+            });
         });
 
         const arena = Array.from({ length: 20 }, () => new Array(12).fill(0)); draw(); // 초기 화면 그리기
