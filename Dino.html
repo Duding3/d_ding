@@ -359,7 +359,9 @@
         let highScore = localStorage.getItem('dinoHighScore') || 0;
         let isGameOver = false;
         let isPlaying = false;
-        let frame = 0;
+        let lastTime = 0;
+        let scoreCounter = 0;
+        let spawnCounter = 0;
         let obstacles = [];
         let clouds = [];
         let jumpReleased = true;
@@ -378,6 +380,8 @@
             duckHeight: 30,
             widthDuck: 59,
             color: '#acacac',
+            frameIdx: 0,
+            frameTimer: 0,
 
             draw() {
                 ctx.fillStyle = this.color;
@@ -398,7 +402,9 @@
 
                 if (!this.isJumping) {
                     ctx.fillStyle = '#acacac';
-                    if (Math.floor(frame / (12 - gameSpeed / 2)) % 2 === 0) {
+                    // Animation speed depends on gameSpeed
+                    const animLimit = Math.max(2, 12 - gameSpeed / 2) * 16.67; // approx ms per frame segment
+                    if (this.frameIdx % 2 === 0) {
                         ctx.fillRect(this.x + 5, this.y + h, 6, 4);
                         ctx.fillRect(this.x + w - 10, this.y + h, 6, 8);
                     } else {
@@ -412,32 +418,40 @@
                 }
             },
 
-            update() {
+            update(dt) {
                 if ((keys['Space'] || keys['ArrowUp']) && jumpReleased) {
                     this.jump();
                     jumpReleased = false;
                 } else {
                     if (this.isJumping && this.dy < -5 && !keys['Space'] && !keys['ArrowUp']) {
-                        this.dy += 3;
+                        this.dy += 3 * dt;
                     }
                 }
 
                 if (keys['ArrowDown']) {
                     this.isDucking = true;
-                    if (this.isJumping) this.dy += 2;
+                    if (this.isJumping) this.dy += 2 * dt;
                 } else {
                     this.isDucking = false;
                 }
 
-                this.y += this.dy;
+                this.y += this.dy * dt;
 
                 if (this.y + (this.isDucking ? this.duckHeight : this.height) < GROUND_Y) {
-                    this.dy += GRAVITY;
+                    this.dy += GRAVITY * dt;
                     this.isJumping = true;
                 } else {
                     this.dy = 0;
                     this.isJumping = false;
                     this.y = GROUND_Y - (this.isDucking ? this.duckHeight : this.height);
+                }
+
+                // Animation timer
+                this.frameTimer += dt * 16.67;
+                const animSpeed = Math.max(30, 200 - gameSpeed * 5);
+                if (this.frameTimer > animSpeed) {
+                    this.frameIdx++;
+                    this.frameTimer = 0;
                 }
             },
 
@@ -454,6 +468,8 @@
                 this.type = type;
                 this.markedForDeletion = false;
                 this.x = canvas.width;
+                this.flapTimer = 0;
+                this.flapState = 0;
                 if (type === 'cactusSmall') {
                     this.width = 20 + Math.random() * 20;
                     this.height = 35 + Math.random() * 10;
@@ -472,14 +488,20 @@
                     else if (hTier < 0.8) this.y = GROUND_Y - 65;
                     else this.y = GROUND_Y - 80;
                     this.color = '#acacac';
-                    this.flapState = 0;
                 }
             }
 
-            update() {
-                this.x -= gameSpeed;
+            update(dt) {
+                this.x -= gameSpeed * dt;
                 if (this.x + this.width < 0) this.markedForDeletion = true;
-                if (this.type === 'bird' && frame % 15 === 0) this.flapState = this.flapState === 0 ? 1 : 0;
+
+                if (this.type === 'bird') {
+                    this.flapTimer += dt * 16.67;
+                    if (this.flapTimer > 250) {
+                        this.flapState = this.flapState === 0 ? 1 : 0;
+                        this.flapTimer = 0;
+                    }
+                }
             }
 
             draw() {
@@ -503,11 +525,11 @@
                 this.y = Math.random() * (canvas.height / 2);
                 this.width = 60 + Math.random() * 40;
                 this.height = 20 + Math.random() * 10;
-                this.speed = (gameSpeed * 0.1) + Math.random() * 0.2;
+                this.speedBase = 0.1 + Math.random() * 0.2;
             }
 
-            update() {
-                this.x -= this.speed;
+            update(dt) {
+                this.x -= (gameSpeed * 0.1 + this.speedBase) * dt;
                 if (this.x + this.width < 0) this.x = canvas.width + Math.random() * 500;
             }
 
@@ -534,7 +556,8 @@
         function startGame() {
             startScreen.style.display = 'none';
             resetGame();
-            animate();
+            lastTime = performance.now();
+            requestAnimationFrame(animate);
         }
 
         function resetGame() {
@@ -542,11 +565,14 @@
             score = 0;
             isGameOver = false;
             obstacles = [];
-            frame = 0;
             dino.y = GROUND_Y - dino.height;
             dino.dy = 0;
+            dino.frameIdx = 0;
+            dino.frameTimer = 0;
             gameOverScreen.style.display = 'none';
             isPlaying = true;
+            scoreCounter = 0;
+            spawnCounter = 0;
             currentScoreEl.innerText = "00000";
         }
 
@@ -592,16 +618,20 @@
             wrapper.style.opacity = e.target.value / 100;
         });
 
-        function spawnObstacle() {
-            if (frame % Math.floor(1200 / gameSpeed) === 0 || Math.random() < 0.005) {
+        function spawnObstacle(dt) {
+            spawnCounter += dt * 16.67;
+            const spawnInterval = Math.max(500, 2000 - gameSpeed * 50);
+
+            if (spawnCounter > spawnInterval || Math.random() < 0.005 * dt) {
                 if (obstacles.length > 0) {
                     const lastObstacle = obstacles[obstacles.length - 1];
-                    if (canvas.width - lastObstacle.x < 350 + (gameSpeed * 15)) return;
+                    if (canvas.width - lastObstacle.x < 250 + (gameSpeed * 10)) return;
                 }
                 const roll = Math.random();
                 if (score > 300 && roll > 0.85) obstacles.push(new Obstacle('bird'));
                 else if (roll > 0.5) obstacles.push(new Obstacle('cactusLarge'));
                 else obstacles.push(new Obstacle('cactusSmall'));
+                spawnCounter = 0;
             }
         }
 
@@ -609,8 +639,16 @@
             return s.toString().padStart(5, '0');
         }
 
-        function animate() {
+        function animate(now) {
             if (!isPlaying) return;
+
+            // Delta time calculation (dt = 1.0 at 60fps)
+            const dt = (now - lastTime) / 16.67;
+            lastTime = now;
+
+            // Limit dt to prevent huge jumps on tab switch/lag
+            const limitedDt = Math.min(dt, 3);
+
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.strokeStyle = '#535353';
             ctx.lineWidth = 2;
@@ -620,17 +658,17 @@
             ctx.stroke();
 
             clouds.forEach(cloud => {
-                cloud.update();
+                cloud.update(limitedDt);
                 cloud.draw();
             });
 
-            dino.update();
+            dino.update(limitedDt);
             dino.draw();
-            spawnObstacle();
+            spawnObstacle(limitedDt);
 
             for (let i = obstacles.length - 1; i >= 0; i--) {
                 let obs = obstacles[i];
-                obs.update();
+                obs.update(limitedDt);
                 obs.draw();
                 const dinoW = dino.isDucking ? dino.widthDuck : dino.width;
                 const dinoH = dino.isDucking ? dino.duckHeight : dino.height;
@@ -642,7 +680,8 @@
 
             obstacles = obstacles.filter(o => !o.markedForDeletion);
 
-            if (frame % 8 === 0) {
+            scoreCounter += limitedDt;
+            if (scoreCounter > 8) {
                 score++;
                 currentScoreEl.innerText = padScore(score);
                 if (score > highScore) {
@@ -650,10 +689,11 @@
                     highScoreEl.innerText = padScore(highScore);
                     localStorage.setItem('dinoHighScore', highScore);
                 }
+                scoreCounter = 0;
             }
 
-            if (gameSpeed < GAME_SPEED_MAX) gameSpeed += SPEED_INCREMENT;
-            frame++;
+            if (gameSpeed < GAME_SPEED_MAX) gameSpeed += SPEED_INCREMENT * limitedDt;
+
             if (!isGameOver) requestAnimationFrame(animate);
         }
 
