@@ -172,6 +172,47 @@ header p {
     perspective: 1000px;
 }
 
+.game-section-title {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 0.15rem 0.2rem 0.3rem;
+}
+
+.game-section-title h3 {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: #e2e8f0;
+    border-radius: 12px;
+    padding: 0.6rem 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25);
+}
+
+.section-bugcheck h3 {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.22), rgba(217, 70, 239, 0.18));
+}
+
+.section-progress h3 {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.22), rgba(16, 185, 129, 0.18));
+}
+
+.game-section-title h3 i {
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.12);
+    font-size: 0.85rem;
+}
+
 /* Glass Card */
 .game-card {
     background: var(--glass-bg);
