@@ -558,6 +558,7 @@
         let gameStarted = false; // 🌟 게임 시작 여부 플래그
         let dropCounter = 0; let dropInterval = 800; let lastTime = 0; let bag = []; let calculatedUnit = 20;
         let highScore = localStorage.getItem('tetrisHighScore') || 0; // 로드된 최고 스코어
+        let didCheckRanking = false;
         let garbageTimer = 0; // Timer for garbage spawning
         let garbageInterval = 15000; // Initial garbage spawn interval (15 seconds)
         document.getElementById('highScore').innerText = highScore;
@@ -581,6 +582,7 @@
         function startGame() {
             gameStarted = true;
             isGameOver = false;
+            didCheckRanking = false;
             startScreen.style.display = 'none'; // 시작 화면 숨김
             document.getElementById('game-over-screen').style.display = 'none';
             garbageTimer = 0; // Reset garbage timer
@@ -597,6 +599,12 @@
             isGameOver = false;
             document.getElementById('game-over-screen').style.display = 'none';
             startGame();
+        }
+
+        function reportRankingOnce() {
+            if (didCheckRanking) return;
+            didCheckRanking = true;
+            window.LeaderboardSystem?.checkAndCelebrate('tetris', player.score);
         }
 
         function createPiece(type) {
@@ -624,6 +632,7 @@
                 gameStarted = false;
                 document.getElementById('finalScore').innerText = player.score;
                 document.getElementById('game-over-screen').style.display = 'flex'; // Show immediately!
+                reportRankingOnce();
             }
         }
         function drawGrid() {
@@ -718,6 +727,7 @@
                 gameStarted = false;
                 document.getElementById('finalScore').innerText = player.score;
                 document.getElementById('game-over-screen').style.display = 'flex'; // Show immediately!
+                reportRankingOnce();
             }
         }
         function updateStats() {
@@ -802,7 +812,6 @@
                 e.preventDefault();
             }
             if (isGameOver) {
-                location.reload();
                 return;
             }
             if (!gameStarted) {
@@ -824,7 +833,7 @@
         document.addEventListener('keyup', e => { if (e.keyCode === 37) keys.left.pressed = false; if (e.keyCode === 39) keys.right.pressed = false; if (e.keyCode === 40) keys.down.pressed = false; if (e.keyCode === 32) keys.space.pressed = false; });
         const bindMobileBtn = (id, keyName, isAction = false) => {
             const el = document.getElementById(id);
-            const start = (e) => { e.preventDefault(); if (isGameOver) { location.reload(); return; } if (!gameStarted) return; if (isAction) { if (keyName === 'up') playerRotate(1); if (keyName === 'drop') hardDrop(); } else keys[keyName].pressed = true; };
+            const start = (e) => { e.preventDefault(); if (isGameOver) return; if (!gameStarted) return; if (isAction) { if (keyName === 'up') playerRotate(1); if (keyName === 'drop') hardDrop(); } else keys[keyName].pressed = true; };
             const end = (e) => { e.preventDefault(); if (!isAction && gameStarted) keys[keyName].pressed = false; };
             el.addEventListener('touchstart', start); el.addEventListener('touchend', end); el.addEventListener('mousedown', start); el.addEventListener('mouseup', end);
         };
@@ -833,6 +842,7 @@
 
         const arena = Array.from({ length: 20 }, () => new Array(12).fill(0)); draw(); // 초기 화면 그리기
     </script>
+    <script src="leaderboard-system.js"></script>
 </body>
 
 </html>

@@ -422,6 +422,8 @@
                 localStorage.setItem('stackHighScore', highScore);
                 highScoreEl.innerText = highScore;
             }
+
+            window.LeaderboardSystem?.checkAndCelebrate('stack', score);
         }
 
         // 물리 상수
@@ -562,6 +564,7 @@
 
         draw();
     </script>
+    <script src="leaderboard-system.js"></script>
 </body>
 
 </html>

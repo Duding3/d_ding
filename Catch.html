@@ -403,6 +403,8 @@
                 localStorage.setItem('catchBest', bestScore);
                 bestEl.innerText = bestScore;
             }
+
+            window.LeaderboardSystem?.checkAndCelebrate('catch', score);
         }
 
         // Controls
@@ -469,6 +471,7 @@
             document.body.style.opacity = e.target.value / 100;
         });
     </script>
+    <script src="leaderboard-system.js"></script>
 </body>
 
 </html>

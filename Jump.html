@@ -1492,7 +1492,7 @@
 
         function updateHUD() {
             document.getElementById('scoreHeight').innerText = Math.floor(Math.max(0, -player.y + (canvas.height - 80))) + "m";
-            document.getElementById('scoreMax').innerText = Math.floor(maxHeight) + "m";
+            document.getElementById('scoreMax').innerText = Math.floor(highScore) + "m";
         }
 
         function gameLoop(timestamp) {
@@ -1547,9 +1547,15 @@
 
         function endGame() {
             gameOver = true;
-            finalScoreEl.textContent = Math.floor(maxHeight);
+            const finalHeight = Math.floor(maxHeight);
+            if (finalHeight > highScore) {
+                highScore = finalHeight;
+                localStorage.setItem('jumpHighScore', highScore);
+            }
+            finalScoreEl.textContent = finalHeight;
             gameOverScreen.style.display = 'flex'; // Show Game Over immediately!
             document.querySelector('.hud-container').style.display = 'none';
+            window.LeaderboardSystem?.checkAndCelebrate('jump', finalHeight);
         }
 
         // 키보드 이벤트
@@ -1705,6 +1711,7 @@
         init();
         requestAnimationFrame(gameLoop);
     </script>
+    <script src="leaderboard-system.js"></script>
 </body>
 
 </html>

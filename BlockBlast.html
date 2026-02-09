@@ -865,6 +865,7 @@
                 <button class="start-btn" onclick="startGame()">다시 시작</button>
             `;
             overlay.style.display = 'flex'; // Show immediately!
+            window.LeaderboardSystem?.checkAndCelebrate('blockBlast', score);
         }
 
         function showPreview(x, y) {
@@ -988,6 +989,7 @@
         // 초기 보드 렌더링
         initBoard();
     </script>
+    <script src="leaderboard-system.js"></script>
 </body>
 
 </html>

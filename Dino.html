@@ -526,6 +526,8 @@
             gameSpeed = GAME_SPEED_START;
             score = 0;
             isGameOver = false;
+            keys = {};
+            jumpReleased = true;
             obstacles = [];
             dino.y = GROUND_Y - dino.height;
             dino.dy = 0;
@@ -666,12 +668,14 @@
             let w = dino.isDucking ? dino.widthDuck : dino.width;
             ctx.fillRect(dino.x + w - 12, dino.y + 5, 4, 4);
             gameOverScreen.style.display = 'block'; // Show Game Over immediately!
+            window.LeaderboardSystem?.checkAndCelebrate('dino', score);
         }
 
 
         restartBtn.addEventListener('click', () => {
             resetGame();
-            animate();
+            lastTime = performance.now();
+            requestAnimationFrame(animate);
         });
 
         startBtn.addEventListener('click', startGame);
@@ -685,6 +689,7 @@
 
         init();
     </script>
+    <script src="leaderboard-system.js"></script>
 </body>
 
 </html>

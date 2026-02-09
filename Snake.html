@@ -751,6 +751,8 @@
                 localStorage.setItem('snakeHighScore', highScore);
                 document.getElementById('highScore').innerText = highScore;
             }
+
+            window.LeaderboardSystem?.checkAndCelebrate('snake', score);
         }
 
         // Controls
@@ -789,6 +791,7 @@
         });
 
     </script>
+    <script src="leaderboard-system.js"></script>
 </body>
 
 </html>

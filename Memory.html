@@ -442,6 +442,7 @@
             overlayMsg.style.display = 'block';
             finalStats.innerText = `도달 레벨: ${level} | ${timeEl.innerText}`;
             finalStats.style.display = 'block';
+            window.LeaderboardSystem?.checkAndCelebrate('memory', level);
 
             const startBtn = overlay.querySelector('.start-btn');
             startBtn.innerText = "다시 시작";
@@ -459,6 +460,7 @@
         startBtn.onclick = () => initGame(true);
 
     </script>
+    <script src="leaderboard-system.js"></script>
 </body>
 
 </html>

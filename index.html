@@ -18,6 +18,9 @@
         <button id="update-refresh-btn" class="update-refresh-btn">
             <i class="fas fa-sync-alt"></i> 새로고침
         </button>
+        <a href="hall-of-fame.html" class="ranking-btn">
+            <i class="fas fa-crown"></i> 명예의 전당
+        </a>
     </header>
 
     <main class="game-container">
@@ -59,7 +62,6 @@
 
         <div class="game-card">
             <div class="icon-wrapper" style="position: relative;">
-                <!-- Overlapping Card Symbols with Animal Silhouettes -->
                 <div
                     style="position: absolute; transform: translate(-15px, -10px) rotate(-5deg); background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); width: 60px; height: 80px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
                     <i class="fas fa-cat" style="font-size: 1.8rem; opacity: 0.8; color: #4ade80;"></i>
@@ -73,7 +75,6 @@
             <p>뒤집어서 짝 맞춰 보던지!</p>
             <a href="Memory.html" class="play-btn">게임 시작</a>
         </div>
-
 
         <div class="game-card">
             <div class="icon-wrapper">
@@ -111,13 +112,12 @@
             <a href="Dodge.html" class="play-btn">게임 시작</a>
         </div>
 
-
         <div class="game-card">
             <div class="icon-wrapper">
                 <i class="fas fa-dragon"></i>
             </div>
             <h2>달려달려 (Chrome Dino)</h2>
-            <p>인터넷 끊기면 하던 그 게임! 점프!</p>
+            <p>인터넷 끊기면 하던 그 게임 해보던지!</p>
             <a href="Dino.html" class="play-btn">게임 시작</a>
         </div>
 
@@ -135,9 +135,7 @@
     </footer>
 
     <script>
-        // 캐시를 무시하고 페이지를 새로 불러오는 로직
         document.getElementById('update-refresh-btn').addEventListener('click', function () {
-            // URL 뒤에 현재 시간을 붙여서 브라우저가 새로운 페이지로 인식하게 강제함
             const currentUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
             window.location.href = currentUrl + '?update=' + new Date().getTime();
         });

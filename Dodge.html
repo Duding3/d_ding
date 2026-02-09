@@ -421,6 +421,8 @@
                 localStorage.setItem('dodgeHighScore', highScore);
                 highScoreEl.innerText = highScore.toFixed(1) + 's';
             }
+
+            window.LeaderboardSystem?.checkAndCelebrate('dodge', Number(score.toFixed(1)));
         }
 
         function gameLoop(timestamp) {
@@ -792,6 +794,7 @@
 
         draw(); // Initial draw
     </script>
+    <script src="leaderboard-system.js"></script>
 </body>
 
 </html>
