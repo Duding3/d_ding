@@ -318,10 +318,11 @@
         document.getElementById('highScore').innerText = highScore;
 
         function initCanvas() {
-            const size = Math.min(window.innerWidth * 0.9, 450);
-            canvas.width = size;
-            canvas.height = size;
-            TILE_COUNT = Math.floor(size / GRID_SIZE);
+            const desiredSize = Math.min(window.innerWidth * 0.9, 450);
+            // Snap to grid
+            TILE_COUNT = Math.floor(desiredSize / GRID_SIZE);
+            canvas.width = TILE_COUNT * GRID_SIZE;
+            canvas.height = TILE_COUNT * GRID_SIZE;
         }
 
         window.addEventListener('resize', initCanvas);
@@ -368,20 +369,117 @@
             foods.push(newFood);
         }
 
+        let particles = []; // 파티클 배열 추가
+
+        // 파티클 생성 함수
+        function createExplosion(x, y, color) {
+            for (let i = 0; i < 12; i++) {
+                particles.push({
+                    x: x * GRID_SIZE + GRID_SIZE / 2,
+                    y: y * GRID_SIZE + GRID_SIZE / 2,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    life: 1.0,
+                    color: color
+                });
+            }
+        }
+
         function spawnWorm() {
-            const side = Math.floor(Math.random() * 4);
-            let x, y, wdx, wdy;
-            if (side === 0) { x = 0; y = Math.floor(Math.random() * TILE_COUNT); wdx = 1; wdy = 0; }
-            else if (side === 1) { x = TILE_COUNT - 1; y = Math.floor(Math.random() * TILE_COUNT); wdx = -1; wdy = 0; }
-            else if (side === 2) { x = Math.floor(Math.random() * TILE_COUNT); y = 0; wdx = 0; wdy = 1; }
-            else { x = Math.floor(Math.random() * TILE_COUNT); y = TILE_COUNT - 1; wdx = 0; wdy = -1; }
+            // 플레이어와 거리를 둔 위치에서 스폰
+            let x, y, side;
+            let attempts = 0;
+            do {
+                side = Math.floor(Math.random() * 4);
+                if (side === 0) { x = 0; y = Math.floor(Math.random() * TILE_COUNT); }
+                else if (side === 1) { x = TILE_COUNT - 1; y = Math.floor(Math.random() * TILE_COUNT); }
+                else if (side === 2) { x = Math.floor(Math.random() * TILE_COUNT); y = 0; }
+                else { x = Math.floor(Math.random() * TILE_COUNT); y = TILE_COUNT - 1; }
+
+                // 플레이어 머리와의 거리 체크 (맨해튼 거리 5 이상)
+                const dist = Math.abs(x - snake[0].x) + Math.abs(y - snake[0].y);
+                if (dist > 5) break;
+                attempts++;
+            } while (attempts < 10);
+
+            let wdx = 0, wdy = 0;
+            if (side === 0) wdx = 1;
+            else if (side === 1) wdx = -1;
+            else if (side === 2) wdy = 1;
+            else wdy = -1;
 
             const length = 3 + Math.floor(Math.random() * 3);
             const segments = [];
             for (let i = 0; i < length; i++) {
                 segments.push({ x: x - wdx * i, y: y - wdy * i });
             }
-            worms.push({ segments, dx: wdx, dy: wdy, lastMove: 0, moveInterval: 300 });
+            worms.push({ segments, dx: wdx, dy: wdy, lastMove: 0, moveInterval: 300 }); // 속도 조금 느리게 (300ms)
+        }
+
+        // AI: 가장 가까운 먹이 찾기 및 이동 방향 결정
+        function getBestMove(worm) {
+            const head = worm.segments[0];
+            const validMoves = [];
+            const moves = [
+                { dx: 0, dy: -1 }, { dx: 0, dy: 1 },
+                { dx: -1, dy: 0 }, { dx: 1, dy: 0 }
+            ];
+
+            // 1. 유효한 이동 필터링
+            for (const move of moves) {
+                const nx = head.x + move.dx;
+                const ny = head.y + move.dy;
+
+                // 벽 충돌 체크
+                if (nx < 0 || nx >= TILE_COUNT || ny < 0 || ny >= TILE_COUNT) continue;
+
+                // 자기 자신 충돌 체크
+                if (worm.segments.some(s => s.x === nx && s.y === ny)) continue;
+
+                // 플레이어 몸통 충돌 체크 (피해야 함)
+                if (snake.some(s => s.x === nx && s.y === ny)) continue;
+
+                // 다른 지렁이 충돌 체크 (옵션, 서로 겹치지 않게 하려면 추가)
+                if (worms.some(w => w !== worm && w.segments.some(s => s.x === nx && s.y === ny))) continue;
+
+                validMoves.push(move);
+            }
+
+            if (validMoves.length === 0) return { dx: worm.dx, dy: worm.dy }; // 갈 곳 없으면 가던 길 (죽더라도)
+
+            // 2. 가장 가까운 먹이 찾기
+            let target = null;
+            let minDist = Infinity;
+
+            for (const food of foods) {
+                const d = Math.abs(head.x - food.x) + Math.abs(head.y - food.y);
+                if (d < minDist) {
+                    minDist = d;
+                    target = food;
+                }
+            }
+
+            // 먹이가 없으면 랜덤 이동 (혹은 플레이어 반대 방향?) 
+            // 현재 코드엔 먹이가 항상 있음.
+            if (!target) return validMoves[Math.floor(Math.random() * validMoves.length)];
+
+            // 3. 먹이 방향으로 가장 좋은 이동 선택
+            // 간단한 그리디: 먹이와의 거리가 줄어드는 방향 선택
+            let bestMove = validMoves[0];
+            let minFinalDist = Infinity;
+
+            for (const move of validMoves) {
+                const nx = head.x + move.dx;
+                const ny = head.y + move.dy;
+                const distToTarget = Math.abs(nx - target.x) + Math.abs(ny - target.y);
+
+                if (distToTarget < minFinalDist) {
+                    minFinalDist = distToTarget;
+                    bestMove = move;
+                }
+            }
+
+            return bestMove;
         }
 
         function gameLoop(time) {
@@ -411,7 +509,7 @@
         function update(time) {
             // Worm Spawning
             wormSpawnTimer++;
-            if (wormSpawnTimer > 100 && Math.random() < 0.05) {
+            if (wormSpawnTimer > 200 && worms.length < 3 && Math.random() < 0.02) { // 스폰 조건 조정
                 spawnWorm();
                 wormSpawnTimer = 0;
             }
@@ -423,11 +521,27 @@
             // Self collision
             if (snake.some(p => p.x === head.x && p.y === head.y)) return gameOver();
 
-            // Worm collision
-            for (const worm of worms) {
-                if (worm.segments.some(s => s.x === head.x && s.y === head.y)) return gameOver();
-                // If worm head hits player body
+            // Worm collision logic
+            for (let i = worms.length - 1; i >= 0; i--) {
+                const worm = worms[i];
                 const wHead = worm.segments[0];
+
+                // 1. Player Head vs Worm Head (Win)
+                if (head.x === wHead.x && head.y === wHead.y) {
+                    createExplosion(wHead.x, wHead.y, '#ff0000');
+                    worms.splice(i, 1);
+                    score += 50; // 적 처치 보너스
+                    document.getElementById('score').innerText = score;
+                    // 즉시 리스폰? or 타이머? 자연스럽게 타이머에 맡김
+                    // 플레이어는 이동 진행 (겹친 위치로)
+                    continue;
+                }
+
+                // 2. Player Head vs Worm Body (Lose)
+                // 제외: Worm Head (이미 위에서 체크함)
+                if (worm.segments.slice(1).some(s => s.x === head.x && s.y === head.y)) return gameOver();
+
+                // 3. Worm Head vs Player Body (Lose)
                 if (snake.some(p => p.x === wHead.x && p.y === wHead.y)) return gameOver();
             }
 
@@ -456,40 +570,56 @@
                 snake.pop();
             }
 
-            // Move worms & 먹이 가로채기
+            // Move worms
             worms.forEach((worm, i) => {
                 if (time - worm.lastMove > worm.moveInterval) {
                     worm.lastMove = time;
+
+                    // AI Movement
+                    const bestMove = getBestMove(worm);
+                    worm.dx = bestMove.dx;
+                    worm.dy = bestMove.dy;
+
                     const wHead = { x: worm.segments[0].x + worm.dx, y: worm.segments[0].y + worm.dy };
 
-                    // Worm random turn
-                    if (Math.random() < 0.1) {
-                        if (worm.dx !== 0) { worm.dy = Math.random() < 0.5 ? 1 : -1; worm.dx = 0; }
-                        else { worm.dx = Math.random() < 0.5 ? 1 : -1; worm.dy = 0; }
-                    }
-
-                    // Wall collision - change direction or wrap
+                    // Wall collision - AI should avoid this, but fail-safe
                     if (wHead.x < 0 || wHead.x >= TILE_COUNT || wHead.y < 0 || wHead.y >= TILE_COUNT) {
-                        worm.dx *= -1; worm.dy *= -1;
+                        // AI failed? Just stay or random turn?
+                        // getBestMove should return 0,0 if trapped.
                         return;
                     }
 
                     worm.segments.unshift(wHead);
-                    worm.segments.pop();
 
-                    // 빨간 뱀이 먹이를 가로채기
+                    // 빨간 뱀이 먹이를 먹으면 성장
+                    let wormAte = false;
                     for (let j = 0; j < foods.length; j++) {
                         if (wHead.x === foods[j].x && wHead.y === foods[j].y) {
                             foods.splice(j, 1);
                             generateSingleFood();
+                            wormAte = true;
+                            // Worm grows (don't pop)
                             break;
                         }
+                    }
+
+                    if (!wormAte) {
+                        worm.segments.pop();
                     }
                 }
             });
 
+            // Update Particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.05;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+
             // Cleanup offscreen or old worms? For now just keep them limited.
-            if (worms.length > 3) worms.shift();
+            // if (worms.length > 3) worms.shift(); // Limit handled in spawn
         }
 
         function draw() {
@@ -530,6 +660,16 @@
                 });
             });
             ctx.shadowBlur = 0;
+
+            // Draw particles
+            particles.forEach(p => {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1.0;
         }
 
         function gameOver() {

@@ -450,7 +450,6 @@
         let selectedPiece = null;
         let gameActive = false;
         let comboCount = 0;
-        let comboMovesLeft = 0; // 콤보 유지를 위한 남은 이동 횟수
 
         highScoreEl.innerText = highScore;
 
@@ -640,9 +639,8 @@
 
             // 클리어 애니메이션
             if (rowsToClear.length > 0 || colsToClear.length > 0) {
-                // 콤보 증가 및 유지 횟수 리셋
+                // 콤보 증가
                 comboCount++;
-                comboMovesLeft = 3; // 3번의 배치 기회 부여
                 triggerShake();
 
                 // 이펙트 중심점 계산 (대충 화면 중앙이나 클리어된 줄 근처)
@@ -683,11 +681,20 @@
                 // 점수 계산
                 const linesCleared = rowsToClear.length + colsToClear.length;
                 let bonus = linesCleared > 1 ? linesCleared * 10 : 0;
-                // 콤보 보너스
-                bonus += (comboCount - 1) * 20;
+
+                // 콤보 보너스 (대폭 상향)
+                // 콤보가 유지될 때 점수 증가폭을 크게 적용
+                if (comboCount > 0) {
+                    bonus += comboCount * 30 + (comboCount * comboCount * 10);
+                }
 
                 score += linesCleared * 10 + bonus;
-                scoreEl.innerText = score;
+                scoreEl.innerHTML = `<div>${score}</div><div style="font-size:0.5em; color:#ffd700; opacity:0.8;">+${linesCleared * 10 + bonus}</div>`;
+
+                // 점수 애니메이션 복구
+                setTimeout(() => {
+                    scoreEl.innerText = score;
+                }, 1000);
 
                 if (score > highScore) {
                     highScore = score;
@@ -695,11 +702,7 @@
                     highScoreEl.innerText = highScore;
                 }
             } else {
-                // 라인 클리어 실패 시 콤보 유지 카운트 감소
-                comboMovesLeft--;
-                if (comboMovesLeft === 0) {
-                    comboCount = 0;
-                }
+                comboCount = 0;
             }
         }
 

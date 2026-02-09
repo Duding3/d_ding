@@ -455,6 +455,7 @@
         // [데이터 영역] v7.2 - 각 카테고리 100개 이상
         const typingData = {
             proverbs: [
+                "호주머니의 호들갑", "캄호디아",
                 "샤랩 으아아아!", "샤아아아래애앱!",
                 "가는 말이 고와야 오는 말이 곱다.", "등잔 밑이 어둡다.", "세 살 버릇 여든까지 간다.",
                 "고생 끝에 낙이 온다.", "원숭이도 나무에서 떨어진다.", "시작이 반이다.",
@@ -807,7 +808,7 @@
                 for (let i = 0; i < 2 && queue.length > 0; i++) {
                     items.push(queue.pop());
                 }
-                finalStr = items.join('\n\n');
+                finalStr = items.join('\n');
             } else {
                 // 짧은글, 동화, 영타: 1개씩 표시
                 finalStr = queue.pop();
