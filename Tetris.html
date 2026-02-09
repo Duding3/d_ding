@@ -8,11 +8,11 @@
     <title>다일러 테트리스 v1.1</title>
     <style>
         :root {
-            --unit: min(3.5vh, 2.8vw, 22px);
+            --unit: min(6.5vh, 5vw, 40px);
             --main-color: #4ecca3;
             --bg-color: #1a1a2e;
             --board-width: calc(var(--unit) * 12);
-            --side-width: calc(var(--unit) * 5);
+            --side-width: calc(var(--unit) * 4.5);
         }
 
         body {
@@ -28,7 +28,7 @@
             overflow-x: hidden;
             overflow-y: auto;
             touch-action: none;
-            padding: 20px 10px;
+            padding: 4px 2px;
             box-sizing: border-box;
             background-attachment: fixed;
         }
@@ -38,8 +38,8 @@
             flex-direction: column;
             align-items: center;
             transition: opacity 0.1s;
-            gap: calc(var(--unit) * 0.5);
-            margin: auto;
+            gap: calc(var(--unit) * 0.15);
+            margin: 0 auto;
             position: relative;
         }
 
@@ -47,14 +47,14 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: calc(var(--unit) * 0.2);
-            margin-bottom: calc(var(--unit) * 0.2);
+            gap: calc(var(--unit) * 0.1);
+            margin-bottom: calc(var(--unit) * 0.1);
         }
 
         h1 {
             color: var(--main-color);
             margin: 0;
-            font-size: calc(var(--unit) * 1.4);
+            font-size: calc(var(--unit) * 1.1);
         }
 
         .refresh-btn {
@@ -80,9 +80,9 @@
             grid-template-columns: var(--side-width) var(--board-width) var(--side-width);
             align-items: start;
             justify-content: center;
-            gap: calc(var(--unit) * 1.0);
-            /* Increased gap for breathing room */
+            gap: calc(var(--unit) * 0.6);
             position: relative;
+            width: calc(var(--board-width) + var(--side-width) * 2 + var(--unit) * 1.2);
         }
 
         /* 스타트 & 게임오버 오버레이 */
@@ -252,22 +252,35 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: var(--board-width);
+            width: calc(var(--board-width) + var(--side-width) * 2 + var(--unit) * 1.2);
             gap: calc(var(--unit) * 0.35);
         }
 
-        .layout-row-top {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: calc(var(--unit) * 0.3);
+        .controls-row {
+            display: flex;
+            justify-content: space-between;
+            gap: calc(var(--unit) * 0.5);
             width: 100%;
         }
 
-        .layout-row-bottom {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: calc(var(--unit) * 0.3);
-            width: 100%;
+        .controls-left,
+        .controls-right {
+            display: flex;
+            gap: calc(var(--unit) * 0.4);
+        }
+
+        .controls-left .btn {
+            min-width: calc(var(--unit) * 4);
+            padding: 0 calc(var(--unit) * 0.8);
+        }
+
+        .controls-right .btn {
+            min-width: calc(var(--unit) * 2.5);
+            padding: 0 calc(var(--unit) * 0.6);
+        }
+
+        .controls-right {
+            flex-direction: row;
         }
 
         .btn,
@@ -277,14 +290,18 @@
             -webkit-backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: var(--main-color);
-            height: calc(var(--unit) * 1.8);
+            height: calc(var(--unit) * 2.4);
             display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 12px;
             font-weight: 600;
+            font-size: calc(var(--unit) * 0.7);
             -webkit-tap-highlight-color: transparent;
             user-select: none;
+            -webkit-user-select: none;
+            -webkit-user-drag: none;
+            touch-action: manipulation;
             box-sizing: border-box;
             transition: all 0.3s ease;
         }
@@ -439,14 +456,16 @@
 
         <div class="controls-section">
             <div class="controls-info">키보드 조작 : ←→ 이동 | ↑ 회전 | ↓ 가속 | Space 하강</div>
-            <div class="layout-row-top">
-                <div class="btn" id="ctrl-left">◀</div>
-                <div class="btn" id="ctrl-down">▼</div>
-                <div class="btn" id="ctrl-right">▶</div>
-            </div>
-            <div class="layout-row-bottom">
-                <div class="btn" style="background: rgba(78, 204, 163, 0.25);" id="ctrl-up">회전</div>
-                <div class="btn" style="background: rgba(255, 255, 255, 0.1);" id="ctrl-drop">스페이스바</div>
+            <div class="controls-row">
+                <div class="controls-left">
+                    <div class="btn" style="background: rgba(255, 255, 255, 0.1);" id="ctrl-drop">스페이스</div>
+                    <div class="btn" style="background: rgba(78, 204, 163, 0.25);" id="ctrl-up">회전</div>
+                </div>
+                <div class="controls-right">
+                    <div class="btn" id="ctrl-left">◀</div>
+                    <div class="btn" id="ctrl-down">▼</div>
+                    <div class="btn" id="ctrl-right">▶</div>
+                </div>
             </div>
 
             <div class="slider-area">
@@ -666,6 +685,10 @@
 
         opacitySlider.addEventListener('input', (e) => { gameWrapper.style.opacity = e.target.value / 100; });
         document.addEventListener('keydown', e => {
+            // 방향키/스페이스로 페이지 스크롤 방지
+            if ([37, 38, 39, 40, 32].includes(e.keyCode)) {
+                e.preventDefault();
+            }
             if (isGameOver) { location.reload(); return; }
             if (!gameStarted) {
                 if (e.keyCode === 13) startGame(); // 엔터로 시작

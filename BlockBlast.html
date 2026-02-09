@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>블록블라스트 (Block Blast) v1.0</title>
+    <style>
+        :root {
+            --unit: min(4vh, 3.5vw, 26px);
+            --main-color: #f59e0b;
+            --bg-color: #1a1a2e;
+            --card-bg: rgba(255, 255, 255, 0.03);
+        }
+
+        body {
+            background: radial-gradient(circle at center, #2d1f0a 0%, #1a1a2e 100%);
+            color: #fff;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100dvh;
+            margin: 0;
+            overflow-x: hidden;
+            overflow-y: auto;
+            touch-action: pan-y;
+            padding: 10px 0 30px 0;
+            box-sizing: border-box;
+        }
+
+        #game-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: calc(var(--unit) * 0.8);
+            position: relative;
+        }
+
+        .game-header {
+            text-align: center;
+        }
+
+        h1 {
+            color: var(--main-color);
+            margin: 0;
+            font-size: calc(var(--unit) * 1.5);
+            text-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+        }
+
+        .version {
+            font-size: 0.9rem;
+            color: #aaa;
+            opacity: 0.5;
+            font-weight: normal;
+        }
+
+        .stats {
+            display: flex;
+            gap: calc(var(--unit) * 0.6);
+            justify-content: center;
+            margin-top: calc(var(--unit) * 0.5);
+        }
+
+        .stat-box {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: calc(var(--unit) * 0.3) calc(var(--unit) * 0.8);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: calc(var(--unit) * 0.4);
+            color: var(--main-color);
+            font-weight: bold;
+        }
+
+        .stat-value {
+            font-size: calc(var(--unit) * 0.8);
+            font-weight: 800;
+        }
+
+        .refresh-btn {
+            background: var(--main-color);
+            border: none;
+            color: #1a1a2e;
+            padding: 6px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.8rem;
+            margin-top: 5px;
+            transition: all 0.2s;
+        }
+
+        .refresh-btn:hover {
+            transform: scale(1.05);
+        }
+
+        #board {
+            display: grid;
+            grid-template-columns: repeat(8, calc(var(--unit) * 1.8));
+            grid-template-rows: repeat(8, calc(var(--unit) * 1.8));
+            gap: 2px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 8px;
+            border-radius: 12px;
+            border: 2px solid rgba(245, 158, 11, 0.3);
+            position: relative;
+            /* 파티클 및 콤보 팝업 위치 기준 */
+        }
+
+        .cell {
+            width: calc(var(--unit) * 1.8);
+            height: calc(var(--unit) * 1.8);
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            transition: all 0.15s;
+        }
+
+        .cell.filled {
+            box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.2), 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .cell.preview {
+            background: rgba(245, 158, 11, 0.3) !important;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+        }
+
+        .cell.invalid-preview {
+            background: rgba(239, 68, 68, 0.3) !important;
+        }
+
+        /* Screen Shake Animation (Intensity Reduced) */
+        @keyframes shake {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+
+            10% {
+                transform: translate(-2px, 0) rotate(-0.5deg);
+            }
+
+            20% {
+                transform: translate(2px, 0) rotate(0.5deg);
+            }
+
+            30% {
+                transform: translate(-2px, 0) rotate(0deg);
+            }
+
+            40% {
+                transform: translate(2px, 0) rotate(0.5deg);
+            }
+
+            50% {
+                transform: translate(-1px, 0) rotate(-0.5deg);
+            }
+
+            60% {
+                transform: translate(1px, 0) rotate(0deg);
+            }
+
+            70% {
+                transform: translate(-1px, 0) rotate(0.5deg);
+            }
+
+            80% {
+                transform: translate(1px, 0) rotate(-0.5deg);
+            }
+
+            90% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+
+            100% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+        }
+
+        .cell.clearing {
+            animation: clearPulse 0.4s ease-out;
+            z-index: 10;
+            /* 이펙트가 위에 보이도록 */
+        }
+
+        @keyframes clearPulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+                filter: brightness(1.5) drop-shadow(0 0 5px #fff);
+                background-color: #fff !important;
+                /* 번쩍! */
+            }
+
+            30% {
+                transform: scale(1.1);
+                opacity: 1;
+                filter: brightness(2) drop-shadow(0 0 10px #fff);
+                background-color: #fff !important;
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+                filter: brightness(1);
+            }
+        }
+
+        #pieces-area {
+            display: flex;
+            justify-content: center;
+            gap: calc(var(--unit) * 1);
+            margin-top: calc(var(--unit) * 0.5);
+            min-height: calc(var(--unit) * 5);
+            padding: 10px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .piece-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: grab;
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.2s;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-user-drag: none;
+            touch-action: none;
+        }
+
+        .piece-container:hover {
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .piece-container.selected {
+            background: rgba(245, 158, 11, 0.2);
+            transform: scale(1.05);
+        }
+
+        .piece-container.used {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .piece-grid {
+            display: grid;
+            gap: 2px;
+        }
+
+        .piece-cell {
+            width: calc(var(--unit) * 0.8);
+            height: calc(var(--unit) * 0.8);
+            border-radius: 4px;
+        }
+
+        .piece-cell.filled {
+            box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.2);
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            border-radius: 12px;
+        }
+
+        .start-btn {
+            padding: 15px 40px;
+            background: var(--main-color);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 12px;
+            font-weight: 900;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
+            transition: all 0.2s;
+        }
+
+        .start-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .slider-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            padding: 10px 15px;
+            background: rgba(245, 158, 11, 0.1);
+            border: 2px solid var(--main-color);
+            border-radius: 12px;
+        }
+
+        .slider-label {
+            color: var(--main-color);
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        #opacitySlider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: rgba(245, 158, 11, 0.2);
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        #opacitySlider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--main-color);
+            cursor: pointer;
+        }
+
+        .game-over-text {
+            color: #ef4444;
+            font-size: 2rem;
+            font-weight: 900;
+            margin-bottom: 10px;
+        }
+
+        .final-score {
+            color: #fff;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+
+        .shake {
+            animation: shake 0.4s cubic-bezier(.36, .07, .19, .97) both;
+        }
+
+        /* Combo Popup */
+        .combo-popup {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3rem;
+            font-weight: 900;
+            color: #fbbf24;
+            text-shadow: 0 0 10px #f59e0b, 0 0 20px #b91c1c;
+            pointer-events: none;
+            z-index: 100;
+            opacity: 0;
+            white-space: nowrap;
+        }
+
+        .combo-popup.animate {
+            animation: comboFloat 1s ease-out forwards;
+        }
+
+        @keyframes comboFloat {
+            0% {
+                transform: translate(-50%, -50%) scale(0.5);
+                opacity: 0;
+            }
+
+            50% {
+                transform: translate(-50%, -100%) scale(1.5);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translate(-50%, -150%) scale(1);
+                opacity: 0;
+            }
+        }
+
+        /* Particles */
+        .particle {
+            position: absolute;
+            background: #fff;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 50;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="game-wrapper">
+        <div class="game-header">
+            <h1>블록블라스트 <span class="version">v1.0</span></h1>
+            <button class="refresh-btn" onclick="location.reload(true)">새로고침</button>
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-label">점수</div>
+                    <div id="score" class="stat-value">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">최고 기록</div>
+                    <div id="highScore" class="stat-value">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="game-main"
+            style="position: relative; display: flex; flex-direction: column; align-items: center; gap: calc(var(--unit) * 0.8);">
+            <div id="board"></div>
+            <div id="pieces-area"></div>
+            <div id="overlay">
+                <h2 id="msg" style="color: var(--main-color); margin-bottom: 10px;">블록블라스트</h2>
+                <p style="color: #aaa; margin-bottom: 20px; text-align: center;">블록을 배치해서<br>가로/세로 줄을 완성하세요!</p>
+                <button class="start-btn" onclick="startGame()">게임 시작</button>
+            </div>
+        </div>
+
+        <div class="slider-area">
+            <span class="slider-label">투명도</span>
+            <input type="range" id="opacitySlider" min="30" max="100" value="100">
+        </div>
+    </div>
+
+    <script>
+        const BOARD_SIZE = 8;
+        const board = [];
+        const boardEl = document.getElementById('board');
+        const piecesArea = document.getElementById('pieces-area');
+        const overlay = document.getElementById('overlay');
+        const scoreEl = document.getElementById('score');
+        const highScoreEl = document.getElementById('highScore');
+
+        let score = 0;
+        let highScore = localStorage.getItem('blockBlastHigh') || 0;
+        let currentPieces = [];
+        let selectedPiece = null;
+        let gameActive = false;
+        let comboCount = 0;
+        let comboMovesLeft = 0; // 콤보 유지를 위한 남은 이동 횟수
+
+        highScoreEl.innerText = highScore;
+
+        // 블록 색상
+        const COLORS = [
+            '#ef4444', '#f97316', '#eab308', '#22c55e',
+            '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6'
+        ];
+
+        // 블록 모양 정의
+        const SHAPES = [
+            // 1x1
+            [[1]],
+            // 1x2, 2x1
+            [[1, 1]], [[1], [1]],
+            // 1x3, 3x1
+            [[1, 1, 1]], [[1], [1], [1]],
+            // 1x4, 4x1
+            [[1, 1, 1, 1]], [[1], [1], [1], [1]],
+            // 2x2
+            [[1, 1], [1, 1]],
+            // L shapes
+            [[1, 0], [1, 0], [1, 1]],
+            [[1, 1, 1], [1, 0, 0]],
+            [[1, 1], [0, 1], [0, 1]],
+            [[0, 0, 1], [1, 1, 1]],
+            // T shape
+            [[1, 1, 1], [0, 1, 0]],
+            [[1, 0], [1, 1], [1, 0]],
+            // S/Z shapes
+            [[0, 1, 1], [1, 1, 0]],
+            [[1, 1, 0], [0, 1, 1]],
+            // 3x3
+            [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
+            // Corner 2x2
+            [[1, 1], [1, 0]],
+            [[1, 1], [0, 1]],
+            [[1, 0], [1, 1]],
+            [[0, 1], [1, 1]]
+        ];
+
+        function initBoard() {
+            boardEl.innerHTML = '';
+            board.length = 0;
+            for (let y = 0; y < BOARD_SIZE; y++) {
+                board[y] = [];
+                for (let x = 0; x < BOARD_SIZE; x++) {
+                    board[y][x] = 0;
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    boardEl.appendChild(cell);
+                }
+            }
+        }
+
+        function getCell(x, y) {
+            return boardEl.querySelector(`[data-x="${x}"][data-y="${y}"]`);
+        }
+
+        function renderBoard() {
+            for (let y = 0; y < BOARD_SIZE; y++) {
+                for (let x = 0; x < BOARD_SIZE; x++) {
+                    const cell = getCell(x, y);
+                    if (board[y][x]) {
+                        cell.className = 'cell filled';
+                        cell.style.background = board[y][x];
+                    } else {
+                        cell.className = 'cell';
+                        cell.style.background = '';
+                    }
+                }
+            }
+        }
+
+        function generatePieces() {
+            currentPieces = [];
+            piecesArea.innerHTML = '';
+
+            for (let i = 0; i < 3; i++) {
+                const shape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+                const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+                const piece = { shape, color, used: false };
+                currentPieces.push(piece);
+
+                const container = createPieceElement(piece, i);
+                piecesArea.appendChild(container);
+            }
+        }
+
+        function createPieceElement(piece, index) {
+            const container = document.createElement('div');
+            container.className = 'piece-container';
+            container.dataset.index = index;
+
+            const grid = document.createElement('div');
+            grid.className = 'piece-grid';
+            grid.style.gridTemplateColumns = `repeat(${piece.shape[0].length}, calc(var(--unit) * 0.8))`;
+            grid.style.gridTemplateRows = `repeat(${piece.shape.length}, calc(var(--unit) * 0.8))`;
+
+            for (let y = 0; y < piece.shape.length; y++) {
+                for (let x = 0; x < piece.shape[0].length; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'piece-cell';
+                    if (piece.shape[y][x]) {
+                        cell.classList.add('filled');
+                        cell.style.background = piece.color;
+                    }
+                    grid.appendChild(cell);
+                }
+            }
+
+            container.appendChild(grid);
+
+            // 클릭/터치 이벤트
+            container.addEventListener('click', () => selectPiece(index));
+            container.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                selectPiece(index);
+            });
+
+            return container;
+        }
+
+        function selectPiece(index) {
+            if (currentPieces[index].used) return;
+
+            // 이전 선택 해제
+            document.querySelectorAll('.piece-container').forEach(el => el.classList.remove('selected'));
+
+            selectedPiece = index;
+            document.querySelector(`[data-index="${index}"]`).classList.add('selected');
+        }
+
+        function canPlace(shape, startX, startY) {
+            for (let y = 0; y < shape.length; y++) {
+                for (let x = 0; x < shape[0].length; x++) {
+                    if (shape[y][x]) {
+                        const boardX = startX + x;
+                        const boardY = startY + y;
+                        if (boardX < 0 || boardX >= BOARD_SIZE ||
+                            boardY < 0 || boardY >= BOARD_SIZE ||
+                            board[boardY][boardX]) {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+        function placePiece(shape, color, startX, startY) {
+            for (let y = 0; y < shape.length; y++) {
+                for (let x = 0; x < shape[0].length; x++) {
+                    if (shape[y][x]) {
+                        board[startY + y][startX + x] = color;
+                    }
+                }
+            }
+        }
+
+
+
+        function checkAndClearLines() {
+            const rowsToClear = [];
+            const colsToClear = [];
+
+            // 가로 줄 체크
+            for (let y = 0; y < BOARD_SIZE; y++) {
+                if (board[y].every(cell => cell !== 0)) {
+                    rowsToClear.push(y);
+                }
+            }
+
+            // 세로 줄 체크
+            for (let x = 0; x < BOARD_SIZE; x++) {
+                let full = true;
+                for (let y = 0; y < BOARD_SIZE; y++) {
+                    if (!board[y][x]) {
+                        full = false;
+                        break;
+                    }
+                }
+                if (full) colsToClear.push(x);
+            }
+
+            // 클리어 애니메이션
+            if (rowsToClear.length > 0 || colsToClear.length > 0) {
+                // 콤보 증가 및 유지 횟수 리셋
+                comboCount++;
+                comboMovesLeft = 3; // 3번의 배치 기회 부여
+                triggerShake();
+
+                // 이펙트 중심점 계산 (대충 화면 중앙이나 클리어된 줄 근처)
+                // 간단하게 화면 중앙에 콤보 표시
+                if (comboCount > 1) {
+                    showCombo(comboCount);
+                }
+
+                rowsToClear.forEach(y => {
+                    for (let x = 0; x < BOARD_SIZE; x++) {
+                        const cell = getCell(x, y);
+                        cell.classList.add('clearing');
+                        createParticles(cell.offsetLeft + cell.offsetWidth / 2, cell.offsetTop + cell.offsetHeight / 2, board[y][x]);
+                    }
+                });
+                colsToClear.forEach(x => {
+                    for (let y = 0; y < BOARD_SIZE; y++) {
+                        const cell = getCell(x, y);
+                        cell.classList.add('clearing');
+                        createParticles(cell.offsetLeft + cell.offsetWidth / 2, cell.offsetTop + cell.offsetHeight / 2, board[y][x]);
+                    }
+                });
+
+                setTimeout(() => {
+                    rowsToClear.forEach(y => {
+                        for (let x = 0; x < BOARD_SIZE; x++) {
+                            board[y][x] = 0;
+                        }
+                    });
+                    colsToClear.forEach(x => {
+                        for (let y = 0; y < BOARD_SIZE; y++) {
+                            board[y][x] = 0;
+                        }
+                    });
+                    renderBoard();
+                }, 300);
+
+                // 점수 계산
+                const linesCleared = rowsToClear.length + colsToClear.length;
+                let bonus = linesCleared > 1 ? linesCleared * 10 : 0;
+                // 콤보 보너스
+                bonus += (comboCount - 1) * 20;
+
+                score += linesCleared * 10 + bonus;
+                scoreEl.innerText = score;
+
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('blockBlastHigh', highScore);
+                    highScoreEl.innerText = highScore;
+                }
+            } else {
+                // 라인 클리어 실패 시 콤보 유지 카운트 감소
+                comboMovesLeft--;
+                if (comboMovesLeft === 0) {
+                    comboCount = 0;
+                }
+            }
+        }
+
+        // 이펙트 함수들
+        function triggerShake() {
+            const wrapper = document.getElementById('game-wrapper');
+            wrapper.classList.remove('shake');
+            void wrapper.offsetWidth; // trigger reflow
+            wrapper.classList.add('shake');
+        }
+
+        function showCombo(count) {
+            const popup = document.createElement('div');
+            popup.className = 'combo-popup';
+            popup.innerHTML = `${count} COMBO!`;
+            // 랜덤 색상
+            const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+            popup.style.color = color;
+            popup.style.textShadow = `0 0 10px ${color}, 0 0 20px #fff`;
+
+            document.getElementById('board').appendChild(popup); // 보드 위에 표시
+
+            requestAnimationFrame(() => {
+                popup.classList.add('animate');
+            });
+
+            setTimeout(() => {
+                popup.remove();
+            }, 1000);
+        }
+
+        function createParticles(x, y, color) {
+            const particleCount = 8;
+            for (let i = 0; i < particleCount; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                const size = Math.random() * 6 + 4;
+                p.style.width = `${size}px`;
+                p.style.height = `${size}px`;
+                p.style.background = color;
+                p.style.left = `${x}px`;
+                p.style.top = `${y}px`;
+
+                // Random velocity
+                const angle = Math.random() * Math.PI * 2;
+                const velocity = Math.random() * 60 + 20;
+                const tx = Math.cos(angle) * velocity;
+                const ty = Math.sin(angle) * velocity;
+
+                p.style.transition = 'all 0.5s ease-out';
+                boardEl.appendChild(p);
+
+                requestAnimationFrame(() => {
+                    p.style.transform = `translate(${tx}px, ${ty}px) scale(0)`;
+                    p.style.opacity = 0;
+                });
+
+                setTimeout(() => p.remove(), 500);
+            }
+        }
+
+        function canPlaceAnyPiece() {
+            for (const piece of currentPieces) {
+                if (piece.used) continue;
+                for (let y = 0; y < BOARD_SIZE; y++) {
+                    for (let x = 0; x < BOARD_SIZE; x++) {
+                        if (canPlace(piece.shape, x, y)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        function gameOver() {
+            gameActive = false;
+            overlay.innerHTML = `
+                <div class="game-over-text" style="font-size: 3rem; margin-bottom: 20px; text-shadow: 0 0 20px rgba(239, 68, 68, 0.6);">GAME OVER</div>
+                <div class="final-score" style="font-size: 1.5rem; margin-bottom: 30px;">최종 점수: <span style="color: var(--main-color);">${score}</span></div>
+                <p style="color: #aaa; margin-bottom: 30px;">더 이상 배치할 수 없습니다!</p>
+                <button class="start-btn" onclick="startGame()">다시 시작</button>
+            `;
+            overlay.style.display = 'flex';
+        }
+
+        function showPreview(x, y) {
+            clearPreview();
+            if (selectedPiece === null) return;
+
+            const piece = currentPieces[selectedPiece];
+            const valid = canPlace(piece.shape, x, y);
+
+            for (let py = 0; py < piece.shape.length; py++) {
+                for (let px = 0; px < piece.shape[0].length; px++) {
+                    if (piece.shape[py][px]) {
+                        const cell = getCell(x + px, y + py);
+                        if (cell) {
+                            cell.classList.add(valid ? 'preview' : 'invalid-preview');
+                        }
+                    }
+                }
+            }
+        }
+
+        function clearPreview() {
+            document.querySelectorAll('.cell').forEach(cell => {
+                cell.classList.remove('preview', 'invalid-preview');
+            });
+        }
+
+        function handleBoardClick(e) {
+            if (!gameActive || selectedPiece === null) return;
+
+            const cell = e.target.closest('.cell');
+            if (!cell) return;
+
+            const x = parseInt(cell.dataset.x);
+            const y = parseInt(cell.dataset.y);
+            const piece = currentPieces[selectedPiece];
+
+            if (canPlace(piece.shape, x, y)) {
+                placePiece(piece.shape, piece.color, x, y);
+                piece.used = true;
+                document.querySelector(`[data-index="${selectedPiece}"]`).classList.add('used');
+                selectedPiece = null;
+                renderBoard();
+                checkAndClearLines();
+
+                // 모든 피스 사용 시 새로운 피스 생성
+                if (currentPieces.every(p => p.used)) {
+                    setTimeout(() => {
+                        generatePieces();
+                        // 데이터 업데이트(300ms) 후 충분한 여유를 두고 체크 (400ms)
+                        if (!canPlaceAnyPiece()) {
+                            gameOver();
+                        }
+                    }, 400);
+                } else {
+                    // 남은 피스로 배치 가능한지 체크
+                    setTimeout(() => {
+                        if (!canPlaceAnyPiece()) {
+                            gameOver();
+                        }
+                    }, 400);
+                }
+            }
+        }
+
+        function startGame() {
+            score = 0;
+            scoreEl.innerText = 0;
+            gameActive = true;
+            selectedPiece = null;
+            initBoard();
+            generatePieces();
+            overlay.style.display = 'none';
+        }
+
+        // 이벤트 리스너
+        boardEl.addEventListener('click', handleBoardClick);
+        boardEl.addEventListener('mousemove', (e) => {
+            const cell = e.target.closest('.cell');
+            if (cell && selectedPiece !== null) {
+                showPreview(parseInt(cell.dataset.x), parseInt(cell.dataset.y));
+            }
+        });
+        boardEl.addEventListener('mouseleave', clearPreview);
+
+        // 터치 이벤트
+        boardEl.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const cell = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (cell && cell.classList.contains('cell') && selectedPiece !== null) {
+                const x = parseInt(cell.dataset.x);
+                const y = parseInt(cell.dataset.y);
+                showPreview(x, y);
+            }
+        });
+
+        boardEl.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            const touch = e.changedTouches[0];
+            const cell = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (cell && cell.classList.contains('cell')) {
+                handleBoardClick({ target: cell });
+            }
+            clearPreview();
+        });
+
+        // 키보드 스크롤 방지
+        window.addEventListener('keydown', (e) => {
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+
+        // 투명도
+        document.getElementById('opacitySlider').addEventListener('input', (e) => {
+            document.body.style.opacity = e.target.value / 100;
+        });
+
+        // 초기 보드 렌더링
+        initBoard();
+    </script>
+</body>
+
+</html>

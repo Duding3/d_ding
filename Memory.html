@@ -150,6 +150,15 @@
             box-shadow: 0 0 15px var(--main-color);
             border-color: var(--main-color);
             background: linear-gradient(135deg, rgba(244, 114, 182, 0.4) 0%, rgba(244, 114, 182, 0.2) 100%);
+            visibility: visible !important;
+            opacity: 1 !important;
+            backface-visibility: visible !important;
+            -webkit-backface-visibility: visible !important;
+        }
+
+        .card.matched .card-front {
+            visibility: hidden !important;
+            opacity: 0 !important;
         }
 
         @keyframes matchPop {
@@ -226,12 +235,14 @@
             align-items: center;
             gap: 10px;
             margin-top: 25px;
-            padding: 10px 20px;
+            padding: 10px 15px;
             background: rgba(244, 114, 182, 0.1);
             border: 2px solid var(--main-color);
             border-radius: 12px;
-            width: 100%;
-            max-width: 450px;
+            width: calc(var(--unit) * 12 + 45px);
+            /* 게임 그리드와 동일한 폭 */
+            max-width: calc(var(--unit) * 12 + 45px);
+            box-sizing: border-box;
         }
 
         .slider-label {

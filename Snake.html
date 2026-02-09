@@ -5,10 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>네온 스네이크 (Snake) v1.1</title>
+    <title>네온 스네이크 (Snake) v1.2</title>
     <style>
         :root {
-            --unit: min(3.5vh, 2.8vw, 22px);
+            --unit: min(4.5vh, 3.6vw, 28px);
             --main-color: #4ade80;
             --bg-color: #1a1a2e;
             --card-bg: rgba(255, 255, 255, 0.03);
@@ -21,11 +21,14 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             min-height: 100dvh;
             margin: 0;
-            overflow: hidden;
-            touch-action: none;
+            overflow-x: hidden;
+            overflow-y: auto;
+            touch-action: pan-y;
+            padding: 10px 0 30px 0;
+            box-sizing: border-box;
         }
 
         #game-wrapper {
@@ -86,8 +89,8 @@
             border-radius: 8px;
             background: rgba(0, 0, 0, 0.4);
             box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
-            width: calc(var(--unit) * 15);
-            height: calc(var(--unit) * 15);
+            width: calc(var(--unit) * 18);
+            height: calc(var(--unit) * 18);
         }
 
         .controls {
@@ -112,6 +115,9 @@
             font-size: 1.2rem;
             cursor: pointer;
             user-select: none;
+            -webkit-user-select: none;
+            -webkit-user-drag: none;
+            touch-action: manipulation;
             transition: all 0.2s;
             -webkit-tap-highlight-color: transparent;
         }
@@ -204,13 +210,13 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            margin-top: 20px;
-            padding: 10px 20px;
+            margin-top: 15px;
+            padding: 8px 15px;
             background: rgba(74, 222, 128, 0.1);
             border: 2px solid var(--main-color);
             border-radius: 12px;
             width: 100%;
-            max-width: 400px;
+            max-width: 280px;
         }
 
         .slider-label {
@@ -246,7 +252,7 @@
 <body>
     <div id="game-wrapper">
         <div class="game-header">
-            <h1>네온 스네이크 <span class="version">v1.1</span></h1>
+            <h1>네온 스네이크 <span class="version">v1.2</span></h1>
             <button class="refresh-btn" onclick="location.reload(true)">새로고침</button>
             <div class="stats">
                 <div class="stat-box">
@@ -269,11 +275,18 @@
             </div>
         </div>
 
-    </div>
-    <div class="slider-area">
-        <span class="slider-label">투명도</span>
-        <input type="range" id="opacitySlider" min="30" max="100" value="100">
-    </div>
+        <!-- 모바일 방향키 컨트롤 추가 -->
+        <div class="controls">
+            <div class="ctrl-btn" id="btn-up">▲</div>
+            <div class="ctrl-btn" id="btn-left">◀</div>
+            <div class="ctrl-btn" id="btn-down">▼</div>
+            <div class="ctrl-btn" id="btn-right">▶</div>
+        </div>
+
+        <div class="slider-area">
+            <span class="slider-label">투명도</span>
+            <input type="range" id="opacitySlider" min="30" max="100" value="100">
+        </div>
     </div>
 
     <script>
@@ -285,7 +298,8 @@
         const GRID_SIZE = 20;
         let TILE_COUNT = 20;
         let snake = [{ x: 10, y: 10 }];
-        let food = { x: 15, y: 15 };
+        // 먹이를 배열로 변경 (2개 이상)
+        let foods = [{ x: 15, y: 15 }, { x: 5, y: 5 }];
         let dx = 0;
         let dy = 0;
         let score = 0;
@@ -304,7 +318,7 @@
         document.getElementById('highScore').innerText = highScore;
 
         function initCanvas() {
-            const size = Math.min(window.innerWidth * 0.9, 400);
+            const size = Math.min(window.innerWidth * 0.9, 450);
             canvas.width = size;
             canvas.height = size;
             TILE_COUNT = Math.floor(size / GRID_SIZE);
@@ -315,7 +329,7 @@
 
         function startGame() {
             snake = [{ x: 10, y: 10 }];
-            generateFood();
+            generateFoods();
             dx = 0; dy = 0;
             score = 0;
             speed = 150;
@@ -331,29 +345,43 @@
             requestAnimationFrame(gameLoop);
         }
 
-        function generateFood() {
-            food = {
-                x: Math.floor(Math.random() * TILE_COUNT),
-                y: Math.floor(Math.random() * TILE_COUNT)
-            };
-            // Ensure food doesn't spawn on snake
-            if (snake.some(p => p.x === food.x && p.y === food.y)) generateFood();
+        // 먹이 여러개 생성
+        function generateFoods() {
+            const foodCount = 2 + Math.floor(score / 50); // 점수 올라가면 먹이 증가
+            foods = [];
+            for (let i = 0; i < Math.min(foodCount, 4); i++) {
+                generateSingleFood();
+            }
+        }
+
+        function generateSingleFood() {
+            let newFood;
+            do {
+                newFood = {
+                    x: Math.floor(Math.random() * TILE_COUNT),
+                    y: Math.floor(Math.random() * TILE_COUNT)
+                };
+            } while (
+                snake.some(p => p.x === newFood.x && p.y === newFood.y) ||
+                foods.some(f => f.x === newFood.x && f.y === newFood.y)
+            );
+            foods.push(newFood);
         }
 
         function spawnWorm() {
             const side = Math.floor(Math.random() * 4);
-            let x, y, dx, dy;
-            if (side === 0) { x = 0; y = Math.floor(Math.random() * TILE_COUNT); dx = 1; dy = 0; }
-            else if (side === 1) { x = TILE_COUNT - 1; y = Math.floor(Math.random() * TILE_COUNT); dx = -1; dy = 0; }
-            else if (side === 2) { x = Math.floor(Math.random() * TILE_COUNT); y = 0; dx = 0; dy = 1; }
-            else { x = Math.floor(Math.random() * TILE_COUNT); y = TILE_COUNT - 1; dx = 0; dy = -1; }
+            let x, y, wdx, wdy;
+            if (side === 0) { x = 0; y = Math.floor(Math.random() * TILE_COUNT); wdx = 1; wdy = 0; }
+            else if (side === 1) { x = TILE_COUNT - 1; y = Math.floor(Math.random() * TILE_COUNT); wdx = -1; wdy = 0; }
+            else if (side === 2) { x = Math.floor(Math.random() * TILE_COUNT); y = 0; wdx = 0; wdy = 1; }
+            else { x = Math.floor(Math.random() * TILE_COUNT); y = TILE_COUNT - 1; wdx = 0; wdy = -1; }
 
             const length = 3 + Math.floor(Math.random() * 3);
             const segments = [];
             for (let i = 0; i < length; i++) {
-                segments.push({ x: x - dx * i, y: y - dy * i });
+                segments.push({ x: x - wdx * i, y: y - wdy * i });
             }
-            worms.push({ segments, dx, dy, lastMove: 0, moveInterval: 300 });
+            worms.push({ segments, dx: wdx, dy: wdy, lastMove: 0, moveInterval: 300 });
         }
 
         function gameLoop(time) {
@@ -405,21 +433,30 @@
 
             snake.unshift(head);
 
-            if (head.x === food.x && head.y === food.y) {
-                score += 10;
-                document.getElementById('score').innerText = score;
-                if (score > highScore) {
-                    highScore = score;
-                    localStorage.setItem('snakeHighScore', highScore);
-                    document.getElementById('highScore').innerText = highScore;
+            // 먹이 충돌 체크 (여러개)
+            let ateFood = false;
+            for (let i = 0; i < foods.length; i++) {
+                if (head.x === foods[i].x && head.y === foods[i].y) {
+                    score += 10;
+                    document.getElementById('score').innerText = score;
+                    if (score > highScore) {
+                        highScore = score;
+                        localStorage.setItem('snakeHighScore', highScore);
+                        document.getElementById('highScore').innerText = highScore;
+                    }
+                    speed = Math.max(70, speed - 2);
+                    foods.splice(i, 1);
+                    generateSingleFood();
+                    ateFood = true;
+                    break;
                 }
-                speed = Math.max(70, speed - 2);
-                generateFood();
-            } else {
+            }
+
+            if (!ateFood) {
                 snake.pop();
             }
 
-            // Move worms
+            // Move worms & 먹이 가로채기
             worms.forEach((worm, i) => {
                 if (time - worm.lastMove > worm.moveInterval) {
                     worm.lastMove = time;
@@ -439,6 +476,15 @@
 
                     worm.segments.unshift(wHead);
                     worm.segments.pop();
+
+                    // 빨간 뱀이 먹이를 가로채기
+                    for (let j = 0; j < foods.length; j++) {
+                        if (wHead.x === foods[j].x && wHead.y === foods[j].y) {
+                            foods.splice(j, 1);
+                            generateSingleFood();
+                            break;
+                        }
+                    }
                 }
             });
 
@@ -457,13 +503,15 @@
                 ctx.beginPath(); ctx.moveTo(0, i * GRID_SIZE); ctx.lineTo(canvas.width, i * GRID_SIZE); ctx.stroke();
             }
 
-            // Draw food
-            ctx.fillStyle = '#ef4444';
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = '#ef4444';
-            ctx.beginPath();
-            ctx.arc((food.x + 0.5) * GRID_SIZE, (food.y + 0.5) * GRID_SIZE, GRID_SIZE / 2.5, 0, Math.PI * 2);
-            ctx.fill();
+            // Draw foods (여러개) - 파란색으로 적과 구분
+            foods.forEach(food => {
+                ctx.fillStyle = '#3b82f6';
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#3b82f6';
+                ctx.beginPath();
+                ctx.arc((food.x + 0.5) * GRID_SIZE, (food.y + 0.5) * GRID_SIZE, GRID_SIZE / 2.5, 0, Math.PI * 2);
+                ctx.fill();
+            });
 
             // Draw snake
             ctx.shadowBlur = 10;
@@ -473,11 +521,11 @@
                 ctx.fillRect(p.x * GRID_SIZE + 1, p.y * GRID_SIZE + 1, GRID_SIZE - 2, GRID_SIZE - 2);
             });
 
-            // Draw worms
-            ctx.shadowColor = '#ff00ff';
+            // Draw worms (빨간색)
+            ctx.shadowColor = '#ff0000';
             worms.forEach(worm => {
                 worm.segments.forEach((p, i) => {
-                    ctx.fillStyle = i === 0 ? '#ff00ff' : 'rgba(255, 0, 255, 0.5)';
+                    ctx.fillStyle = i === 0 ? '#ff0000' : 'rgba(255, 0, 0, 0.5)';
                     ctx.fillRect(p.x * GRID_SIZE + 1, p.y * GRID_SIZE + 1, GRID_SIZE - 2, GRID_SIZE - 2);
                 });
             });
@@ -487,6 +535,7 @@
         function gameOver() {
             gameActive = false;
             msg.innerText = "GAME OVER";
+            msg.style.display = 'block';
             overlay.style.display = 'flex';
             if (score > highScore) {
                 highScore = score;
@@ -503,24 +552,20 @@
         };
 
         window.addEventListener('keydown', e => {
+            // 방향키로 페이지 스크롤 방지
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                e.preventDefault();
+            }
             if (e.key === 'ArrowUp') handleInput(0, -1);
             if (e.key === 'ArrowDown') handleInput(0, 1);
             if (e.key === 'ArrowLeft') handleInput(-1, 0);
             if (e.key === 'ArrowRight') handleInput(1, 0);
         });
 
-
-        // Commented out - buttons don't exist in HTML
-        // document.getElementById('btn-up').onclick = () => handleInput(0, -1);
-        // document.getElementById('btn-down').onclick = () => handleInput(0, 1);
-        // document.getElementById('btn-left').onclick = () => handleInput(-1, 0);
-        // document.getElementById('btn-right').onclick = () => handleInput(1, 0);
-
-
         // Touch events for mobile buttons
         const bindBtn = (id, fn) => {
             const el = document.getElementById(id);
-            if (!el) return; // Skip if element doesn't exist
+            if (!el) return;
             el.addEventListener('touchstart', (e) => { e.preventDefault(); fn(); });
             el.onclick = fn;
         };

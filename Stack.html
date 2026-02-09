@@ -424,22 +424,27 @@
             }
         }
 
+        // 물리 상수
+        const GRAVITY = 0.15; // 부드러운 중력 가속도
+        const MAX_FALL_SPEED = 12; // 최대 낙하 속도
+        const ANGULAR_ACCEL = 0.0008; // 회전 가속도
+
         function updatePhysics() {
             // Update all toppling blocks
             for (let i = 1; i < blocks.length; i++) {
                 const block = blocks[i];
 
                 if (block.isToppling) {
-                    // Apply rotation
+                    // 부드러운 회전 가속
                     block.rotation += block.rotationSpeed;
-                    block.rotationSpeed += 0.001; // Angular acceleration
+                    block.rotationSpeed += ANGULAR_ACCEL * (block.rotationSpeed > 0 ? 1 : -1);
 
-                    // Apply gravity
-                    block.fallSpeed += 0.5; // Gravity
+                    // 부드러운 중력 적용 (최대 속도 제한)
+                    block.fallSpeed = Math.min(block.fallSpeed + GRAVITY, MAX_FALL_SPEED);
                     block.y += block.fallSpeed;
 
-                    // Horizontal drift based on rotation
-                    block.x += block.rotationSpeed * 10;
+                    // 회전에 따른 수평 이동 (더 부드럽게)
+                    block.x += block.rotationSpeed * 8;
 
                     // Check if block has fallen off screen
                     if (block.y > CANVAS_HEIGHT + 100) {

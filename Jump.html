@@ -249,6 +249,9 @@
             font-weight: bold;
             cursor: pointer;
             user-select: none;
+            -webkit-user-select: none;
+            -webkit-user-drag: none;
+            touch-action: manipulation;
             transition: all 0.2s;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             -webkit-tap-highlight-color: transparent;
@@ -1525,6 +1528,10 @@
 
         // 키보드 이벤트
         document.addEventListener('keydown', (e) => {
+            // 방향키로 페이지 스크롤 방지
+            if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.code)) {
+                e.preventDefault();
+            }
             if (e.code === 'Space' && !e.repeat) {
                 e.preventDefault();
 

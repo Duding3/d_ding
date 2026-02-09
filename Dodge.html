@@ -8,7 +8,7 @@
     <title>코스믹 닷지 (Cosmic Dodge) v1.1</title>
     <style>
         :root {
-            --unit: min(3.5vh, 2.8vw, 22px);
+            --unit: min(5vh, 4vw, 32px);
             --main-color: #60a5fa;
             --bg-color: #0f172a;
             --card-bg: rgba(255, 255, 255, 0.03);
@@ -21,11 +21,14 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             min-height: 100dvh;
             margin: 0;
-            overflow: hidden;
-            touch-action: none;
+            overflow-x: hidden;
+            overflow-y: auto;
+            touch-action: pan-y;
+            padding: 10px 0 30px 0;
+            box-sizing: border-box;
         }
 
         #game-wrapper {
@@ -157,6 +160,9 @@
             font-size: 1.2rem;
             cursor: pointer;
             user-select: none;
+            -webkit-user-select: none;
+            -webkit-user-drag: none;
+            touch-action: manipulation;
             transition: all 0.2s;
             -webkit-tap-highlight-color: transparent;
         }
@@ -288,10 +294,14 @@
             radius: 8,
             speed: 2.5,
             color: '#60a5fa',
-            hasShield: false
+            hasShield: false,
+            gunTimer: 0,  // 총알 자동발사 타이머 (3초)
+            speedBoost: 0,
+            lastAutoShot: 0  // 마지막 자동 발사 시간
         };
 
         let bullets = [];
+        let playerBullets = [];
         let items = [];
         let particles = [];
         let lastItemSpawn = 0;
@@ -368,7 +378,14 @@
             else if (side === 2) { x = -20; y = Math.random() * GRID_SIZE; vx = speed; vy = (Math.random() - 0.5) * speed; }
             else { x = GRID_SIZE + 20; y = Math.random() * GRID_SIZE; vx = -speed; vy = (Math.random() - 0.5) * speed; }
 
-            items.push({ x, y, vx, vy, radius: 10, type: 'shield' });
+            // 아이템 타입 (쉴드 50%, 총알 30%, 부스트 20%)
+            const rand = Math.random();
+            let type = 'shield';
+            if (rand < 0.5) type = 'shield';
+            else if (rand < 0.8) type = 'gun';
+            else type = 'boost';
+
+            items.push({ x, y, vx, vy, radius: 10, type });
         }
 
         function startGame() {
@@ -377,7 +394,11 @@
             player.x = GRID_SIZE / 2;
             player.y = GRID_SIZE / 2;
             player.hasShield = false;
+            player.gunTimer = 0;
+            player.speedBoost = 0;
+            player.lastAutoShot = 0;
             bullets = [];
+            playerBullets = [];
             items = [];
             particles = [];
             overlay.style.display = 'none';
@@ -441,10 +462,34 @@
             }
 
             // Move player
-            if (keys['ArrowUp'] || keys['up']) player.y -= player.speed;
-            if (keys['ArrowDown'] || keys['down']) player.y += player.speed;
-            if (keys['ArrowLeft'] || keys['left']) player.x -= player.speed;
-            if (keys['ArrowRight'] || keys['right']) player.x += player.speed;
+            const currentSpeed = player.speed + (player.speedBoost > 0 ? 1.5 : 0);
+            if (keys['ArrowUp'] || keys['up']) player.y -= currentSpeed;
+            if (keys['ArrowDown'] || keys['down']) player.y += currentSpeed;
+            if (keys['ArrowLeft'] || keys['left']) player.x -= currentSpeed;
+            if (keys['ArrowRight'] || keys['right']) player.x += currentSpeed;
+
+            // 총알 자동발사 (3초간 사방으로)
+            if (player.gunTimer > 0) {
+                player.gunTimer -= stepSeconds;
+                player.lastAutoShot -= stepSeconds;
+
+                // 0.15초마다 사방으로 총알 발사
+                if (player.lastAutoShot <= 0) {
+                    player.lastAutoShot = 0.15;
+                    // 8방향으로 총알 발사
+                    for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 4) {
+                        playerBullets.push({
+                            x: player.x,
+                            y: player.y,
+                            vx: Math.cos(angle) * 5,
+                            vy: Math.sin(angle) * 5
+                        });
+                    }
+                }
+            }
+
+            // 부스트 타이머 감소
+            if (player.speedBoost > 0) player.speedBoost -= stepSeconds;
 
             // Bounds
             player.x = Math.max(player.radius, Math.min(GRID_SIZE - player.radius, player.x));
@@ -517,13 +562,55 @@
                 const distance = Math.sqrt(dx * dx + dy * dy);
 
                 if (distance < item.radius + player.radius) {
-                    player.hasShield = true;
+                    if (item.type === 'shield') {
+                        player.hasShield = true;
+                    } else if (item.type === 'gun') {
+                        player.gunTimer = 3;  // 3초간 자동 발사
+                        player.lastAutoShot = 0;
+                    } else if (item.type === 'boost') {
+                        player.speedBoost = 5; // 5초간 속도 증가
+                    }
                     items.splice(i, 1);
-                    // Shield popup effect?
                 }
 
                 if (item.x < -100 || item.x > GRID_SIZE + 100 || item.y < -100 || item.y > GRID_SIZE + 100) {
                     items.splice(i, 1);
+                }
+            });
+
+            // Move player bullets & 운석 파괴
+            playerBullets.forEach((pb, pi) => {
+                // vx, vy 모두 적용 (사방으로 이동)
+                if (pb.vx !== undefined) pb.x += pb.vx;
+                if (pb.vy !== undefined) pb.y += pb.vy;
+
+                // 플레이어 총알 vs 운석 충돌
+                for (let bi = bullets.length - 1; bi >= 0; bi--) {
+                    const b = bullets[bi];
+                    const dx = pb.x - b.x;
+                    const dy = pb.y - b.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < b.radius + 3) {
+                        // 운석 파괴 이펙트
+                        for (let j = 0; j < 8; j++) {
+                            particles.push({
+                                x: b.x,
+                                y: b.y,
+                                vx: (Math.random() - 0.5) * 8,
+                                vy: (Math.random() - 0.5) * 8,
+                                life: 0.8,
+                                color: '#f87171'
+                            });
+                        }
+                        bullets.splice(bi, 1);
+                        playerBullets.splice(pi, 1);
+                        break;
+                    }
+                }
+
+                // 화면 밖으로 나간 총알 제거 (사방)
+                if (pb.x < -30 || pb.x > GRID_SIZE + 30 || pb.y < -30 || pb.y > GRID_SIZE + 30) {
+                    playerBullets.splice(pi, 1);
                 }
             });
 
@@ -559,31 +646,88 @@
                 ctx.fill();
             });
 
-            // Player
+            // Player (우주선 모양)
+            ctx.save();
+            ctx.translate(player.x, player.y);
             ctx.fillStyle = player.color;
             ctx.shadowBlur = 15;
             ctx.shadowColor = player.color;
+
+            // 우주선 삼각형
             ctx.beginPath();
-            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+            ctx.moveTo(0, -player.radius * 1.5);  // 위쪽 꼭지점
+            ctx.lineTo(-player.radius, player.radius);  // 왼쪽
+            ctx.lineTo(player.radius, player.radius);   // 오른쪽
+            ctx.closePath();
             ctx.fill();
+
+            // 우주선 날개
+            ctx.fillStyle = '#3b82f6';
+            ctx.beginPath();
+            ctx.moveTo(-player.radius - 3, player.radius);
+            ctx.lineTo(-player.radius, player.radius - 5);
+            ctx.lineTo(-player.radius + 3, player.radius);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(player.radius + 3, player.radius);
+            ctx.lineTo(player.radius, player.radius - 5);
+            ctx.lineTo(player.radius - 3, player.radius);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
 
             // Shield Halo
             if (player.hasShield) {
                 ctx.strokeStyle = '#00ffff';
                 ctx.lineWidth = 3;
                 ctx.beginPath();
-                ctx.arc(player.x, player.y, player.radius + 5, 0, Math.PI * 2);
+                ctx.arc(player.x, player.y, player.radius + 8, 0, Math.PI * 2);
                 ctx.stroke();
                 ctx.shadowBlur = 10;
                 ctx.shadowColor = '#00ffff';
                 ctx.shadowBlur = 0;
             }
 
+            // 총알 자동발사 타이머 표시
+            if (player.gunTimer > 0) {
+                ctx.fillStyle = '#fbbf24';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`🔫${player.gunTimer.toFixed(1)}s`, player.x, player.y + player.radius + 15);
+
+                // 발사 중 이펙트 (노란 원)
+                ctx.strokeStyle = '#fbbf24';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(player.x, player.y, player.radius + 5, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // 속도 부스트 표시
+            if (player.speedBoost > 0) {
+                ctx.strokeStyle = '#22c55e';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([3, 3]);
+                ctx.beginPath();
+                ctx.arc(player.x, player.y, player.radius + 12, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
             // Draw items
             items.forEach(item => {
-                ctx.fillStyle = '#00ffff';
+                if (item.type === 'shield') {
+                    ctx.fillStyle = '#00ffff';
+                    ctx.shadowColor = '#00ffff';
+                } else if (item.type === 'gun') {
+                    ctx.fillStyle = '#fbbf24';
+                    ctx.shadowColor = '#fbbf24';
+                } else if (item.type === 'boost') {
+                    ctx.fillStyle = '#22c55e';
+                    ctx.shadowColor = '#22c55e';
+                }
                 ctx.shadowBlur = 15;
-                ctx.shadowColor = '#00ffff';
                 ctx.beginPath();
                 ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
                 ctx.fill();
@@ -591,8 +735,19 @@
                 ctx.font = 'bold 12px Arial';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText('🛡️', item.x, item.y);
+                const emoji = item.type === 'shield' ? '🛡️' : item.type === 'gun' ? '🔫' : '⚡';
+                ctx.fillText(emoji, item.x, item.y);
                 ctx.shadowBlur = 0;
+            });
+
+            // Draw player bullets
+            ctx.fillStyle = '#fbbf24';
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = '#fbbf24';
+            playerBullets.forEach(pb => {
+                ctx.beginPath();
+                ctx.arc(pb.x, pb.y, 3, 0, Math.PI * 2);
+                ctx.fill();
             });
 
             // Draw particles
@@ -607,7 +762,13 @@
         }
 
         // Input handling
-        window.onkeydown = (e) => keys[e.key] = true;
+        window.onkeydown = (e) => {
+            // 방향키로 페이지 스크롤 방지
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+                e.preventDefault();
+            }
+            keys[e.key] = true;
+        };
         window.onkeyup = (e) => keys[e.key] = false;
 
         function bindBtn(id, key) {

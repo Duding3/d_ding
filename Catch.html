@@ -103,6 +103,10 @@
             font-weight: 900;
             font-size: 1.5rem;
             cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-user-drag: none;
+            touch-action: manipulation;
             transition: all 0.2s;
             -webkit-tap-highlight-color: transparent;
         }
@@ -286,7 +290,7 @@
 
         function spawnItem() {
             const isGift = Math.random() > 0.2;
-            const isFake = isGift && Math.random() < 0.25; // 25% chance a gift is fake
+            const isFake = isGift && Math.random() < 0.5; // 50% chance a gift is fake (더 자주 등장)
             items.push({
                 x: Math.random() * (canvas.width - 30),
                 y: -30,
@@ -300,10 +304,15 @@
         }
 
         let spawnTimer = 0;
+        const PLAYER_SPEED = 450; // pixels per second (빠르게 조정)
+        const BASE_ITEM_SPEED = 400; // pixels per second (더 빠르게 조정)
+
         function update(dt) {
-            // 조작 업데이트 (느리게, 세세하게 조정 - 7 -> 4)
-            if (moveLeft) player.x = Math.max(0, player.x - 4);
-            if (moveRight) player.x = Math.min(canvas.width - player.w, player.x + 4);
+            const dtSeconds = dt / 1000;
+
+            // 조작 업데이트 (delta-time 기반)
+            if (moveLeft) player.x = Math.max(0, player.x - PLAYER_SPEED * dtSeconds);
+            if (moveRight) player.x = Math.min(canvas.width - player.w, player.x + PLAYER_SPEED * dtSeconds);
 
             spawnTimer += dt;
             if (spawnTimer > 1000 - Math.min(score, 500)) {
@@ -311,8 +320,11 @@
                 spawnTimer = 0;
             }
 
+            // 현재 아이템 속도 (점수에 따라 증가)
+            const currentItemSpeed = (BASE_ITEM_SPEED + score * 0.5) * dtSeconds;
+
             items.forEach((item, i) => {
-                item.y += itemSpeed;
+                item.y += currentItemSpeed;
 
                 // 페이크 선물 로직: 특정 높이(200)에서 상자로 변신!
                 if (item.isFake && item.y > 200 && item.type === 'gift') {
@@ -329,7 +341,6 @@
                         if (item.type === 'gift') {
                             score += 10;
                             scoreEl.innerText = score;
-                            itemSpeed += 0.02;
                             items.splice(i, 1);
                         } else {
                             gameOver();
@@ -399,6 +410,10 @@
         let moveRight = false;
 
         window.addEventListener('keydown', e => {
+            // 방향키로 페이지 스크롤 방지
+            if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+                e.preventDefault();
+            }
             if (e.key === 'ArrowLeft') moveLeft = true;
             if (e.key === 'ArrowRight') moveRight = true;
         });
