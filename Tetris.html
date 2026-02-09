@@ -801,7 +801,13 @@
             if ([37, 38, 39, 40, 32].includes(e.keyCode)) {
                 e.preventDefault();
             }
-            if (isGameOver) { location.reload(); return; }
+            if (isGameOver) {
+                // 랭킹 입력창이 떠 있을 때는 새로고침하지 않음
+                if (rankingModal.style.display !== 'flex') {
+                    location.reload();
+                }
+                return;
+            }
             if (!gameStarted) {
                 if (e.keyCode === 13) startGame(); // 엔터로 시작
                 return;

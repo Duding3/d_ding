@@ -340,63 +340,7 @@
             font-size: 0.7rem;
             font-weight: bold;
         }
-
-        #ranking-modal {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(15, 23, 42, 0.95);
-            padding: 30px;
-            border-radius: 20px;
-            text-align: center;
-            border: 2px solid var(--accent-color);
-            z-index: 1000;
-            display: none;
-            flex-direction: column;
-            gap: 15px;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
-            min-width: 320px;
-        }
-
-        #ranking-modal h2 {
-            margin: 0;
-            font-size: 1.8rem;
-            color: #ffd700;
-        }
-
-        #ranking-input {
-            padding: 12px;
-            font-size: 1.1rem;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid var(--accent-color);
-            color: white;
-            border-radius: 10px;
-            text-align: center;
-            outline: none;
-        }
-
-        #save-rank-btn {
-            padding: 12px 25px;
-            font-size: 1.1rem;
-            background: var(--accent-color);
-            color: #0f172a;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.3s;
-        }
-
-        #save-rank-btn:hover {
-            opacity: 0.9;
-            transform: scale(1.05);
-        }
     </style>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="firebase-config.js"></script>
 </head>
 
 <body oncontextmenu="return false">
@@ -499,12 +443,6 @@
             <div class="info-msg">💡 Shift + Enter 줄바꿈</div>
         </div>
 
-        <div id="ranking-modal">
-            <h2>🏆 순위권 진입!</h2>
-            <p style="color: white; margin-bottom: 5px;">축하합니다! 상위 3위에 들었습니다.</p>
-            <input type="text" id="ranking-input" placeholder="이름 입력 (최대 10자)" maxlength="10">
-            <button id="save-rank-btn">기록 저장</button>
-        </div>
     </div>
 
     <script>
@@ -995,67 +933,8 @@
         const saveRankBtn = document.getElementById('save-rank-btn');
 
         function checkRanking(finalScore) {
-            if (finalScore <= 10) { // CPM too low, don't rank
-                setTimeout(render, 50);
-                return;
-            }
-
-            const gameId = 'Typing';
-            if (typeof database === 'undefined') {
-                console.error("Firebase Database not initialized.");
-                setTimeout(render, 50);
-                return;
-            }
-
-            const dbRef = database.ref('rankings/' + gameId);
-            dbRef.once('value').then((snapshot) => {
-                let rankings = snapshot.val() || [];
-                rankings.sort((a, b) => b.score - a.score);
-
-                if (rankings.length < 3 || finalScore > rankings[rankings.length - 1].score) {
-                    showRankingModal(finalScore);
-                } else {
-                    setTimeout(render, 50);
-                }
-            }).catch((error) => {
-                console.error("Firebase error:", error);
-                setTimeout(render, 50);
-            });
+            setTimeout(render, 50);
         }
-
-        let pendingScore = 0;
-        function showRankingModal(score) {
-            pendingScore = score;
-            rankingModal.style.display = 'flex';
-            quoteInput.blur();
-            rankingInput.value = '';
-            rankingInput.focus();
-        }
-
-        saveRankBtn.addEventListener('click', () => {
-            const name = rankingInput.value.trim() || '익명';
-            const gameId = 'Typing';
-            const dbRef = database.ref('rankings/' + gameId);
-
-            dbRef.once('value').then((snapshot) => {
-                let rankings = snapshot.val() || [];
-                rankings.push({
-                    name: name,
-                    score: pendingScore,
-                    date: new Date().toLocaleDateString()
-                });
-                rankings.sort((a, b) => b.score - a.score);
-                rankings = rankings.slice(0, 3);
-
-                return dbRef.set(rankings);
-            }).then(() => {
-                alert('랭킹이 저장되었습니다!');
-                window.location.href = 'Ranking.html';
-            }).catch((error) => {
-                console.error("Firebase save error:", error);
-                alert('랭킹 저장 중 오류가 발생했습니다.');
-            });
-        });
 
         render();
     </script>

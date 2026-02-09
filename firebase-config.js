@@ -1,13 +1,14 @@
 // Firebase Configuration
 // 아래의 설정을 Firebase 콘솔에서 복사한 내용으로 교체해주세요.
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  databaseURL: "YOUR_DATABASE_URL",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyAckQZKKVmsy23iAp_xxrAD-j-BcmT-etU",
+  authDomain: "dingding-bcf1b.firebaseapp.com",
+  projectId: "dingding-bcf1b",
+  storageBucket: "dingding-bcf1b.firebasestorage.app",
+  messagingSenderId: "831618245971",
+  appId: "1:831618245971:web:4017491904c7514af02da6",
+  measurementId: "G-M627F2PZKZ",
+  databaseURL: "https://dingding-bcf1b-default-rtdb.firebaseio.com"
 };
 
 // Initialize Firebase
