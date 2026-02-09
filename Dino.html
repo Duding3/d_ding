@@ -308,9 +308,9 @@
         const opacitySlider = document.getElementById('opacitySlider');
 
         // Game Constants
-        let GAME_SPEED_START = 10;
-        let GAME_SPEED_MAX = 36;
-        let SPEED_INCREMENT = 0.0011;
+        let GAME_SPEED_START = 9;
+        let GAME_SPEED_MAX = 34;
+        let SPEED_INCREMENT = 0.0009;
         let GRAVITY = 0.6;
         let JUMP_FORCE = -10;
         let GROUND_Y = 0;
@@ -326,7 +326,8 @@
         let spawnCounter = 0;
         let obstacles = [];
         let clouds = [];
-        let jumpReleased = true;
+        let holdJumpTimer = 260;
+        const HOLD_JUMP_INTERVAL = 260; // ms, hold-to-repeat jump cadence
         let keys = {};
 
         // Dino Object
@@ -381,13 +382,17 @@
             },
 
             update(dt) {
-                if ((keys['Space'] || keys['ArrowUp']) && jumpReleased) {
+                const jumpHeld = keys['Space'] || keys['ArrowUp'];
+                holdJumpTimer += dt * 16.67;
+                if (jumpHeld && !this.isJumping && holdJumpTimer >= HOLD_JUMP_INTERVAL) {
                     this.jump();
-                    jumpReleased = false;
-                } else {
-                    if (this.isJumping && this.dy < -5 && !keys['Space'] && !keys['ArrowUp']) {
-                        this.dy += 3 * dt;
-                    }
+                    holdJumpTimer = 0;
+                } else if (this.isJumping && this.dy < -5 && !jumpHeld) {
+                    this.dy += 3 * dt;
+                }
+
+                if (!jumpHeld) {
+                    holdJumpTimer = HOLD_JUMP_INTERVAL;
                 }
 
                 if (keys['ArrowDown']) {
@@ -527,7 +532,7 @@
             score = 0;
             isGameOver = false;
             keys = {};
-            jumpReleased = true;
+            holdJumpTimer = HOLD_JUMP_INTERVAL;
             obstacles = [];
             dino.y = GROUND_Y - dino.height;
             dino.dy = 0;
@@ -547,7 +552,7 @@
 
         window.addEventListener('keyup', e => {
             keys[e.code] = false;
-            if (['Space', 'ArrowUp'].includes(e.code)) jumpReleased = true;
+            if (['Space', 'ArrowUp'].includes(e.code)) holdJumpTimer = HOLD_JUMP_INTERVAL;
         });
 
         const mobileJump = document.getElementById('mobile-jump');
@@ -556,16 +561,13 @@
         mobileJump.addEventListener('touchstart', e => {
             e.preventDefault();
             keys['Space'] = true;
-            if (jumpReleased) {
-                dino.jump();
-                jumpReleased = false;
-            }
+            holdJumpTimer = HOLD_JUMP_INTERVAL;
         });
 
         mobileJump.addEventListener('touchend', e => {
             e.preventDefault();
             keys['Space'] = false;
-            jumpReleased = true;
+            holdJumpTimer = HOLD_JUMP_INTERVAL;
         });
 
         mobileDuck.addEventListener('touchstart', e => {
