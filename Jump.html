@@ -288,30 +288,6 @@
             }
         }
 
-        #ranking-modal {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(26, 26, 46, 0.95);
-            padding: 30px;
-            border-radius: 12px;
-            text-align: center;
-            border: 2px solid #4ade80;
-            z-index: 110;
-            display: none;
-            flex-direction: column;
-            gap: 15px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-            min-width: 300px;
-        }
-
-        #ranking-modal h2 {
-            margin: 0;
-            font-size: 1.8rem;
-            color: #ffd700;
-        }
-
         #ranking-input {
             padding: 10px;
             font-size: 1.2rem;
@@ -337,10 +313,7 @@
             opacity: 0.9;
         }
     </style>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="firebase-config.js"></script>
+    </style>
 </head>
 
 <body>
@@ -376,13 +349,6 @@
                 <h2>GAME OVER</h2>
                 <p>최고 높이: <span id="finalScore">0</span>m</p>
                 <button class="start-btn" onclick="restartGame()">다시 시작</button>
-            </div>
-
-            <div id="ranking-modal">
-                <h2>🏆 순위권 진입!</h2>
-                <p>축하합니다! 상위 3위에 들었습니다.</p>
-                <input type="text" id="ranking-input" placeholder="이름 입력 (최대 10자)" maxlength="10">
-                <button id="save-rank-btn">기록 저장</button>
             </div>
         </div>
 
@@ -1584,69 +1550,7 @@
             finalScoreEl.textContent = Math.floor(maxHeight);
             gameOverScreen.style.display = 'flex'; // Show Game Over immediately!
             document.querySelector('.hud-container').style.display = 'none';
-
-            checkRanking(Math.floor(maxHeight));
         }
-
-        // Ranking Logic
-        const rankingModal = document.getElementById('ranking-modal');
-        const rankingInput = document.getElementById('ranking-input');
-        const saveRankBtn = document.getElementById('save-rank-btn');
-
-        function checkRanking(finalScore) {
-            if (finalScore <= 0) return; // Already showing game over
-
-            const gameId = 'Jump';
-            if (typeof database === 'undefined') {
-                console.error("Firebase Database not initialized.");
-                return;
-            }
-
-            const dbRef = database.ref('rankings/' + gameId);
-            dbRef.once('value').then((snapshot) => {
-                let rankings = snapshot.val() || [];
-                rankings.sort((a, b) => b.score - a.score);
-
-                if (rankings.length < 3 || finalScore > rankings[rankings.length - 1].score) {
-                    showRankingModal();
-                }
-                // No else, because gameOverScreen is already visible
-            }).catch((error) => {
-                console.error("Firebase error:", error);
-            });
-        }
-
-        function showRankingModal() {
-            rankingModal.style.display = 'flex';
-            gameOverScreen.style.display = 'none';
-            rankingInput.value = '';
-            rankingInput.focus();
-        }
-
-        saveRankBtn.addEventListener('click', () => {
-            const name = rankingInput.value.trim() || '익명';
-            const gameId = 'Jump';
-            const dbRef = database.ref('rankings/' + gameId);
-
-            dbRef.once('value').then((snapshot) => {
-                let rankings = snapshot.val() || [];
-                rankings.push({
-                    name: name,
-                    score: Math.floor(maxHeight),
-                    date: new Date().toLocaleDateString()
-                });
-                rankings.sort((a, b) => b.score - a.score);
-                rankings = rankings.slice(0, 3);
-
-                return dbRef.set(rankings);
-            }).then(() => {
-                alert('랭킹이 저장되었습니다!');
-                window.location.href = 'Ranking.html';
-            }).catch((error) => {
-                console.error("Firebase save error:", error);
-                alert('랭킹 저장 중 오류가 발생했습니다.');
-            });
-        });
 
         // 키보드 이벤트
         document.addEventListener('keydown', (e) => {

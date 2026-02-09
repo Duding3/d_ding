@@ -624,7 +624,6 @@
                 gameStarted = false;
                 document.getElementById('finalScore').innerText = player.score;
                 document.getElementById('game-over-screen').style.display = 'flex'; // Show immediately!
-                checkRanking(player.score);
             }
         }
         function drawGrid() {
@@ -719,7 +718,6 @@
                 gameStarted = false;
                 document.getElementById('finalScore').innerText = player.score;
                 document.getElementById('game-over-screen').style.display = 'flex'; // Show immediately!
-                checkRanking(player.score);
             }
         }
         function updateStats() {
@@ -804,10 +802,7 @@
                 e.preventDefault();
             }
             if (isGameOver) {
-                // 랭킹 입력창이 떠 있을 때는 새로고침하지 않음
-                if (rankingModal.style.display !== 'flex') {
-                    location.reload();
-                }
+                location.reload();
                 return;
             }
             if (!gameStarted) {
@@ -835,65 +830,6 @@
         };
         bindMobileBtn('ctrl-left', 'left'); bindMobileBtn('ctrl-right', 'right'); bindMobileBtn('ctrl-down', 'down'); bindMobileBtn('ctrl-up', 'up', true); bindMobileBtn('ctrl-drop', 'drop', true);
 
-        // Ranking Logic
-        const rankingModal = document.getElementById('ranking-modal');
-        const rankingInput = document.getElementById('ranking-input');
-        const saveRankBtn = document.getElementById('save-rank-btn');
-        const gameOverScreen = document.getElementById('game-over-screen');
-
-        function checkRanking(finalScore) {
-            if (finalScore <= 0) return; // Already showing game over
-
-            const gameId = 'Tetris';
-            if (typeof database === 'undefined') {
-                console.error("Firebase Database not initialized.");
-                return;
-            }
-
-            const dbRef = database.ref('rankings/' + gameId);
-            dbRef.once('value').then((snapshot) => {
-                let rankings = snapshot.val() || [];
-                rankings.sort((a, b) => b.score - a.score);
-
-                if (rankings.length < 3 || finalScore > rankings[rankings.length - 1].score) {
-                    showRankingModal();
-                }
-            }).catch((error) => {
-                console.error("Firebase error:", error);
-            });
-        }
-
-        function showRankingModal() {
-            rankingModal.style.display = 'flex';
-            document.getElementById('game-over-screen').style.display = 'none';
-            rankingInput.value = '';
-            rankingInput.focus();
-        }
-
-        saveRankBtn.addEventListener('click', () => {
-            const name = rankingInput.value.trim() || '익명';
-            const gameId = 'Tetris';
-            const dbRef = database.ref('rankings/' + gameId);
-
-            dbRef.once('value').then((snapshot) => {
-                let rankings = snapshot.val() || [];
-                rankings.push({
-                    name: name,
-                    score: player.score,
-                    date: new Date().toLocaleDateString()
-                });
-                rankings.sort((a, b) => b.score - a.score);
-                rankings = rankings.slice(0, 3);
-
-                return dbRef.set(rankings);
-            }).then(() => {
-                alert('랭킹이 저장되었습니다!');
-                window.location.href = 'Ranking.html';
-            }).catch((error) => {
-                console.error("Firebase save error:", error);
-                alert('랭킹 저장 중 오류가 발생했습니다.');
-            });
-        });
 
         const arena = Array.from({ length: 20 }, () => new Array(12).fill(0)); draw(); // 초기 화면 그리기
     </script>

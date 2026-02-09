@@ -751,8 +751,6 @@
                 localStorage.setItem('snakeHighScore', highScore);
                 document.getElementById('highScore').innerText = highScore;
             }
-
-            checkRanking(score);
         }
 
         // Controls
@@ -790,64 +788,6 @@
             document.body.style.opacity = e.target.value / 100;
         });
 
-        // Ranking Logic
-        const rankingModal = document.getElementById('ranking-modal');
-        const rankingInput = document.getElementById('ranking-input');
-        const saveRankBtn = document.getElementById('save-rank-btn');
-
-        function checkRanking(finalScore) {
-            if (finalScore <= 0) return; // Already showing game over
-
-            const gameId = 'Snake';
-            if (typeof database === 'undefined') {
-                console.error("Firebase Database not initialized.");
-                return;
-            }
-
-            const dbRef = database.ref('rankings/' + gameId);
-            dbRef.once('value').then((snapshot) => {
-                let rankings = snapshot.val() || [];
-                rankings.sort((a, b) => b.score - a.score);
-
-                if (rankings.length < 3 || finalScore > rankings[rankings.length - 1].score) {
-                    showRankingModal();
-                }
-            }).catch((error) => {
-                console.error("Firebase error:", error);
-            });
-        }
-
-        function showRankingModal() {
-            rankingModal.style.display = 'flex';
-            overlay.style.display = 'none';
-            rankingInput.value = '';
-            rankingInput.focus();
-        }
-
-        saveRankBtn.addEventListener('click', () => {
-            const name = rankingInput.value.trim() || '익명';
-            const gameId = 'Snake';
-            const dbRef = database.ref('rankings/' + gameId);
-
-            dbRef.once('value').then((snapshot) => {
-                let rankings = snapshot.val() || [];
-                rankings.push({
-                    name: name,
-                    score: score,
-                    date: new Date().toLocaleDateString()
-                });
-                rankings.sort((a, b) => b.score - a.score);
-                rankings = rankings.slice(0, 3);
-
-                return dbRef.set(rankings);
-            }).then(() => {
-                alert('랭킹이 저장되었습니다!');
-                window.location.href = 'Ranking.html';
-            }).catch((error) => {
-                console.error("Firebase save error:", error);
-                alert('랭킹 저장 중 오류가 발생했습니다.');
-            });
-        });
     </script>
 </body>
 
