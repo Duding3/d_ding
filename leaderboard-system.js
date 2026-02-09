@@ -17,6 +17,7 @@
 
   let firebaseReady = false;
   let firebaseLoadAttempted = false;
+  let firebaseEnsurePromise = null;
   let firebaseDisabledReason = "";
   let authInitDone = false;
   let authStateKnown = false;
@@ -55,25 +56,36 @@
 
   async function ensureFirebase() {
     if (firebaseReady) return true;
-    if (firebaseLoadAttempted) return false;
-    firebaseLoadAttempted = true;
+    if (firebaseEnsurePromise) return firebaseEnsurePromise;
+
+    firebaseEnsurePromise = (async () => {
+      if (firebaseReady) return true;
+      if (firebaseLoadAttempted) return firebaseReady;
+      firebaseLoadAttempted = true;
+
+      try {
+        if (!window.firebase || !window.firebase.database || !window.firebase.auth) {
+          await loadScript("https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js");
+          await loadScript("https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js");
+          await loadScript("https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js");
+        }
+        await loadScript("firebase-config.js");
+        await sleep(80);
+        firebaseReady = Boolean(window.firebase && window.firebase.apps && window.firebase.apps.length > 0);
+        if (firebaseReady) {
+          initAuth();
+        }
+      } catch (err) {
+        firebaseReady = false;
+      }
+      return firebaseReady;
+    })();
 
     try {
-      if (!window.firebase || !window.firebase.database || !window.firebase.auth) {
-        await loadScript("https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js");
-        await loadScript("https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js");
-        await loadScript("https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js");
-      }
-      await loadScript("firebase-config.js");
-      await sleep(80);
-      firebaseReady = Boolean(window.firebase && window.firebase.apps && window.firebase.apps.length > 0);
-      if (firebaseReady) {
-        initAuth();
-      }
-    } catch (err) {
-      firebaseReady = false;
+      return await firebaseEnsurePromise;
+    } finally {
+      firebaseEnsurePromise = null;
     }
-    return firebaseReady;
   }
 
   function emitAuthState() {
