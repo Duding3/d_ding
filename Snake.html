@@ -8,7 +8,7 @@
     <title>네온 스네이크 (Snake) v1.3</title>
     <style>
         :root {
-            --unit: min(4.5vh, 3.6vw, 28px);
+            --unit: min(4.5vh, 5.2vw, 28px);
             --main-color: #4ade80;
             --bg-color: #1a1a2e;
             --card-bg: rgba(255, 255, 255, 0.03);
@@ -25,7 +25,7 @@
             min-height: 100dvh;
             margin: 0;
             overflow-x: hidden;
-            overflow-y: auto;
+            overflow-y: hidden;
             touch-action: pan-y;
             padding: 10px 0 30px 0;
             box-sizing: border-box;
@@ -37,6 +37,11 @@
             align-items: center;
             gap: calc(var(--unit) * 0.8);
             position: relative;
+            width: max-content;
+            max-width: calc(100vw - 12px);
+            padding-left: 6px;
+            padding-right: 6px;
+            box-sizing: border-box;
         }
 
         .game-header {
@@ -103,8 +108,8 @@
         }
 
         .ctrl-btn {
-            width: calc(var(--unit) * 2.2);
-            height: calc(var(--unit) * 2.2);
+            width: 56px;
+            height: 56px;
             background: var(--card-bg);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: #ccc;
@@ -387,11 +392,28 @@
         document.getElementById('highScore').innerText = highScore;
 
         function initCanvas() {
-            const desiredSize = Math.min(window.innerWidth * 0.9, 450);
+            const wrapper = document.getElementById('game-wrapper');
+            const headerH = document.querySelector('.game-header')?.offsetHeight || 0;
+            const controlsH = document.querySelector('.controls')?.offsetHeight || 0;
+            const sliderH = document.querySelector('.slider-area')?.offsetHeight || 0;
+            const bodyStyle = window.getComputedStyle(document.body);
+            const wrapperStyle = wrapper ? window.getComputedStyle(wrapper) : null;
+            const bodyPadY =
+                (parseFloat(bodyStyle.paddingTop) || 0) +
+                (parseFloat(bodyStyle.paddingBottom) || 0);
+            const wrapperGap = wrapperStyle ? parseFloat(wrapperStyle.gap) || 0 : 0;
+            const reservedHeight = headerH + controlsH + sliderH + bodyPadY + wrapperGap * 4 + 24;
+
+            const desiredByWidth = Math.min(window.innerWidth - 12, 450);
+            const desiredByHeight = window.innerHeight - reservedHeight;
+            const desiredSize = Math.max(220, Math.min(desiredByWidth, desiredByHeight, 450));
             // Snap to grid
             TILE_COUNT = Math.floor(desiredSize / GRID_SIZE);
-            canvas.width = TILE_COUNT * GRID_SIZE;
-            canvas.height = TILE_COUNT * GRID_SIZE;
+            const boardSize = TILE_COUNT * GRID_SIZE;
+            canvas.style.width = boardSize + 'px';
+            canvas.style.height = boardSize + 'px';
+            canvas.width = boardSize;
+            canvas.height = boardSize;
         }
 
         window.addEventListener('resize', initCanvas);
@@ -753,7 +775,23 @@
                 document.getElementById('highScore').innerText = highScore;
             }
 
-            window.LeaderboardSystem?.checkAndCelebrate('snake', score);
+            if (window.LeaderboardSystem && typeof window.LeaderboardSystem.renderGameOverTop3Panel === 'function') {
+                window.LeaderboardSystem.renderGameOverTop3Panel(overlay, 'snake', {
+                    panelId: 'snake-top3-panel',
+                    onRestart: () => startGame()
+                }).catch(() => {});
+            }
+            window.LeaderboardSystem?.checkAndCelebrate('snake', score)
+                ?.catch(() => {})
+                ?.finally(() => {
+                    if (window.LeaderboardSystem && typeof window.LeaderboardSystem.renderGameOverTop3Panel === 'function') {
+                        window.LeaderboardSystem.renderGameOverTop3Panel(overlay, 'snake', {
+                            panelId: 'snake-top3-panel',
+                            onRestart: () => startGame(),
+                            forceRefresh: true
+                        }).catch(() => {});
+                    }
+                });
         }
 
         // Controls

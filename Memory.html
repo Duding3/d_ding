@@ -8,7 +8,7 @@
     <title>메모리 매치 (Memory) v1.1</title>
     <style>
         :root {
-            --unit: min(3.5vh, 2.8vw, 22px);
+            --unit: min(3.5vh, 5.8vw, 22px);
             --main-color: #f472b6;
             /* Cute pink */
             --bg-color: #1a1a2e;
@@ -37,8 +37,11 @@
             /* Improved spacing from 0.8 */
             padding-top: calc(var(--unit) * 1);
             position: relative;
-            width: 100%;
-            max-width: 500px;
+            width: max-content;
+            max-width: calc(100vw - 12px);
+            padding-left: 6px;
+            padding-right: 6px;
+            box-sizing: border-box;
         }
 
         h1 {
@@ -57,9 +60,12 @@
 
         .stats {
             display: flex;
-            gap: calc(var(--unit) * 1);
+            gap: calc(var(--unit) * 0.6);
             margin-bottom: calc(var(--unit) * 0.5);
             justify-content: center;
+            width: calc(var(--unit) * 12 + 45px);
+            max-width: calc(var(--unit) * 12 + 45px);
+            box-sizing: border-box;
         }
 
         .stat-box {
@@ -69,8 +75,8 @@
             padding: calc(var(--unit) * 0.3) calc(var(--unit) * 0.8);
             border-radius: 12px;
             text-align: center;
-            width: calc(var(--unit) * 4.6);
-            min-width: calc(var(--unit) * 4.6);
+            flex: 1;
+            min-width: 0;
         }
 
         .stat-label {
@@ -348,7 +354,7 @@
                 <div id="moves-left" class="stat-value">30</div>
             </div>
             <div class="stat-box">
-                <div class="stat-label">소요 시간</div>
+                <div class="stat-label">남은 시간</div>
                 <div id="time" class="stat-value">00:00</div>
             </div>
         </div>
@@ -382,6 +388,7 @@
         const levelEl = document.getElementById('level');
         const movesLeftEl = document.getElementById('moves-left');
         const timeEl = document.getElementById('time');
+        const timeLabelEl = timeEl ? timeEl.previousElementSibling : null;
         const overlay = document.getElementById('overlay');
         const overlayMsg = document.getElementById('overlay-msg');
         const finalStats = document.getElementById('final-stats');
@@ -395,25 +402,43 @@
         let maxMoves = 30;
         let matchedPairs = 0;
         let timer = null;
-        let seconds = 0;
+        let timeLimit = 0;
+        let timeRemaining = 0;
+        let hasEnded = false;
         let isLock = false;
+
+        function formatTime(totalSeconds) {
+            const safe = Math.max(0, totalSeconds);
+            const mins = String(Math.floor(safe / 60)).padStart(2, '0');
+            const secs = String(safe % 60).padStart(2, '0');
+            return `${mins}:${secs}`;
+        }
 
         function initGame(resetLevel = false) {
             if (resetLevel) level = 1;
+            if (timeLabelEl) timeLabelEl.innerText = '남은 시간';
             maxMoves = Math.max(10, 30 - (level - 1) * 3);
+            timeLimit = Math.max(20, 70 - (level - 1) * 5);
+            timeRemaining = timeLimit;
             cards = [...emojis, ...emojis].sort(() => Math.random() - 0.5);
             grid.innerHTML = '';
             moves = 0;
             matchedPairs = 0;
-            seconds = 0;
             flippedCards = [];
+            hasEnded = false;
             isLock = true; // Lock interactions during preview
 
             levelEl.innerText = level;
             movesLeftEl.innerText = maxMoves;
-            timeEl.innerText = '00:00';
+            timeEl.innerText = formatTime(timeRemaining);
             overlay.style.display = 'none';
             overlayRanking.style.display = 'none';
+            const startBtn = overlay.querySelector('.start-btn');
+            if (startBtn) startBtn.style.display = '';
+            const sharedPanel = overlay.querySelector('#memory-top3-panel');
+            if (sharedPanel) sharedPanel.style.display = '';
+            const sharedActions = overlay.querySelector('#memory-top3-panel-actions');
+            if (sharedActions) sharedActions.style.display = '';
 
             cards.forEach((emoji, index) => {
                 const card = document.createElement('div');
@@ -437,10 +462,16 @@
 
                 // Start timer after preview
                 timer = setInterval(() => {
-                    seconds++;
-                    const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
-                    const secs = String(seconds % 60).padStart(2, '0');
-                    timeEl.innerText = `${mins}:${secs}`;
+                    timeRemaining--;
+                    timeEl.innerText = formatTime(timeRemaining);
+
+                    if (timeRemaining <= 0) {
+                        clearInterval(timer);
+                        if (gameActive()) {
+                            isLock = true;
+                            gameOver('TIME OUT!');
+                        }
+                    }
                 }, 1000);
             }, 2000); // 2 second preview
         }
@@ -463,7 +494,7 @@
         }
 
         function gameActive() {
-            return matchedPairs < emojis.length;
+            return !hasEnded && matchedPairs < emojis.length;
         }
 
         function checkMatch() {
@@ -491,6 +522,7 @@
         }
 
         function win() {
+            hasEnded = true;
             clearInterval(timer);
             overlay.style.display = 'flex';
             overlayMsg.innerText = `LEVEL ${level} 클리어!`;
@@ -498,8 +530,13 @@
             finalStats.innerText = `${moves}회 이동 | ${timeEl.innerText}`;
             finalStats.style.display = 'block';
             overlayRanking.style.display = 'none';
+            const sharedPanel = overlay.querySelector('#memory-top3-panel');
+            if (sharedPanel) sharedPanel.style.display = 'none';
+            const sharedActions = overlay.querySelector('#memory-top3-panel-actions');
+            if (sharedActions) sharedActions.style.display = 'none';
 
             const startBtn = overlay.querySelector('.start-btn');
+            if (startBtn) startBtn.style.display = '';
             startBtn.innerText = "다음 레벨";
             startBtn.onclick = () => {
                 level++;
@@ -511,6 +548,16 @@
             const opts = options || {};
             const forceRefresh = Boolean(opts.forceRefresh);
             if (!overlayRankingList) return;
+            if (window.LeaderboardSystem && typeof window.LeaderboardSystem.renderTop3List === 'function') {
+                await window.LeaderboardSystem.renderTop3List(overlayRankingList, 'memory', {
+                    forceRefresh: forceRefresh,
+                    rankLabel: (n) => `${n}위`,
+                    loadingText: '불러오는 중...',
+                    emptyText: '기록 없음',
+                    scorePrefix: 'Lv '
+                });
+                return;
+            }
             overlayRankingList.innerHTML = [
                 '<li><span><strong>1위</strong> 불러오는 중...</span><span>-</span></li>',
                 '<li><span><strong>2위</strong> 불러오는 중...</span><span>-</span></li>',
@@ -540,24 +587,55 @@
         }
 
         async function gameOver(reason) {
+            if (hasEnded) return;
+            hasEnded = true;
             clearInterval(timer);
             overlay.style.display = 'flex';
             overlayMsg.innerText = reason || "GAME OVER";
             overlayMsg.style.display = 'block';
             finalStats.innerText = `도달 레벨: ${level} | ${timeEl.innerText}`;
             finalStats.style.display = 'block';
-            overlayRanking.style.display = 'block';
-            await renderOverlayTop3();
+            overlayRanking.style.display = 'none';
+            if (window.LeaderboardSystem && typeof window.LeaderboardSystem.renderGameOverTop3Panel === 'function') {
+                window.LeaderboardSystem.renderGameOverTop3Panel(overlay, 'memory', {
+                    panelId: 'memory-top3-panel',
+                    title: '메모리 매치 TOP 3',
+                    rankLabel: (n) => `${n}위`,
+                    loadingText: '불러오는 중...',
+                    emptyText: '기록 없음',
+                    scorePrefix: 'Lv ',
+                    hideNativeActionSelector: '.overlay-ranking, .start-btn, #restart-btn',
+                    onRestart: () => initGame(true)
+                }).catch(() => {});
+            } else {
+                overlayRanking.style.display = 'block';
+                await renderOverlayTop3();
+            }
             try {
                 await window.LeaderboardSystem?.checkAndCelebrate('memory', level);
             } catch (e) {
                 // no-op
             }
-            await renderOverlayTop3({ forceRefresh: true });
-
-            const startBtn = overlay.querySelector('.start-btn');
-            startBtn.innerText = "다시 시작";
-            startBtn.onclick = () => initGame(true);
+            if (window.LeaderboardSystem && typeof window.LeaderboardSystem.renderGameOverTop3Panel === 'function') {
+                window.LeaderboardSystem.renderGameOverTop3Panel(overlay, 'memory', {
+                    panelId: 'memory-top3-panel',
+                    title: '메모리 매치 TOP 3',
+                    rankLabel: (n) => `${n}위`,
+                    loadingText: '불러오는 중...',
+                    emptyText: '기록 없음',
+                    scorePrefix: 'Lv ',
+                    hideNativeActionSelector: '.overlay-ranking, .start-btn, #restart-btn',
+                    onRestart: () => initGame(true),
+                    forceRefresh: true
+                }).catch(() => {});
+            } else {
+                await renderOverlayTop3({ forceRefresh: true });
+                const startBtn = overlay.querySelector('.start-btn');
+                if (startBtn) {
+                    startBtn.innerText = "다시 시작";
+                    startBtn.onclick = () => initGame(true);
+                }
+            }
         }
 
         // 투명도 조절

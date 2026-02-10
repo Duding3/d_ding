@@ -405,7 +405,23 @@
                 bestEl.innerText = bestScore;
             }
 
-            window.LeaderboardSystem?.checkAndCelebrate('catch', score);
+            if (window.LeaderboardSystem && typeof window.LeaderboardSystem.renderGameOverTop3Panel === 'function') {
+                window.LeaderboardSystem.renderGameOverTop3Panel(overlay, 'catch', {
+                    panelId: 'catch-top3-panel',
+                    onRestart: () => initGame()
+                }).catch(() => {});
+            }
+            window.LeaderboardSystem?.checkAndCelebrate('catch', score)
+                ?.catch(() => {})
+                ?.finally(() => {
+                    if (window.LeaderboardSystem && typeof window.LeaderboardSystem.renderGameOverTop3Panel === 'function') {
+                        window.LeaderboardSystem.renderGameOverTop3Panel(overlay, 'catch', {
+                            panelId: 'catch-top3-panel',
+                            onRestart: () => initGame(),
+                            forceRefresh: true
+                        }).catch(() => {});
+                    }
+                });
         }
 
         // Controls

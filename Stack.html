@@ -424,7 +424,23 @@
                 highScoreEl.innerText = highScore;
             }
 
-            window.LeaderboardSystem?.checkAndCelebrate('stack', score);
+            if (window.LeaderboardSystem && typeof window.LeaderboardSystem.renderGameOverTop3Panel === 'function') {
+                window.LeaderboardSystem.renderGameOverTop3Panel(overlay, 'stack', {
+                    panelId: 'stack-top3-panel',
+                    onRestart: () => startGame()
+                }).catch(() => {});
+            }
+            window.LeaderboardSystem?.checkAndCelebrate('stack', score)
+                ?.catch(() => {})
+                ?.finally(() => {
+                    if (window.LeaderboardSystem && typeof window.LeaderboardSystem.renderGameOverTop3Panel === 'function') {
+                        window.LeaderboardSystem.renderGameOverTop3Panel(overlay, 'stack', {
+                            panelId: 'stack-top3-panel',
+                            onRestart: () => startGame(),
+                            forceRefresh: true
+                        }).catch(() => {});
+                    }
+                });
         }
 
         // 물리 상수

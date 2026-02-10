@@ -341,8 +341,6 @@
             <canvas id="gameCanvas" width="400" height="600"></canvas>
 
             <div id="startScreen">
-                <h1 style="font-size: 2.5rem; margin-bottom: 10px;">🟢 슬라임점프</h1>
-                <span style="color: #666; margin-bottom: 20px; font-size: 0.9rem;">Ver 1.8 - Responsive</span>
                 <p style="color: #aaa; margin-bottom: 20px;">스페이스바를 길게 눌러 차징하고<br>높이 점프하세요 !</p>
                 <button class="start-btn" onclick="startGame()">START</button>
             </div>
@@ -1556,7 +1554,25 @@
             finalScoreEl.textContent = finalHeight;
             gameOverScreen.style.display = 'flex'; // Show Game Over immediately!
             document.querySelector('.hud-container').style.display = 'none';
-            window.LeaderboardSystem?.checkAndCelebrate('jump', finalHeight);
+            if (window.LeaderboardSystem && typeof window.LeaderboardSystem.renderGameOverTop3Panel === 'function') {
+                window.LeaderboardSystem.renderGameOverTop3Panel(gameOverScreen, 'jump', {
+                    panelId: 'jump-top3-panel',
+                    scoreSuffix: 'm',
+                    onRestart: () => restartGame()
+                }).catch(() => {});
+            }
+            window.LeaderboardSystem?.checkAndCelebrate('jump', finalHeight)
+                ?.catch(() => {})
+                ?.finally(() => {
+                    if (window.LeaderboardSystem && typeof window.LeaderboardSystem.renderGameOverTop3Panel === 'function') {
+                        window.LeaderboardSystem.renderGameOverTop3Panel(gameOverScreen, 'jump', {
+                            panelId: 'jump-top3-panel',
+                            scoreSuffix: 'm',
+                            onRestart: () => restartGame(),
+                            forceRefresh: true
+                        }).catch(() => {});
+                    }
+                });
         }
 
         // 키보드 이벤트

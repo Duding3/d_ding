@@ -184,6 +184,27 @@
       }
     }
 
+    function readPersistedTopScoreCache() {
+      try {
+        const raw = localStorage.getItem("hof_top_scores_cache_v1");
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === "object" ? parsed : {};
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function renderPersistedCache(meta) {
+      const cache = readPersistedTopScoreCache();
+      const gameIds = Object.keys(meta);
+      for (const gameId of gameIds) {
+        const entry = cache[gameId];
+        const rows = entry && Array.isArray(entry.rows) ? entry.rows : [];
+        fillCardRows(gameId, meta[gameId], rows.slice(0, 3));
+      }
+    }
+
     async function warmupFirstLoad() {
       if (initialLoadDone) return;
       if (window.LeaderboardSystem && typeof window.LeaderboardSystem.ensureFirebase === "function") {
@@ -199,10 +220,11 @@
       const forceRefresh = Boolean(opts.forceRefresh);
       const startedAt = performance.now();
 
-      await warmupFirstLoad();
       const meta = (window.LeaderboardSystem && window.LeaderboardSystem.GAME_META) || FALLBACK_META;
       const gameIds = Object.keys(meta);
       if (!cardsInitialized) renderCardsSkeleton(meta);
+      if (!forceRefresh) renderPersistedCache(meta);
+      await warmupFirstLoad();
 
       console.log("[HOF] renderAll start", {
         at: new Date().toISOString(),

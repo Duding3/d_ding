@@ -423,7 +423,25 @@
                 highScoreEl.innerText = highScore.toFixed(1) + 's';
             }
 
-            window.LeaderboardSystem?.checkAndCelebrate('dodge', Number(score.toFixed(1)));
+            if (window.LeaderboardSystem && typeof window.LeaderboardSystem.renderGameOverTop3Panel === 'function') {
+                window.LeaderboardSystem.renderGameOverTop3Panel(overlay, 'dodge', {
+                    panelId: 'dodge-top3-panel',
+                    scoreSuffix: 's',
+                    onRestart: () => startGame()
+                }).catch(() => {});
+            }
+            window.LeaderboardSystem?.checkAndCelebrate('dodge', Number(score.toFixed(1)))
+                ?.catch(() => {})
+                ?.finally(() => {
+                    if (window.LeaderboardSystem && typeof window.LeaderboardSystem.renderGameOverTop3Panel === 'function') {
+                        window.LeaderboardSystem.renderGameOverTop3Panel(overlay, 'dodge', {
+                            panelId: 'dodge-top3-panel',
+                            scoreSuffix: 's',
+                            onRestart: () => startGame(),
+                            forceRefresh: true
+                        }).catch(() => {});
+                    }
+                });
         }
 
         function gameLoop(timestamp) {

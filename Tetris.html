@@ -535,34 +535,23 @@
       if (gameStarted && collide(arena, player)) finishGame();
     }
 
-    function reportRankingOnce() { if (didCheckRanking) return; didCheckRanking = true; window.LeaderboardSystem?.checkAndCelebrate("tetris", player.score); }
+    function reportRankingOnce() {
+      if (didCheckRanking) return Promise.resolve();
+      didCheckRanking = true;
+      if (window.LeaderboardSystem && typeof window.LeaderboardSystem.checkAndCelebrate === "function") {
+        return window.LeaderboardSystem.checkAndCelebrate("tetris", player.score);
+      }
+      return Promise.resolve();
+    }
     async function renderGameOverTop3() {
       if (!gameOverRankingList) return;
-      gameOverRankingList.innerHTML = [
-        '<li><span><strong>1위</strong> 불러오는 중...</span><span>-</span></li>',
-        '<li><span><strong>2위</strong> 불러오는 중...</span><span>-</span></li>',
-        '<li><span><strong>3위</strong> 불러오는 중...</span><span>-</span></li>'
-      ].join("");
-
-      let rows = [];
-      try {
-        if (window.LeaderboardSystem && typeof window.LeaderboardSystem.getTopScores === "function") {
-          rows = await window.LeaderboardSystem.getTopScores("tetris", 3);
-        }
-      } catch (e) {
-        rows = [];
-      }
-
-      gameOverRankingList.innerHTML = "";
-      for (let i = 0; i < 3; i++) {
-        const li = document.createElement("li");
-        const row = rows[i];
-        if (row) {
-          li.innerHTML = `<span><strong>${i + 1}위</strong> ${row.name}</span><span>${row.score}</span>`;
-        } else {
-          li.innerHTML = `<span><strong>${i + 1}위</strong> 기록 없음</span><span>-</span>`;
-        }
-        gameOverRankingList.appendChild(li);
+      if (window.LeaderboardSystem && typeof window.LeaderboardSystem.renderTop3List === "function") {
+        await window.LeaderboardSystem.renderTop3List(gameOverRankingList, "tetris", {
+          rankLabel: (n) => `${n}위`,
+          loadingText: "불러오는 중...",
+          emptyText: "기록 없음"
+        });
+        return;
       }
     }
 
@@ -571,8 +560,35 @@
       gameStarted = false;
       document.getElementById("finalScore").textContent = String(player.score);
       document.getElementById("game-over-screen").style.display = "flex";
-      renderGameOverTop3();
-      reportRankingOnce();
+      if (window.LeaderboardSystem && typeof window.LeaderboardSystem.renderGameOverTop3Panel === "function") {
+        window.LeaderboardSystem.renderGameOverTop3Panel(document.getElementById("game-over-screen"), "tetris", {
+          panelId: "tetris-top3-panel",
+          title: "현재 테트리스 TOP 3",
+          rankLabel: (n) => `${n}위`,
+          loadingText: "불러오는 중...",
+          emptyText: "기록 없음",
+          hideNativeActionSelector: ".game-over-ranking, .start-btn, #restart-btn",
+          onRestart: () => resetGame()
+        }).catch(() => {});
+      } else {
+        renderGameOverTop3();
+      }
+      reportRankingOnce()
+        .catch(() => {})
+        .finally(() => {
+          if (window.LeaderboardSystem && typeof window.LeaderboardSystem.renderGameOverTop3Panel === "function") {
+            window.LeaderboardSystem.renderGameOverTop3Panel(document.getElementById("game-over-screen"), "tetris", {
+              panelId: "tetris-top3-panel",
+              title: "현재 테트리스 TOP 3",
+              rankLabel: (n) => `${n}위`,
+              loadingText: "불러오는 중...",
+              emptyText: "기록 없음",
+              hideNativeActionSelector: ".game-over-ranking, .start-btn, #restart-btn",
+              onRestart: () => resetGame(),
+              forceRefresh: true
+            }).catch(() => {});
+          }
+        });
     }
 
     function updateStats() {

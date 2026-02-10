@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   const GAME_META = {
     jump: { name: "슬라임 점프", unit: "m" },
     tetris: { name: "테트리스", unit: "" },
@@ -17,7 +17,6 @@
   const AUTH_CACHE_KEY = "hof_auth_cache_v1";
   const TOP3_CACHE_ROOT = "leaderboards_top3";
   const TOP_SCORES_PERSIST_KEY = "hof_top_scores_cache_v1";
-  const TOP_SCORES_PERSIST_TTL = 24 * 60 * 60 * 1000;
   const REQUIRE_AUTH_FOR_WRITE = true;
 
   let firebaseReady = false;
@@ -407,6 +406,130 @@
     };
   }
 
+  function shouldShowGlobalTopRightBar() {
+    try {
+      const path = String(window.location.pathname || "").toLowerCase();
+      if (!path || path === "/") return false;
+      if (path.endsWith("/index.html")) return false;
+      if (path.endsWith("/hall-of-fame.html")) return false;
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  function injectGlobalTopRightBar() {
+    if (!shouldShowGlobalTopRightBar()) return;
+    if (document.getElementById("global-top-right-bar")) return;
+
+    try {
+      document.querySelectorAll(".home-btn").forEach((el) => {
+        el.style.display = "none";
+      });
+    } catch (err) {
+      // no-op
+    }
+
+    const bar = document.createElement("div");
+    bar.id = "global-top-right-bar";
+    bar.style.position = "fixed";
+    bar.style.top = "10px";
+    bar.style.right = "10px";
+    bar.style.zIndex = "2147483000";
+    bar.style.display = "flex";
+    bar.style.alignItems = "center";
+    bar.style.gap = "8px";
+    bar.style.padding = "6px 8px";
+    bar.style.borderRadius = "12px";
+    bar.style.background = "rgba(10, 14, 28, 0.72)";
+    bar.style.backdropFilter = "blur(8px)";
+    bar.style.border = "1px solid rgba(255, 255, 255, 0.18)";
+
+    const userName = document.createElement("span");
+    userName.style.fontSize = "12px";
+    userName.style.color = "#e5e7eb";
+    userName.style.maxWidth = "140px";
+    userName.style.overflow = "hidden";
+    userName.style.textOverflow = "ellipsis";
+    userName.style.whiteSpace = "nowrap";
+    userName.style.display = "none";
+
+    const authBtn = document.createElement("button");
+    authBtn.type = "button";
+    authBtn.textContent = "Google 로그인";
+    authBtn.style.border = "1px solid rgba(255,255,255,0.25)";
+    authBtn.style.background = "rgba(255,255,255,0.10)";
+    authBtn.style.color = "#fff";
+    authBtn.style.padding = "8px 10px";
+    authBtn.style.borderRadius = "10px";
+    authBtn.style.fontSize = "12px";
+    authBtn.style.fontWeight = "700";
+    authBtn.style.cursor = "pointer";
+
+    const homeBtn = document.createElement("button");
+    homeBtn.type = "button";
+    homeBtn.textContent = "홈";
+    homeBtn.style.border = "1px solid rgba(255,255,255,0.25)";
+    homeBtn.style.background = "rgba(255,255,255,0.10)";
+    homeBtn.style.color = "#fff";
+    homeBtn.style.padding = "8px 10px";
+    homeBtn.style.borderRadius = "10px";
+    homeBtn.style.fontSize = "12px";
+    homeBtn.style.fontWeight = "700";
+    homeBtn.style.cursor = "pointer";
+    homeBtn.addEventListener("click", () => {
+      window.location.href = "index.html";
+    });
+
+    function renderAuthBar(user) {
+      const signedIn = Boolean(user && user.uid);
+      if (signedIn) {
+        const name = String(user.displayName || user.email || "Google 사용자");
+        userName.textContent = name;
+        userName.style.display = "inline";
+        authBtn.textContent = "로그아웃";
+      } else {
+        userName.textContent = "";
+        userName.style.display = "none";
+        authBtn.textContent = "Google 로그인";
+      }
+      authBtn.disabled = false;
+      authBtn.style.opacity = "1";
+      authBtn.style.cursor = "pointer";
+    }
+
+    authBtn.addEventListener("click", async () => {
+      authBtn.disabled = true;
+      authBtn.style.opacity = "0.6";
+      authBtn.style.cursor = "default";
+      try {
+        if (getCurrentUser()) await signOutUser();
+        else await signInWithGoogle();
+      } catch (err) {
+        authBtn.disabled = false;
+        authBtn.style.opacity = "1";
+        authBtn.style.cursor = "pointer";
+      }
+    });
+
+    bar.appendChild(userName);
+    bar.appendChild(authBtn);
+    bar.appendChild(homeBtn);
+    document.body.appendChild(bar);
+    onAuthChange(renderAuthBar);
+  }
+
+  function hideRefreshButtonsGlobally() {
+    try {
+      document.querySelectorAll(".refresh-btn").forEach((btn) => {
+        if (!btn) return;
+        btn.style.display = "none";
+      });
+    } catch (err) {
+      // no-op
+    }
+  }
+
   function normalizeScore(score) {
     const n = Number(score);
     if (Number.isNaN(n) || !Number.isFinite(n)) return null;
@@ -510,7 +633,6 @@
     const cache = getPersistedTopScoreCache();
     const entry = cache[gameId];
     if (!entry || !Array.isArray(entry.rows)) return null;
-    if (Date.now() - Number(entry.ts || 0) > TOP_SCORES_PERSIST_TTL) return null;
     return sortEntries(entry.rows).slice(0, Math.max(1, Number(limit) || 3));
   }
 
@@ -667,6 +789,211 @@
 
     result.__mode = mode;
     return result;
+  }
+
+  function setTop3LoadingRows(listEl, loadingText) {
+    if (!listEl) return;
+    listEl.innerHTML = "";
+    for (let i = 0; i < 3; i++) {
+      const li = document.createElement("li");
+      const left = document.createElement("span");
+      const rank = document.createElement("strong");
+      const right = document.createElement("span");
+      li.style.display = "flex";
+      li.style.justifyContent = "space-between";
+      li.style.alignItems = "center";
+      li.style.gap = "10px";
+      li.style.padding = "4px 0";
+      rank.textContent = String(i + 1) + ".";
+      left.appendChild(rank);
+      left.appendChild(document.createTextNode(" " + String(loadingText || "Loading...")));
+      right.textContent = "-";
+      right.style.opacity = "0.95";
+      li.appendChild(left);
+      li.appendChild(right);
+      listEl.appendChild(li);
+    }
+  }
+
+  function fillTop3Rows(listEl, rows, options) {
+    if (!listEl) return;
+    const opts = options || {};
+    const scorePrefix = String(opts.scorePrefix || "");
+    const scoreSuffix = String(opts.scoreSuffix || "");
+    const emptyText = String(opts.emptyText || "No record");
+    const rankLabel = typeof opts.rankLabel === "function" ? opts.rankLabel : null;
+
+    listEl.innerHTML = "";
+    for (let i = 0; i < 3; i++) {
+      const li = document.createElement("li");
+      const left = document.createElement("span");
+      const rank = document.createElement("strong");
+      const right = document.createElement("span");
+      const row = rows[i];
+      li.style.display = "flex";
+      li.style.justifyContent = "space-between";
+      li.style.alignItems = "center";
+      li.style.gap = "10px";
+      li.style.padding = "4px 0";
+      rank.textContent = rankLabel ? String(rankLabel(i + 1)) : String(i + 1) + ".";
+      left.appendChild(rank);
+      left.appendChild(document.createTextNode(" "));
+      if (row) {
+        left.appendChild(document.createTextNode(sanitizeName(row.name)));
+        right.textContent = scorePrefix + String(row.score) + scoreSuffix;
+      } else {
+        left.appendChild(document.createTextNode(emptyText));
+        right.textContent = "-";
+      }
+      right.style.opacity = "0.95";
+      li.appendChild(left);
+      li.appendChild(right);
+      listEl.appendChild(li);
+    }
+  }
+
+  async function renderTop3List(listEl, gameId, options) {
+    const opts = options || {};
+    setTop3LoadingRows(listEl, opts.loadingText);
+
+    let rows = [];
+    try {
+      rows = await getTopScores(gameId, 3, { forceRefresh: Boolean(opts.forceRefresh) });
+    } catch (err) {
+      rows = [];
+    }
+    fillTop3Rows(listEl, rows, opts);
+    return rows;
+  }
+
+  function ensureGameOverTop3Panel(containerEl, options) {
+    if (!containerEl) return null;
+    const opts = options || {};
+    const panelId = String(opts.panelId || "lb-top3-panel");
+    let panel = containerEl.querySelector("#" + panelId);
+    if (!panel) {
+      panel = document.createElement("div");
+      panel.id = panelId;
+      panel.style.margin = "12px 0";
+      panel.style.marginLeft = "auto";
+      panel.style.marginRight = "auto";
+      panel.style.padding = "10px";
+      panel.style.borderRadius = "10px";
+      panel.style.background = "rgba(15, 23, 42, 0.94)";
+      panel.style.border = "1px solid rgba(255,255,255,0.35)";
+      panel.style.boxShadow = "0 8px 20px rgba(0,0,0,0.45)";
+      panel.style.color = "#ffffff";
+      panel.style.width = "min(320px, 90%)";
+      panel.style.position = "relative";
+      panel.style.zIndex = "999";
+      panel.style.alignSelf = "center";
+
+      const title = document.createElement("h3");
+      title.textContent = String(opts.title || "TOP 3");
+      title.style.margin = "0 0 8px";
+      title.style.fontSize = "1rem";
+      title.style.color = "#ffffff";
+      title.style.textAlign = "center";
+      panel.appendChild(title);
+
+      const list = document.createElement("ol");
+      list.style.margin = "0";
+      list.style.padding = "0 0 0 18px";
+      list.style.color = "#ffffff";
+      panel.appendChild(list);
+
+      const anchor = containerEl.querySelector(".start-btn, #restart-btn, button");
+      if (anchor && anchor.parentNode === containerEl) {
+        containerEl.insertBefore(panel, anchor);
+      } else {
+        containerEl.appendChild(panel);
+      }
+    }
+    return panel.querySelector("ol");
+  }
+
+  function ensureGameOverActions(containerEl, options) {
+    if (!containerEl) return null;
+    const opts = options || {};
+    const panelId = String(opts.panelId || "lb-top3-panel");
+    const actionsId = String(opts.actionsId || panelId + "-actions");
+    let row = containerEl.querySelector("#" + actionsId);
+    if (!row) {
+      row = document.createElement("div");
+      row.id = actionsId;
+      row.style.display = "flex";
+      row.style.justifyContent = "center";
+      row.style.alignItems = "center";
+      row.style.gap = "10px";
+      row.style.marginTop = "10px";
+      row.style.width = "100%";
+      row.style.position = "relative";
+      row.style.zIndex = "999";
+
+      const restartBtn = document.createElement("button");
+      restartBtn.type = "button";
+      restartBtn.dataset.lbAction = "restart";
+      restartBtn.style.padding = "10px 16px";
+      restartBtn.style.border = "1px solid rgba(255,255,255,0.35)";
+      restartBtn.style.borderRadius = "10px";
+      restartBtn.style.background = "rgba(255,255,255,0.16)";
+      restartBtn.style.color = "#ffffff";
+      restartBtn.style.cursor = "pointer";
+      restartBtn.style.fontWeight = "700";
+      restartBtn.style.minWidth = "104px";
+      row.appendChild(restartBtn);
+
+      const homeBtn = document.createElement("button");
+      homeBtn.type = "button";
+      homeBtn.dataset.lbAction = "home";
+      homeBtn.style.padding = "10px 16px";
+      homeBtn.style.border = "1px solid rgba(255,255,255,0.35)";
+      homeBtn.style.borderRadius = "10px";
+      homeBtn.style.background = "rgba(255,255,255,0.16)";
+      homeBtn.style.color = "#ffffff";
+      homeBtn.style.cursor = "pointer";
+      homeBtn.style.fontWeight = "700";
+      homeBtn.style.minWidth = "104px";
+      row.appendChild(homeBtn);
+
+      const panel = containerEl.querySelector("#" + panelId);
+      if (panel && panel.parentNode === containerEl) {
+        if (panel.nextSibling) containerEl.insertBefore(row, panel.nextSibling);
+        else containerEl.appendChild(row);
+      } else {
+        containerEl.appendChild(row);
+      }
+    }
+
+    const restartBtn = row.querySelector('[data-lb-action="restart"]');
+    const homeBtn = row.querySelector('[data-lb-action="home"]');
+    if (restartBtn) {
+      restartBtn.textContent = String(opts.restartText || "다시시작");
+      restartBtn.onclick = typeof opts.onRestart === "function" ? opts.onRestart : null;
+    }
+    if (homeBtn) {
+      homeBtn.textContent = String(opts.homeText || "홈");
+      const homeHref = String(opts.homeHref || "index.html");
+      homeBtn.onclick = () => {
+        window.location.href = homeHref;
+      };
+    }
+    return row;
+  }
+
+  async function renderGameOverTop3Panel(containerEl, gameId, options) {
+    const opts = options || {};
+    const listEl = ensureGameOverTop3Panel(containerEl, opts);
+    if (!listEl) return [];
+    const hideSelector = String(opts.hideNativeActionSelector || ".start-btn, #restart-btn");
+    if (hideSelector && containerEl && typeof containerEl.querySelectorAll === "function") {
+      containerEl.querySelectorAll(hideSelector).forEach((el) => {
+        if (el && el.dataset && el.dataset.lbAction) return;
+        if (el) el.style.display = "none";
+      });
+    }
+    ensureGameOverActions(containerEl, opts);
+    return await renderTop3List(listEl, gameId, opts);
   }
 
   async function refreshTop3CacheForGame(gameId) {
@@ -827,7 +1154,7 @@
       box.style.boxShadow = "0 20px 40px rgba(0,0,0,0.45)";
 
       const title = document.createElement("h2");
-      title.textContent = "축하합니다 순위권에 진입했습니다!";
+      title.textContent = "축하합니다! 순위권에 진입했습니다!";
       title.style.margin = "0 0 12px";
       title.style.color = "#fbbf24";
       title.style.fontSize = "1.35rem";
@@ -1025,11 +1352,15 @@
     pruneGameRankings: pruneGameRankings,
     saveScore: saveScore,
     checkAndCelebrate: checkAndCelebrate,
+    renderTop3List: renderTop3List,
+    renderGameOverTop3Panel: renderGameOverTop3Panel,
     clearAllRankings: clearAllRankings,
     openInExternalBrowser: openInExternalBrowser,
     canGoogleOAuthRunInCurrentBrowser: canGoogleOAuthRunInCurrentBrowser,
     detectEmbeddedBrowser: detectEmbeddedBrowser
   };
 
+  injectGlobalTopRightBar();
+  hideRefreshButtonsGlobally();
   syncGlobalVersionFromIndex();
 })();

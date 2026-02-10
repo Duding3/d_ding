@@ -676,7 +676,31 @@
             let w = dino.isDucking ? dino.widthDuck : dino.width;
             ctx.fillRect(dino.x + w - 12, dino.y + 5, 4, 4);
             gameOverScreen.style.display = 'block'; // Show Game Over immediately!
-            window.LeaderboardSystem?.checkAndCelebrate('dino', score);
+            if (window.LeaderboardSystem && typeof window.LeaderboardSystem.renderGameOverTop3Panel === 'function') {
+                window.LeaderboardSystem.renderGameOverTop3Panel(gameOverScreen, 'dino', {
+                    panelId: 'dino-top3-panel',
+                    onRestart: () => {
+                        resetGame();
+                        lastTime = performance.now();
+                        requestAnimationFrame(animate);
+                    }
+                }).catch(() => {});
+            }
+            window.LeaderboardSystem?.checkAndCelebrate('dino', score)
+                ?.catch(() => {})
+                ?.finally(() => {
+                    if (window.LeaderboardSystem && typeof window.LeaderboardSystem.renderGameOverTop3Panel === 'function') {
+                        window.LeaderboardSystem.renderGameOverTop3Panel(gameOverScreen, 'dino', {
+                            panelId: 'dino-top3-panel',
+                            onRestart: () => {
+                                resetGame();
+                                lastTime = performance.now();
+                                requestAnimationFrame(animate);
+                            },
+                            forceRefresh: true
+                        }).catch(() => {});
+                    }
+                });
         }
 
 
