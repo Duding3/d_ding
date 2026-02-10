@@ -17,6 +17,7 @@
   const AUTH_CACHE_KEY = "hof_auth_cache_v1";
   const TOP3_CACHE_ROOT = "leaderboards_top3";
   const TOP_SCORES_PERSIST_KEY = "hof_top_scores_cache_v1";
+  const USER_PROFILE_ROOT = "userProfiles";
   const REQUIRE_AUTH_FOR_WRITE = true;
 
   let firebaseReady = false;
@@ -27,6 +28,7 @@
   let authStateKnown = false;
   let currentUser = null;
   const authSubscribers = [];
+  const userNicknameCache = {};
 
   function normalizeTitleWithoutVersion(title) {
     return String(title || "").replace(/\s*v\d+(?:\.\d+)*/i, "").trim();
@@ -481,10 +483,15 @@
       window.location.href = "index.html";
     });
 
-    function renderAuthBar(user) {
+    async function renderAuthBar(user) {
       const signedIn = Boolean(user && user.uid);
       if (signedIn) {
-        const name = String(user.displayName || user.email || "Google 사용자");
+        let name = String(user.displayName || user.email || "Google 사용자");
+        try {
+          name = await getPreferredDisplayName(user);
+        } catch (err) {
+          // no-op
+        }
         userName.textContent = name;
         userName.style.display = "inline";
         authBtn.textContent = "로그아웃";
@@ -539,6 +546,110 @@
   function sanitizeName(name) {
     const base = (name || "").toString().trim().slice(0, 12);
     return base || "Player";
+  }
+
+  function normalizeNickname(name) {
+    return (name || "").toString().trim().slice(0, 12);
+  }
+
+  async function getServerNicknameByUid(uid) {
+    const id = (uid || "").toString().trim();
+    if (!id) return "";
+    if (userNicknameCache[id]) return userNicknameCache[id];
+    const useFirebase = await ensureFirebase();
+    if (!useFirebase) return "";
+    try {
+      const snap = await window.firebase.database().ref(USER_PROFILE_ROOT + "/" + id + "/nickname").once("value");
+      const raw = normalizeNickname(snap.val());
+      if (!raw) return "";
+      userNicknameCache[id] = sanitizeName(raw);
+      return userNicknameCache[id];
+    } catch (err) {
+      return "";
+    }
+  }
+
+  async function getPreferredDisplayName(userLike) {
+    const user = userLike && userLike.uid ? userLike : getCurrentUser();
+    if (!user || !user.uid) return "Player";
+    const serverNick = await getServerNicknameByUid(user.uid);
+    if (serverNick) return sanitizeName(serverNick);
+    return sanitizeName(user.displayName || user.email || "Google 사용자");
+  }
+
+  async function setServerNickname(name) {
+    const user = getCurrentUser();
+    if (!user || !user.uid) {
+      const err = new Error("AUTH_REQUIRED");
+      err.code = "auth-required";
+      throw err;
+    }
+    const normalized = normalizeNickname(name);
+    if (!normalized) {
+      const err = new Error("INVALID_NAME");
+      err.code = "invalid-name";
+      throw err;
+    }
+
+    const useFirebase = await ensureFirebase();
+    if (!useFirebase) {
+      const err = new Error("FIREBASE_UNAVAILABLE");
+      err.code = "firebase-unavailable";
+      throw err;
+    }
+
+    const safeName = sanitizeName(normalized);
+    let wroteServerProfile = false;
+    try {
+      await window.firebase.database().ref(USER_PROFILE_ROOT + "/" + user.uid).update({
+        nickname: safeName,
+        updatedAt: Date.now(),
+        email: user.email || ""
+      });
+      userNicknameCache[user.uid] = safeName;
+      wroteServerProfile = true;
+    } catch (err) {
+      // Fallback: if DB rules block profile path, keep nickname via Auth displayName.
+      try {
+        const authUser = window.firebase && window.firebase.auth ? window.firebase.auth().currentUser : null;
+        if (authUser && typeof authUser.updateProfile === "function") {
+          await authUser.updateProfile({ displayName: safeName });
+        }
+      } catch (authErr) {
+        const e = new Error("NICKNAME_SAVE_FAILED");
+        e.code = (err && err.code) || (authErr && authErr.code) || "nickname-save-failed";
+        throw e;
+      }
+    }
+
+    for (const gameId of Object.keys(GAME_META)) {
+      try {
+        const snap = await window.firebase
+          .database()
+          .ref("leaderboards/" + gameId)
+          .orderByChild("uid")
+          .equalTo(user.uid)
+          .once("value");
+        const updates = {};
+        snap.forEach((child) => {
+          updates[child.key + "/name"] = safeName;
+        });
+        if (Object.keys(updates).length > 0) {
+          await window.firebase.database().ref("leaderboards/" + gameId).update(updates);
+        }
+      } catch (err) {
+        // no-op
+      }
+      if (wroteServerProfile) {
+        try {
+          await refreshTop3CacheForGame(gameId);
+        } catch (err) {
+          // no-op
+        }
+      }
+    }
+
+    return safeName;
   }
 
   function getLocalStore() {
@@ -1020,8 +1131,12 @@
     if (normalized === null) throw new Error("Invalid score");
 
     const user = getCurrentUser();
+    let preferredName = sanitizeName(name);
+    if (user && user.uid) {
+      preferredName = await getPreferredDisplayName(user);
+    }
     const payload = {
-      name: sanitizeName(user && user.displayName ? user.displayName : name),
+      name: sanitizeName(preferredName),
       score: normalized,
       ts: Date.now(),
       gameId: gameId
@@ -1346,6 +1461,8 @@
     getTopScores: getTopScores,
     getTopScoresBundle: getTopScoresBundle,
     getCurrentUser: getCurrentUser,
+    getPreferredDisplayName: getPreferredDisplayName,
+    setServerNickname: setServerNickname,
     signInWithGoogle: signInWithGoogle,
     signOutUser: signOutUser,
     onAuthChange: onAuthChange,

@@ -30,7 +30,7 @@
                 <i class="fas fa-spinner"></i> 로그인 확인 중...
             </button>
         </div>
-        <p id="home-auth-status" class="home-auth-status">로그인 상태 확인 중...</p>
+        <button id="home-auth-status" class="home-auth-status" type="button" disabled>로그인 상태 확인 중...</button>
     </header>
 
     <main class="game-container">
@@ -167,16 +167,25 @@
         const homeAuthBtn = document.getElementById('home-auth-btn');
         const homeAuthStatus = document.getElementById('home-auth-status');
 
-        function renderHomeAuth(user) {
+        async function renderHomeAuth(user) {
             if (!homeAuthBtn || !homeAuthStatus) return;
             homeAuthBtn.disabled = false;
             if (user) {
-                const name = user.displayName || 'Google 사용자';
+                let name = user.displayName || 'Google 사용자';
+                if (window.LeaderboardSystem.getPreferredDisplayName) {
+                    try {
+                        name = await window.LeaderboardSystem.getPreferredDisplayName(user);
+                    } catch (e) {
+                        // no-op
+                    }
+                }
                 homeAuthBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> 로그아웃';
-                homeAuthStatus.textContent = `로그인됨: ${name}`;
+                homeAuthStatus.textContent = `로그인됨: ${name} (닉네임 변경)`;
+                homeAuthStatus.disabled = false;
             } else {
                 homeAuthBtn.innerHTML = '<i class="fab fa-google"></i> Google 로그인';
                 homeAuthStatus.textContent = '로그인되지 않음';
+                homeAuthStatus.disabled = true;
             }
         }
 
@@ -201,6 +210,29 @@
                 }
             } finally {
                 homeAuthBtn.disabled = false;
+            }
+        });
+
+        homeAuthStatus?.addEventListener('click', async function () {
+            if (!window.LeaderboardSystem) return;
+            const user = window.LeaderboardSystem.getCurrentUser?.();
+            if (!user) return;
+            const currentLabel = (homeAuthStatus.textContent || '').replace(/^로그인됨:\s*/, '').replace(/\s*\(닉네임 변경\)\s*$/, '').trim();
+            const nextName = window.prompt('사용하실 닉네임을 입력하세요 (최대 12자)', currentLabel || '');
+            if (nextName === null) return;
+            homeAuthStatus.disabled = true;
+            try {
+                if (window.LeaderboardSystem.setServerNickname) {
+                    const saved = await window.LeaderboardSystem.setServerNickname(nextName);
+                    homeAuthStatus.textContent = `로그인됨: ${saved} (닉네임 변경)`;
+                }
+            } catch (e) {
+                const code = (e && e.code) ? ` (${e.code})` : '';
+                homeAuthStatus.textContent = `닉네임 변경 실패${code}`;
+            } finally {
+                if (window.LeaderboardSystem.getCurrentUser?.()) {
+                    homeAuthStatus.disabled = false;
+                }
             }
         });
     </script>
