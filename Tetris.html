@@ -3,14 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>슬라임 테트리스</title>
+  <title>다일러 테트리스</title>
   <style>
     :root {
       --unit: 24px;
       --main-color: #4ecca3;
       --board-w: calc(var(--unit) * 12);
       --board-h: calc(var(--unit) * 20);
-      --side-w: calc(var(--unit) * 4.2);
+      --side-cols: 2.4;
+      --side-w: max(calc(var(--unit) * var(--side-cols)), 64px);
       --gap: 2px;
     }
     * { box-sizing: border-box; }
@@ -80,7 +81,7 @@
       flex: 1 1 auto;
       min-height: 0;
       display: grid;
-      grid-template-columns: var(--side-w) var(--board-w) var(--side-w);
+      grid-template-columns: minmax(0, 1fr) var(--board-w) var(--side-w) minmax(0, 1fr);
       align-items: start;
       justify-content: center;
       gap: var(--gap);
@@ -109,7 +110,7 @@
     .side-panel {
       grid-column: 3;
       width: var(--side-w);
-      margin-left: 3px;
+      margin-left: 0;
       display: flex;
       flex-direction: column;
       gap: calc(var(--unit) * 0.16);
@@ -124,11 +125,16 @@
       backdrop-filter: blur(5px);
       -webkit-backdrop-filter: blur(5px);
     }
+    .next-box {
+      overflow: hidden;
+    }
     .stat-label { color: #98f3da; font-size: calc(var(--unit) * 0.24); line-height: 1.05; margin-bottom: 2px; font-weight: 700; }
     .stat-value { font-size: calc(var(--unit) * 0.5); line-height: 1; font-weight: 800; }
     #next {
-      width: calc(var(--unit) * 2.35);
-      height: calc(var(--unit) * 4.9);
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      aspect-ratio: 2.35 / 4.9;
       image-rendering: pixelated;
       display: block;
       margin: 0 auto;
@@ -143,34 +149,53 @@
     }
     .slider-tile .stat-label { margin: 0; font-size: calc(var(--unit) * 0.22); white-space: nowrap; }
     #opacitySlider { width: 100%; accent-color: var(--main-color); height: 14px; margin: 0; }
-    .controls-section { flex: 0 0 auto; display: flex; flex-direction: column; gap: 2px; margin-top: 2px; }
-    .controls-row {
+    .controls-section {
+      grid-column: 2 / span 2;
+      width: calc(var(--board-w) + var(--side-w) + var(--gap));
       display: flex;
-      justify-content: center;
+      flex-direction: column;
+      gap: 2px;
+      margin-top: 2px;
+    }
+    .opacity-section {
+      grid-column: 2 / span 2;
+      width: calc(var(--board-w) + var(--side-w) + var(--gap));
+      margin-top: 2px;
+    }
+    .controls-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       align-items: stretch;
-      gap: calc(var(--unit) * 0.22);
+      gap: 4px;
       width: 100%;
+      height: 50px;
     }
     .controls-left, .controls-right {
-      display: flex;
-      gap: calc(var(--unit) * 0.16);
+      display: grid;
+      gap: 4px;
+      min-width: 0;
     }
+    .controls-left { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .controls-right { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .controls-left .btn {
-      min-width: calc(var(--unit) * 2.9);
-      padding: 0 calc(var(--unit) * 0.45);
+      min-width: 0;
+      width: 100%;
+      padding: 0 8px;
     }
     .controls-right .btn {
-      min-width: calc(var(--unit) * 1.9);
-      padding: 0 calc(var(--unit) * 0.3);
+      min-width: 0;
+      width: 100%;
+      padding: 0 8px;
     }
     .btn {
-      min-height: calc(var(--unit) * 1.18);
+      height: 100%;
+      min-height: 50px;
       border: 1px solid rgba(255, 255, 255, 0.14);
       border-radius: 10px;
       background: rgba(255, 255, 255, 0.06);
       color: var(--main-color);
       font-weight: 800;
-      font-size: calc(var(--unit) * 0.46);
+      font-size: 1.05rem;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -266,70 +291,15 @@
       outline: none;
     }
     @media (max-width: 900px) {
-      .game-area { grid-template-columns: var(--board-w); justify-content: center; }
-      .board-shell { grid-column: 1; }
       .controls-section {
-        width: var(--board-w);
-        align-self: center;
+        width: calc(var(--board-w) + var(--side-w) + var(--gap));
       }
-      .side-panel {
-        grid-column: 1;
-        width: var(--board-w);
-        margin-left: 0;
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 2px;
-      }
-      .stat-group,
-      .next-box {
-        min-height: 62px;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-      }
-      .stat-group {
-        position: relative;
-      }
-      .next-box { grid-column: span 1; }
-      .slider-tile { grid-column: span 4; }
-      #next { width: calc(var(--unit) * 1.55); height: calc(var(--unit) * 3.5); }
-      .stat-label { font-size: calc(var(--unit) * 0.3); line-height: 1.1; margin-bottom: 6px; }
-      .stat-group .stat-label {
-        position: absolute;
-        top: 6px;
-        left: 0;
-        right: 0;
-        margin: 0;
-      }
-      .stat-value { font-size: calc(var(--unit) * 0.7); line-height: 1; }
-      .stat-group .stat-value {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 100%;
-        text-align: center;
+      .opacity-section {
+        width: calc(var(--board-w) + var(--side-w) + var(--gap));
       }
       .controls-row {
         width: 100%;
-        justify-content: space-between;
-        gap: 4px;
       }
-      .controls-left,
-      .controls-right {
-        flex: 1 1 0;
-      }
-      .controls-left .btn {
-        min-width: 0;
-        flex: 1;
-        padding: 0 10px;
-      }
-      .controls-right .btn {
-        min-width: 0;
-        flex: 1;
-        padding: 0 10px;
-      }
-      .btn { min-height: 42px; font-size: 0.96rem; }
     }
   </style>
   <link rel="stylesheet" href="game-title-theme.css">
@@ -340,7 +310,7 @@
 <body>
   <div id="game-wrapper">
     <div class="game-header">
-      <h1>슬라임 테트리스 <span class="app-version">v-</span></h1>
+      <h1>다일러 테트리스 <span class="app-version">v-</span></h1>
       <a class="home-btn" href="index.html" aria-label="홈으로 이동" title="홈">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M12 3.17 4 9.37V21h6v-6h4v6h6V9.37l-8-6.2Zm0-2.53 10 7.75V23h-10v-6h-0v6H2V8.39L12 .64Z"/>
@@ -349,8 +319,6 @@
     </div>
 
     <div class="game-area" id="gameArea">
-      <div style="width: var(--side-w);"></div>
-
       <div class="board-shell">
         <canvas id="tetris"></canvas>
 
@@ -385,22 +353,23 @@
         <div class="stat-group"><div class="stat-label">현재 점수</div><div id="score" class="stat-value">0</div></div>
         <div class="stat-group"><div class="stat-label">최고 점수</div><div id="highScore" class="stat-value">0</div></div>
         <div class="stat-group"><div class="stat-label">레벨</div><div id="level" class="stat-value">1</div></div>
-        <div class="slider-tile"><span class="stat-label">투명도</span><input type="range" id="opacitySlider" min="20" max="100" value="100"></div>
       </div>
-    </div>
 
-    <div class="controls-section" id="controlsSection">
-      <div class="controls-row">
-        <div class="controls-left">
-          <div class="btn" id="ctrl-drop">드롭</div>
-          <div class="btn" id="ctrl-up">회전</div>
-        </div>
-        <div class="controls-right">
-          <div class="btn" id="ctrl-left">◀</div>
-          <div class="btn" id="ctrl-down">▼</div>
-          <div class="btn" id="ctrl-right">▶</div>
+      <div class="controls-section" id="controlsSection">
+        <div class="controls-row">
+          <div class="controls-left">
+            <div class="btn" id="ctrl-drop">드롭</div>
+            <div class="btn" id="ctrl-up">회전</div>
+          </div>
+          <div class="controls-right">
+            <div class="btn" id="ctrl-left">◀</div>
+            <div class="btn" id="ctrl-down">▼</div>
+            <div class="btn" id="ctrl-right">▶</div>
+          </div>
         </div>
       </div>
+
+      <div class="slider-tile opacity-section"><span class="stat-label">투명도</span><input type="range" id="opacitySlider" min="20" max="100" value="100"></div>
     </div>
   </div>
 
@@ -503,6 +472,45 @@
       }));
     }
 
+    function getFilledBounds(matrix) {
+      let minX = Infinity, minY = Infinity, maxX = -1, maxY = -1;
+      for (let y = 0; y < matrix.length; y++) {
+        for (let x = 0; x < matrix[y].length; x++) {
+          if (!matrix[y][x]) continue;
+          if (x < minX) minX = x;
+          if (y < minY) minY = y;
+          if (x > maxX) maxX = x;
+          if (y > maxY) maxY = y;
+        }
+      }
+      if (maxX < minX || maxY < minY) return null;
+      return { minX, minY, maxX, maxY, width: maxX - minX + 1, height: maxY - minY + 1 };
+    }
+
+    function drawNextPiece(matrix, boxX, boxY, boxW, boxH) {
+      const bounds = getFilledBounds(matrix);
+      if (!bounds) return;
+      const pad = Math.max(2, Math.min(boxW, boxH) * 0.1);
+      const cell = Math.min((boxW - pad * 2) / bounds.width, (boxH - pad * 2) / bounds.height);
+      const drawW = bounds.width * cell, drawH = bounds.height * cell;
+      const startX = boxX + (boxW - drawW) / 2;
+      const startY = boxY + (boxH - drawH) / 2;
+      const strokeW = Math.max(1, cell * 0.08);
+      for (let y = bounds.minY; y <= bounds.maxY; y++) {
+        for (let x = bounds.minX; x <= bounds.maxX; x++) {
+          const value = matrix[y][x];
+          if (!value) continue;
+          const px = startX + (x - bounds.minX) * cell;
+          const py = startY + (y - bounds.minY) * cell;
+          nextContext.fillStyle = COLOR_INDEX[value];
+          nextContext.fillRect(px, py, cell, cell);
+          nextContext.strokeStyle = "rgba(0,0,0,0.35)";
+          nextContext.lineWidth = strokeW;
+          nextContext.strokeRect(px, py, cell, cell);
+        }
+      }
+    }
+
     function getGhostPosition() { const pos = { x: player.pos.x, y: player.pos.y }; while (!collide(arena, { pos, matrix: player.matrix })) pos.y++; pos.y--; return pos; }
 
     function draw() {
@@ -511,10 +519,17 @@
       context.globalAlpha = 1;
       if (gameStarted) { drawMatrix(player.matrix, getGhostPosition(), context, true); drawMatrix(player.matrix, player.pos); }
       nextContext.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
+      const outerPad = Math.max(2, nextCanvas.width * 0.04);
+      const boxGap = Math.max(2, nextCanvas.height * 0.04);
+      const boxW = nextCanvas.width - outerPad * 2;
+      const boxH = (nextCanvas.height - outerPad * 2 - boxGap) / 2;
       player.queue.slice(0, 2).forEach((item, i) => {
-        const m = createPiece(item.type), yb = i * 5;
-        nextContext.fillStyle = "rgba(255,255,255,0.06)"; nextContext.fillRect(0.1, yb + 0.1, 3.8, 3.8);
-        drawMatrix(m, { x: (4 - m[0].length) / 2, y: yb + (4 - m.length) / 2 }, nextContext);
+        const m = createPiece(item.type);
+        const boxX = outerPad;
+        const boxY = outerPad + i * (boxH + boxGap);
+        nextContext.fillStyle = "rgba(255,255,255,0.06)";
+        nextContext.fillRect(boxX, boxY, boxW, boxH);
+        drawNextPiece(m, boxX, boxY, boxW, boxH);
       });
     }
 
@@ -697,14 +712,14 @@
     function applyUnit(unit) {
       const u = Math.max(9, Math.floor(unit)); document.documentElement.style.setProperty("--unit", `${u}px`);
       canvas.width = u * 12; canvas.height = u * 20; context.setTransform(u, 0, 0, u, 0, 0);
-      nextCanvas.width = u * 2.35; nextCanvas.height = u * 4.9; nextContext.setTransform(u * 0.52, 0, 0, u * 0.52, 0, 0);
+      nextCanvas.width = u * 2.35; nextCanvas.height = u * 4.9; nextContext.setTransform(1, 0, 0, 1, 0, 0); nextContext.imageSmoothingEnabled = false;
     }
 
     function resizeGame() {
-      const isMobile = window.innerWidth <= 900;
-      const vw = window.innerWidth - 8, vh = window.innerHeight - 8;
-      const widthUnit = isMobile ? (vw - 8) / 12 : (vw - 8) / (12 + 4.2 + 4.2 + 0.08);
-      const heightUnit = vh / (isMobile ? 30 : 23);
+      const vw = window.innerWidth, vh = window.innerHeight - 8;
+      const sideCols = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--side-cols")) || 3.2;
+      const widthUnit = (vw - 8) / (12 + sideCols + 0.08);
+      const heightUnit = vh / 25.5;
       let unit = Math.floor(Math.max(9, Math.min(widthUnit, heightUnit, 38)));
       applyUnit(unit);
       for (let i = 0; i < 40; i++) {
@@ -744,4 +759,3 @@
   <script src="main-version-sync.js"></script>
 </body>
 </html>
-
