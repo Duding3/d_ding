@@ -82,19 +82,24 @@ header {
 header h1 {
     font-size: 3.5rem;
     font-weight: 800;
+    line-height: 1.18;
     letter-spacing: -0.05em;
     background: linear-gradient(to right, #fff, #94a3b8);
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 0.5rem;
+    padding-bottom: 0.08em;
     text-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
 #home-version-badge {
+    display: inline-block;
     font-size: 1rem;
+    line-height: 1;
     color: #facc15;
-    vertical-align: middle;
+    vertical-align: baseline;
+    margin-left: 0.15em;
 }
 
 header p {
