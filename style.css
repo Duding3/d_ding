@@ -404,27 +404,31 @@ header p {
     color: #e2e8f0;
     font-size: 0.95rem;
     font-weight: 600;
-    background: rgba(59, 130, 246, 0.12);
-    border: 1px solid rgba(96, 165, 250, 0.45);
-    border-radius: 12px;
-    padding: 0.55rem 0.9rem;
+    text-align: center;
+}
+
+.home-nickname-btn {
+    margin-top: 0.5rem;
+    background: rgba(59, 130, 246, 0.14);
+    border: 1px solid rgba(96, 165, 250, 0.48);
+    color: #dbeafe;
+    padding: 0.45rem 0.85rem;
+    border-radius: 10px;
+    font-size: 0.86rem;
+    font-weight: 700;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.16);
 }
 
-.home-auth-status:hover:not(:disabled) {
-    color: #f8fafc;
-    background: rgba(59, 130, 246, 0.2);
-    border-color: rgba(125, 211, 252, 0.75);
+.home-nickname-btn:hover:not(:disabled) {
+    background: rgba(59, 130, 246, 0.24);
+    border-color: rgba(125, 211, 252, 0.82);
     transform: translateY(-1px);
-    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.24);
 }
 
-.home-auth-status:disabled {
-    opacity: 0.65;
+.home-nickname-btn:disabled {
+    opacity: 0.6;
     cursor: default;
-    box-shadow: none;
 }
 
 footer {
