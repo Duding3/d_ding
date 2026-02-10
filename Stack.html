@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 
 <head>
@@ -203,36 +203,6 @@
             box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
         }
 
-        .drop-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 80px;
-            height: 80px;
-            background: rgba(239, 68, 68, 0.1);
-            color: #fff;
-            border: 2px solid rgba(239, 68, 68, 0.1);
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            z-index: 100;
-            transition: all 0.2s;
-            outline: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .drop-btn:active {
-            transform: scale(0.9);
-            background: rgba(239, 68, 68, 0.2);
-        }
-
-        .drop-btn i {
-            opacity: 0.1;
-            /* Subtle icon */
-        }
     </style>
     <link rel="stylesheet" href="game-title-theme.css">
 </head>
@@ -269,11 +239,9 @@
             <input type="range" id="opacitySlider" min="30" max="100" value="100">
         </div>
 
-        <button id="drop-btn" class="drop-btn" onclick="event.stopPropagation(); handleTap()">
-            <i class="fas fa-arrow-down"></i>
-        </button>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -288,131 +256,135 @@
         canvas.width = CANVAS_WIDTH;
         canvas.height = CANVAS_HEIGHT;
 
+        const BLOCK_HEIGHT = 40;
+        const BASE_WIDTH = 180;
+        const BASE_HEIGHT = 36;
+        const BASE_Y = CANVAS_HEIGHT - 32;
+        const SWING_LIMIT = Math.PI / 3.1;
+        const PHYSICS_STEP_MS = 1000 / 60;
+        const SETTLE_SPEED = 0.09;
+        const SETTLE_ANGULAR = 0.018;
+        const SETTLE_FRAMES = 6;
+        const LEAN_LIMIT = 55;
+        const COLLAPSE_FRAMES = 7;
+        const OUT_OF_BOUNDS_MARGIN = 30;
+
         let gameActive = false;
         let score = 0;
         let highScore = localStorage.getItem('stackHighScore') || 0;
         highScoreEl.innerText = highScore;
 
-        let blocks = [];
+        let engine = null;
+        let world = null;
+        let baseBody = null;
+        let placedBlocks = [];
         let currentBlock = null;
-        let baseBlock = { x: 100, y: 0, w: 200, h: 40, color: '#ef4444' };
-        let cameraY = 0;
-        let swingAngle = 0;
+        let swingAngle = -SWING_LIMIT;
         let swingDir = 1;
-        let speed = 0.6;
-
-        const BLOCK_HEIGHT = 40;
-
-        // Fixed Timestep Loop Variables
+        let swingSpeed = 0.022;
+        let cameraY = 0;
         let lastTime = 0;
         let accumulator = 0;
-        const step = 1000 / 60; // 60 FPS (16.67ms)
-        const stepSeconds = step / 1000; // Convert to seconds for calculations
+        let ignoreTapUntil = 0;
+        let collapseFrames = 0;
 
-        function init() {
-            blocks = [];
-            baseBlock.y = CANVAS_HEIGHT - 60;
-            blocks.push({ ...baseBlock });
-            score = 0;
-            cameraY = 0;
-            speed = 0.6;
-            lastTime = 0;
-            accumulator = 0;
-            newBlock();
+        function randomBlockWidth() {
+            const progress = Math.min(1, score / 55);
+            const minWidth = 86 + (30 - 86) * progress;
+            const maxWidth = 190 + (105 - 190) * progress;
+            return minWidth + Math.random() * (maxWidth - minWidth);
         }
 
-        function newBlock() {
-            const prev = blocks[blocks.length - 1];
-
-            let nextW;
-            // 25% chance of super slim block for surprise!
-            if (Math.random() < 0.25) {
-                // Slim block: 30-60px
-                nextW = 30 + Math.random() * 30;
-            } else {
-                // Normal block with dynamic scaling
-                const maxWidth = Math.max(70, 220 - Math.floor(score / 5) * 15);
-                const minWidth = Math.max(40, 90 - Math.floor(score / 10) * 5);
-                nextW = minWidth + Math.random() * (maxWidth - minWidth);
+        function highestTopY() {
+            let top = BASE_Y - BASE_HEIGHT / 2;
+            for (const b of placedBlocks) {
+                if (b.body.bounds.min.y < top) top = b.body.bounds.min.y;
             }
+            return top;
+        }
 
-            currentBlock = {
-                x: 0,
-                y: prev.y - BLOCK_HEIGHT,
-                w: nextW,
-                h: BLOCK_HEIGHT,
-                color: `hsl(${(blocks.length * 40) % 360}, 70%, 70%)`
+        function spawnSwingBlock() {
+            const w = randomBlockWidth();
+            const spawnY = highestTopY() - 95;
+            const body = Matter.Bodies.rectangle(CANVAS_WIDTH / 2, spawnY, w, BLOCK_HEIGHT, {
+                isStatic: true,
+                friction: 0.9,
+                frictionStatic: 1.15,
+                frictionAir: 0.085,
+                restitution: 0.0,
+                density: 0.0048,
+                slop: 0.0008
+            });
+            const block = {
+                body,
+                color: `hsl(${(score * 37) % 360}, 70%, 68%)`,
+                isSwinging: true,
+                isSettled: false,
+                settleFrames: 0
             };
-            swingAngle = -Math.PI / 4;
+            Matter.World.add(world, body);
+            currentBlock = block;
+            swingAngle = -SWING_LIMIT;
             swingDir = 1;
         }
 
-        function checkStability(currentBlock, prevBlock) {
-            const currentCenter = currentBlock.x + currentBlock.w / 2;
-            const prevCenter = prevBlock.x + prevBlock.w / 2;
-            const offset = currentCenter - prevCenter; // Signed offset
-            const absOffset = Math.abs(offset);
-            const threshold = prevBlock.w * 0.5; // 50% overhang allowed
+        function initWorld() {
+            engine = Matter.Engine.create({
+                enableSleeping: true,
+                positionIterations: 14,
+                velocityIterations: 10,
+                constraintIterations: 6
+            });
+            world = engine.world;
+            world.gravity.y = 1;
 
-            if (absOffset > threshold) {
-                return { state: 'topple', direction: offset > 0 ? 1 : -1 }; // Will fall
-            } else if (absOffset > prevBlock.w * 0.3) {
-                return { state: 'tilt', direction: offset > 0 ? 1 : -1 }; // Warning tilt
-            }
-            return { state: 'stable', direction: 0 };
+            placedBlocks = [];
+            currentBlock = null;
+            cameraY = 0;
+            collapseFrames = 0;
+
+            baseBody = Matter.Bodies.rectangle(CANVAS_WIDTH / 2, BASE_Y, BASE_WIDTH, BASE_HEIGHT, {
+                isStatic: true,
+                friction: 1.0,
+                frictionStatic: 1.2,
+                restitution: 0.0,
+                slop: 0.002
+            });
+            Matter.World.add(world, [baseBody]);
+        }
+
+        function init() {
+            score = 0;
+            scoreEl.innerText = score;
+            swingSpeed = 0.022;
+            initWorld();
+            spawnSwingBlock();
         }
 
         function handleTap() {
-            if (!gameActive) return;
-
-            const prev = blocks[blocks.length - 1];
-            const dropX = currentBlock.x;
-
-            // Check if there is ANY overlap between current and previous
-            const hasOverlap = (dropX < prev.x + prev.w) && (dropX + currentBlock.w > prev.x);
-
-            if (!hasOverlap) {
-                gameOver();
-                return;
-            }
-
-            // Add block with physics properties
-            const placedBlock = { ...currentBlock };
-            blocks.push(placedBlock);
-
-            // Check stability
-            const stability = checkStability(placedBlock, prev);
-
-            if (stability.state === 'topple') {
-                // Block will fall
-                placedBlock.isToppling = true;
-                placedBlock.rotationSpeed = stability.direction * 0.02; // Initial rotation speed
-                placedBlock.fallSpeed = 0;
-            } else if (stability.state === 'tilt') {
-                // Slight tilt but stable
-                placedBlock.rotation = stability.direction * 0.05; // Small tilt angle
-            }
-
-            score++;
-            scoreEl.innerText = score;
-            speed = 0.6 + Math.floor(score / 15) * 0.2;
-
-            // Camera shift up
-            if (blocks.length > 5) {
-                cameraY = (blocks.length - 5) * BLOCK_HEIGHT;
-            }
-
-            newBlock();
+            if (performance.now() < ignoreTapUntil) return;
+            if (!gameActive || !currentBlock || !currentBlock.isSwinging) return;
+            currentBlock.isSwinging = false;
+            Matter.Body.setStatic(currentBlock.body, false);
+            Matter.Sleeping.set(currentBlock.body, false);
+            Matter.Body.setVelocity(currentBlock.body, { x: 0, y: 0.06 });
+            placedBlocks.push(currentBlock);
+            currentBlock = null;
         }
 
         function startGame() {
+            if (gameActive) return;
             init();
             gameActive = true;
             overlay.style.display = 'none';
+            lastTime = 0;
+            accumulator = 0;
+            ignoreTapUntil = performance.now() + 250;
             requestAnimationFrame(gameLoop);
         }
 
         function gameOver() {
+            if (!gameActive) return;
             gameActive = false;
             msg.innerText = "GAME OVER";
             finalScore.innerText = `최종 높이: ${score}층`;
@@ -443,118 +415,121 @@
                 });
         }
 
-        // 물리 상수
-        const GRAVITY = 0.15; // 부드러운 중력 가속도
-        const MAX_FALL_SPEED = 12; // 최대 낙하 속도
-        const ANGULAR_ACCEL = 0.0008; // 회전 가속도
+        function checkCollapse() {
+            const settledBlocks = placedBlocks.filter((b) => b.isSettled);
+            if (settledBlocks.length < 3) return false;
+            let massSum = 0;
+            let xWeighted = 0;
+            let maxTilt = 0;
+            let speedSum = 0;
+            for (const b of settledBlocks) {
+                const m = b.body.mass || 1;
+                massSum += m;
+                xWeighted += b.body.position.x * m;
+                const tilt = Math.abs(Math.atan2(Math.sin(b.body.angle), Math.cos(b.body.angle)));
+                if (tilt > maxTilt) maxTilt = tilt;
+                speedSum += b.body.speed;
+            }
+            if (!massSum) return false;
+            const centerX = xWeighted / massSum;
+            const avgSpeed = speedSum / settledBlocks.length;
+            const leftLeaning = centerX < (CANVAS_WIDTH / 2 - LEAN_LIMIT);
+            const rightLeaning = centerX > (CANVAS_WIDTH / 2 + LEAN_LIMIT);
+            const unstable = maxTilt > 0.2 || avgSpeed > 0.12;
 
-        function updatePhysics() {
-            // Update all toppling blocks
-            for (let i = 1; i < blocks.length; i++) {
-                const block = blocks[i];
+            if (leftLeaning || rightLeaning) {
+                // Center-of-mass bias alone should eventually collapse the tower.
+                collapseFrames += 1;
+                if (unstable) collapseFrames += 1;
+            } else {
+                collapseFrames = Math.max(0, collapseFrames - 2);
+            }
+            return collapseFrames > COLLAPSE_FRAMES;
+        }
 
-                if (block.isToppling) {
-                    // 부드러운 회전 가속
-                    block.rotation += block.rotationSpeed;
-                    block.rotationSpeed += ANGULAR_ACCEL * (block.rotationSpeed > 0 ? 1 : -1);
+        function updateFixed() {
+            if (!gameActive) return;
 
-                    // 부드러운 중력 적용 (최대 속도 제한)
-                    block.fallSpeed = Math.min(block.fallSpeed + GRAVITY, MAX_FALL_SPEED);
-                    block.y += block.fallSpeed;
+            if (currentBlock && currentBlock.isSwinging) {
+                swingSpeed = 0.022 + Math.min(0.02, score * 0.00035);
+                swingAngle += swingDir * swingSpeed;
+                if (swingAngle > SWING_LIMIT || swingAngle < -SWING_LIMIT) swingDir *= -1;
+                const w = currentBlock.body.bounds.max.x - currentBlock.body.bounds.min.x;
+                const radius = CANVAS_WIDTH / 2 - w / 2 - 12;
+                const x = CANVAS_WIDTH / 2 + Math.sin(swingAngle) * radius;
+                Matter.Body.setPosition(currentBlock.body, { x, y: currentBlock.body.position.y });
+                Matter.Body.setAngle(currentBlock.body, 0);
+            }
 
-                    // 회전에 따른 수평 이동 (더 부드럽게)
-                    block.x += block.rotationSpeed * 8;
+            Matter.Engine.update(engine, PHYSICS_STEP_MS);
 
-                    // Check if block has fallen off screen
-                    if (block.y > CANVAS_HEIGHT + 100) {
-                        gameOver();
-                        return;
+            let shouldSpawnNext = false;
+            const cameraBottomWorldY = CANVAS_HEIGHT - cameraY + 12;
+            for (const b of placedBlocks) {
+                const body = b.body;
+                if (body.bounds.max.x < -OUT_OF_BOUNDS_MARGIN || body.bounds.min.x > CANVAS_WIDTH + OUT_OF_BOUNDS_MARGIN) {
+                    gameOver();
+                    return;
+                }
+                if (!b.isSettled && body.bounds.min.y > cameraBottomWorldY + 20) {
+                    gameOver();
+                    return;
+                }
+                if (!b.isSettled) {
+                    const stable = body.isSleeping || (body.speed < SETTLE_SPEED && Math.abs(body.angularSpeed) < SETTLE_ANGULAR);
+                    b.settleFrames = stable ? b.settleFrames + 1 : 0;
+                    if (b.settleFrames > SETTLE_FRAMES) {
+                        b.isSettled = true;
+                        score += 1;
+                        scoreEl.innerText = score;
+                        shouldSpawnNext = true;
                     }
                 }
             }
-        }
 
-        function gameLoop(timestamp) {
-            if (!gameActive) return;
-
-            if (!lastTime) lastTime = timestamp;
-            let deltaTime = timestamp - lastTime;
-            lastTime = timestamp;
-
-            // Limit deltaTime to prevent spiraling
-            if (deltaTime > 100) deltaTime = 100;
-
-            accumulator += deltaTime;
-
-            while (accumulator >= step) {
-                update();
-                accumulator -= step;
+            if (checkCollapse()) {
+                gameOver();
+                return;
             }
 
-            draw();
-            requestAnimationFrame(gameLoop);
-        }
-
-        function update() {
-            if (!gameActive) return;
-
-            // Update swing only if currently swinging (before placement)
-            if (blocks[blocks.length - 1] && !blocks[blocks.length - 1].isToppling) {
-                swingAngle += swingDir * speed * stepSeconds;
-                if (swingAngle > Math.PI / 4 || swingAngle < -Math.PI / 4) {
-                    swingDir *= -1;
-                }
-
-                const swingRadius = CANVAS_WIDTH / 2 - currentBlock.w / 2;
-                currentBlock.x = (CANVAS_WIDTH / 2 - currentBlock.w / 2) + Math.sin(swingAngle) * swingRadius;
+            if (shouldSpawnNext && !currentBlock) {
+                spawnSwingBlock();
             }
 
-            // Update physics for toppling blocks
-            updatePhysics();
+            const top = highestTopY();
+            const targetCamera = Math.max(0, 170 - top);
+            cameraY += (targetCamera - cameraY) * 0.2;
+        }
+
+        function drawBody(body, color) {
+            const vs = body.vertices;
+            if (!vs || vs.length === 0) return;
+            ctx.beginPath();
+            ctx.moveTo(vs[0].x, vs[0].y);
+            for (let i = 1; i < vs.length; i++) ctx.lineTo(vs[i].x, vs[i].y);
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.stroke();
         }
 
         function draw() {
             ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
             ctx.save();
             ctx.translate(0, cameraY);
 
-            // Draw all blocks with rotation
-            blocks.forEach((b, i) => {
-                const y = b.y; // y is already in world coordinates, cameraY translation handles it
-                ctx.save();
+            if (baseBody) drawBody(baseBody, '#ef4444');
+            for (const b of placedBlocks) drawBody(b.body, b.color);
 
-                // Apply rotation transform
-                if (b.rotation !== 0) {
-                    const centerX = b.x + b.w / 2;
-                    const centerY = y + b.h / 2;
-                    ctx.translate(centerX, centerY);
-                    ctx.rotate(b.rotation);
-                    ctx.translate(-centerX, -centerY);
-                }
-
-                ctx.fillStyle = b.color;
-                ctx.fillRect(b.x, y, b.w, b.h);
-                ctx.strokeStyle = '#333';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(b.x, y, b.w, b.h);
-
-                ctx.restore();
-            });
-
-            // Draw current swinging block
             if (currentBlock) {
-                ctx.fillStyle = currentBlock.color;
-                ctx.shadowBlur = 20;
-                ctx.shadowColor = currentBlock.color;
-                ctx.fillRect(currentBlock.x, currentBlock.y, currentBlock.w, currentBlock.h);
-
-                // Rope
+                drawBody(currentBlock.body, currentBlock.color);
                 ctx.strokeStyle = '#888';
                 ctx.setLineDash([5, 5]);
                 ctx.beginPath();
-                ctx.moveTo(CANVAS_WIDTH / 2, currentBlock.y - 400);
-                ctx.lineTo(currentBlock.x + currentBlock.w / 2, currentBlock.y);
+                ctx.moveTo(CANVAS_WIDTH / 2, currentBlock.body.position.y - 400);
+                ctx.lineTo(currentBlock.body.position.x, currentBlock.body.position.y);
                 ctx.stroke();
                 ctx.setLineDash([]);
             }
@@ -562,20 +537,31 @@
             ctx.restore();
         }
 
-        // Opacity
+        function gameLoop(ts) {
+            if (!gameActive) return;
+            if (!lastTime) lastTime = ts;
+            let dt = ts - lastTime;
+            lastTime = ts;
+            if (dt > 100) dt = 100;
+            accumulator += dt;
+            while (accumulator >= PHYSICS_STEP_MS) {
+                updateFixed();
+                accumulator -= PHYSICS_STEP_MS;
+            }
+            draw();
+            if (gameActive) requestAnimationFrame(gameLoop);
+        }
+
         document.getElementById('opacitySlider').oninput = (e) => {
             document.body.style.opacity = e.target.value / 100;
         };
 
-        // Keyboard support (Spacebar for drop)
         window.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
                 e.preventDefault();
-                if (!gameActive) {
-                    startGame();
-                } else {
-                    handleTap();
-                }
+                if (e.repeat) return;
+                if (!gameActive) startGame();
+                else handleTap();
             }
         });
 
