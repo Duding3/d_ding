@@ -288,7 +288,7 @@
             </div>
         </div>
         <div class="controls-section">
-            <div class="controls-hint">SPACE / ↑ : 점프 | ↓ : 숙이기</div>
+            <div class="controls-hint">SPACE / ↑ : 점프(더블 점프) | ↓ : 숙이기</div>
             <div class="slider-area">
                 <span class="slider-label">투명도</span>
                 <input type="range" id="opacitySlider" min="10" max="100" value="100">
@@ -332,9 +332,10 @@
         let spawnCounter = 0;
         let obstacles = [];
         let clouds = [];
-        let holdJumpTimer = 260;
-        const HOLD_JUMP_INTERVAL = 260; // ms, hold-to-repeat jump cadence
         let keys = {};
+        let specialObstacleCooldown = 0;
+        let nextSpecialType = 'duckGate';
+        let audioCtx = null;
 
         // Dino Object
         const dino = {
@@ -345,6 +346,7 @@
             dy: 0,
             isJumping: false,
             isDucking: false,
+            jumpsUsed: 0,
             originalHeight: 47,
             duckHeight: 30,
             widthDuck: 59,
@@ -388,19 +390,6 @@
             },
 
             update(dt) {
-                const jumpHeld = keys['Space'] || keys['ArrowUp'];
-                holdJumpTimer += dt * 16.67;
-                if (jumpHeld && !this.isJumping && holdJumpTimer >= HOLD_JUMP_INTERVAL) {
-                    this.jump();
-                    holdJumpTimer = 0;
-                } else if (this.isJumping && this.dy < -5 && !jumpHeld) {
-                    this.dy += 3 * dt;
-                }
-
-                if (!jumpHeld) {
-                    holdJumpTimer = HOLD_JUMP_INTERVAL;
-                }
-
                 if (keys['ArrowDown']) {
                     this.isDucking = true;
                     if (this.isJumping) this.dy += 2 * dt;
@@ -416,6 +405,7 @@
                 } else {
                     this.dy = 0;
                     this.isJumping = false;
+                    this.jumpsUsed = 0;
                     this.y = GROUND_Y - (this.isDucking ? this.duckHeight : this.height);
                 }
 
@@ -429,9 +419,10 @@
             },
 
             jump() {
-                if (!this.isJumping) {
+                if (this.jumpsUsed < 2) {
                     this.dy = JUMP_FORCE;
                     this.isJumping = true;
+                    this.jumpsUsed++;
                 }
             }
         };
@@ -460,6 +451,25 @@
                     if (hTier < 0.65) this.y = GROUND_Y - 40;
                     else if (hTier < 0.9) this.y = GROUND_Y - 65;
                     else this.y = GROUND_Y - 80;
+                    this.baseY = this.y;
+                    this.bobTime = Math.random() * Math.PI * 2;
+                    this.bobAmp = Math.random() < 0.55 ? (7 + Math.random() * 8) : 0;
+                    this.bobSpeed = 0.07 + Math.random() * 0.06;
+                    this.color = '#acacac';
+                } else if (type === 'goldCoin') {
+                    this.width = 18;
+                    this.height = 18;
+                    this.y = GROUND_Y - (45 + Math.random() * 60);
+                    this.color = '#facc15';
+                } else if (type === 'duckGate') {
+                    this.width = 70 + Math.random() * 30;
+                    this.height = GROUND_Y - 36;
+                    this.y = 0;
+                    this.color = '#acacac';
+                } else if (type === 'doubleJumpWall') {
+                    this.width = 26 + Math.random() * 10;
+                    this.height = 85 + Math.random() * 20;
+                    this.y = GROUND_Y - this.height;
                     this.color = '#acacac';
                 }
             }
@@ -474,6 +484,10 @@
                         this.flapState = this.flapState === 0 ? 1 : 0;
                         this.flapTimer = 0;
                     }
+                    if (this.bobAmp > 0) {
+                        this.bobTime += dt * this.bobSpeed;
+                        this.y = this.baseY + Math.sin(this.bobTime) * this.bobAmp;
+                    }
                 }
             }
 
@@ -484,6 +498,22 @@
                     if (this.flapState === 0) ctx.fillRect(this.x + 10, this.y, 10, 10);
                     else ctx.fillRect(this.x + 10, this.y + 15, 10, 10);
                     ctx.fillRect(this.x - 5, this.y + 12, 5, 5);
+                } else if (this.type === 'goldCoin') {
+                    const cx = this.x + this.width / 2;
+                    const cy = this.y + this.height / 2;
+                    const r = this.width / 2;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#fef08a';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    ctx.fillStyle = '#a16207';
+                    ctx.fillRect(cx - 2, cy - 5, 4, 10);
+                } else if (this.type === 'duckGate') {
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                    ctx.fillStyle = '#202124';
+                    ctx.fillRect(this.x + 6, this.height - 10, this.width - 12, 4);
                 } else {
                     ctx.fillRect(this.x, this.y, this.width, this.height);
                     ctx.fillStyle = '#202124';
@@ -528,6 +558,7 @@
 
         function startGame() {
             startScreen.style.display = 'none';
+            initAudio();
             resetGame();
             lastTime = performance.now();
             requestAnimationFrame(animate);
@@ -538,27 +569,32 @@
             score = 0;
             isGameOver = false;
             keys = {};
-            holdJumpTimer = HOLD_JUMP_INTERVAL;
             obstacles = [];
             dino.y = GROUND_Y - dino.height;
             dino.dy = 0;
+            dino.jumpsUsed = 0;
             dino.frameIdx = 0;
             dino.frameTimer = 0;
             gameOverScreen.style.display = 'none';
             isPlaying = true;
             scoreCounter = 0;
             spawnCounter = 0;
+            specialObstacleCooldown = 0;
+            nextSpecialType = 'duckGate';
             currentScoreEl.innerText = "00000";
         }
 
         window.addEventListener('keydown', e => {
+            initAudio();
+            if ((e.code === 'Space' || e.code === 'ArrowUp') && !keys[e.code] && isPlaying && !isGameOver) {
+                dino.jump();
+            }
             keys[e.code] = true;
             if (['Space', 'ArrowUp', 'ArrowDown'].includes(e.code)) e.preventDefault();
         });
 
         window.addEventListener('keyup', e => {
             keys[e.code] = false;
-            if (['Space', 'ArrowUp'].includes(e.code)) holdJumpTimer = HOLD_JUMP_INTERVAL;
         });
 
         const mobileJump = document.getElementById('mobile-jump');
@@ -566,14 +602,14 @@
 
         mobileJump.addEventListener('touchstart', e => {
             e.preventDefault();
+            initAudio();
+            if (isPlaying && !isGameOver) dino.jump();
             keys['Space'] = true;
-            holdJumpTimer = HOLD_JUMP_INTERVAL;
         });
 
         mobileJump.addEventListener('touchend', e => {
             e.preventDefault();
             keys['Space'] = false;
-            holdJumpTimer = HOLD_JUMP_INTERVAL;
         });
 
         mobileDuck.addEventListener('touchstart', e => {
@@ -590,9 +626,65 @@
             wrapper.style.opacity = e.target.value / 100;
         });
 
+        function initAudio() {
+            if (!audioCtx) {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                if (AC) audioCtx = new AC();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume().catch(() => {});
+            }
+        }
+
+        function playCoinSound() {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(900, now);
+            osc.frequency.exponentialRampToValueAtTime(1450, now + 0.08);
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.exponentialRampToValueAtTime(0.12, now + 0.015);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + 0.13);
+        }
+
+        function spawnCoinPattern(baseX) {
+            const roll = Math.random();
+            const addCoin = (x, y) => {
+                const coin = new Obstacle('goldCoin');
+                coin.x = x;
+                coin.y = Math.max(30, Math.min(GROUND_Y - 25, y));
+                obstacles.push(coin);
+            };
+
+            if (roll < 0.34) {
+                // Jump arc: basic jump path
+                const ys = [GROUND_Y - 62, GROUND_Y - 88, GROUND_Y - 102, GROUND_Y - 88, GROUND_Y - 62];
+                ys.forEach((y, i) => addCoin(baseX + i * 28, y));
+                return 5 * 28;
+            }
+            if (roll < 0.67) {
+                // Double-jump arc: higher collection line
+                const ys = [GROUND_Y - 110, GROUND_Y - 138, GROUND_Y - 156, GROUND_Y - 138, GROUND_Y - 110];
+                ys.forEach((y, i) => addCoin(baseX + i * 28, y));
+                return 5 * 28;
+            }
+
+            // Stair pattern: can chain jump timing
+            const ys = [GROUND_Y - 70, GROUND_Y - 92, GROUND_Y - 114, GROUND_Y - 136, GROUND_Y - 158];
+            ys.forEach((y, i) => addCoin(baseX + i * 24, y));
+            return 5 * 24;
+        }
+
         function spawnObstacle(dt) {
             spawnCounter += dt * 16.67;
-            const spawnInterval = Math.max(320, 1500 - gameSpeed * 60);
+            specialObstacleCooldown = Math.max(0, specialObstacleCooldown - dt * 16.67);
+            const spawnInterval = Math.max(290, 1400 - gameSpeed * 65);
 
             if (spawnCounter > spawnInterval || Math.random() < 0.01 * dt) {
                 if (obstacles.length > 0) {
@@ -600,15 +692,67 @@
                     if (canvas.width - lastObstacle.x < 170 + (gameSpeed * 7)) return;
                 }
                 const roll = Math.random();
-                if (score > 120 && roll > 0.7) obstacles.push(new Obstacle('bird'));
-                else if (roll > 0.5) obstacles.push(new Obstacle('cactusLarge'));
-                else obstacles.push(new Obstacle('cactusSmall'));
+
+                if (score > 90 && roll < 0.26) {
+                    // Mario-like coin groups instead of single coin spawn
+                    const span = spawnCoinPattern(canvas.width + 8);
+                    spawnCounter = Math.max(0, spawnCounter - span * 0.25);
+                    return;
+                }
+
+                const canSpawnDuck = score > 170;
+                const canSpawnDouble = score > 260;
+                const spawnSpecial = specialObstacleCooldown <= 0 && (canSpawnDuck || canSpawnDouble) && roll > 0.45;
+                if (spawnSpecial) {
+                    if (nextSpecialType === 'duckGate' && canSpawnDuck) {
+                        obstacles.push(new Obstacle('duckGate'));
+                        nextSpecialType = canSpawnDouble ? 'doubleJumpWall' : 'duckGate';
+                    } else if (canSpawnDouble) {
+                        obstacles.push(new Obstacle('doubleJumpWall'));
+                        nextSpecialType = canSpawnDuck ? 'duckGate' : 'doubleJumpWall';
+                    } else {
+                        obstacles.push(new Obstacle('duckGate'));
+                    }
+                    specialObstacleCooldown = Math.max(520, 900 - gameSpeed * 14);
+                } else if (score > 120 && roll > 0.63) {
+                    obstacles.push(new Obstacle('bird'));
+                } else if (roll > 0.5) {
+                    obstacles.push(new Obstacle('cactusLarge'));
+                } else {
+                    obstacles.push(new Obstacle('cactusSmall'));
+                }
                 spawnCounter = 0;
             }
         }
 
         function padScore(s) {
             return s.toString().padStart(5, '0');
+        }
+
+        function getObstacleHitbox(obs) {
+            if (obs.type === 'bird') {
+                return { x: obs.x + 6, y: obs.y + 8, w: obs.width - 12, h: obs.height - 12 };
+            }
+            if (obs.type === 'duckGate') {
+                return { x: obs.x + 8, y: obs.y + 4, w: obs.width - 16, h: obs.height - 8 };
+            }
+            if (obs.type === 'doubleJumpWall') {
+                return { x: obs.x + 4, y: obs.y + 4, w: obs.width - 8, h: obs.height - 8 };
+            }
+            if (obs.type === 'cactusLarge') {
+                return { x: obs.x + 5, y: obs.y + 4, w: obs.width - 10, h: obs.height - 8 };
+            }
+            if (obs.type === 'cactusSmall') {
+                return { x: obs.x + 4, y: obs.y + 4, w: obs.width - 8, h: obs.height - 8 };
+            }
+            if (obs.type === 'goldCoin') {
+                return { x: obs.x + 2, y: obs.y + 2, w: obs.width - 4, h: obs.height - 4 };
+            }
+            return { x: obs.x, y: obs.y, w: obs.width, h: obs.height };
+        }
+
+        function isCollidingRect(a, b) {
+            return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
         }
 
         function animate(now) {
@@ -644,8 +788,26 @@
                 obs.draw();
                 const dinoW = dino.isDucking ? dino.widthDuck : dino.width;
                 const dinoH = dino.isDucking ? dino.duckHeight : dino.height;
-                const pad = 6;
-                if (dino.x + pad < obs.x + obs.width - pad && dino.x + dinoW - pad > obs.x + pad && dino.y + pad < obs.y + obs.height - pad && dino.y + dinoH - pad > obs.y + pad) {
+                const dinoBox = {
+                    x: dino.x + (dino.isDucking ? 8 : 9),
+                    y: dino.y + 6,
+                    w: dinoW - (dino.isDucking ? 16 : 18),
+                    h: dinoH - 10
+                };
+                const obsBox = getObstacleHitbox(obs);
+                if (isCollidingRect(dinoBox, obsBox)) {
+                    if (obs.type === 'goldCoin') {
+                        playCoinSound();
+                        score += 25;
+                        currentScoreEl.innerText = padScore(score);
+                        if (score > highScore) {
+                            highScore = score;
+                            highScoreEl.innerText = padScore(highScore);
+                            localStorage.setItem('dinoHighScore', highScore);
+                        }
+                        obs.markedForDeletion = true;
+                        continue;
+                    }
                     gameOver();
                 }
             }

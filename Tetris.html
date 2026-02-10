@@ -417,6 +417,7 @@
 
     let isGameOver = false, gameStarted = false, dropCounter = 0, dropInterval = 900, lastTime = 0, bag = [];
     let didCheckRanking = false, garbageTimer = 0, garbageInterval = 15000;
+    let audioCtx = null;
     let highScore = Number(localStorage.getItem("tetrisHighScore") || 0);
     document.getElementById("highScore").textContent = String(highScore);
 
@@ -435,10 +436,12 @@
       for (let y = 0; y < pl.matrix.length; y++) {
         for (let x = 0; x < pl.matrix[y].length; x++) {
           if (!pl.matrix[y][x]) continue;
+          const ax = x + pl.pos.x;
+          if (ax < 0 || ax >= arenaRef[0].length) return true;
           const ay = y + pl.pos.y;
           if (ay < 0) continue;
           const row = arenaRef[ay];
-          if (!row || row[x + pl.pos.x] !== 0) return true;
+          if (!row || row[ax] !== 0) return true;
         }
       }
       return false;
@@ -535,19 +538,64 @@
 
     function createParticles(x, y, color) { for (let i = 0; i < 12; i++) particles.push({ x: x + 0.5, y: y + 0.5, vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5, life: 1, color }); }
 
+    function initAudio() {
+      if (!audioCtx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) audioCtx = new AC();
+      }
+      if (audioCtx && audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
+    }
+
+    function playLineClearSound(linesCleared) {
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+      const gain = audioCtx.createGain();
+      const pitchBoost = Math.min(240, linesCleared * 45);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.11, now + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+      gain.connect(audioCtx.destination);
+
+      const osc1 = audioCtx.createOscillator();
+      const osc2 = audioCtx.createOscillator();
+      osc1.type = "square";
+      osc2.type = "triangle";
+      osc1.frequency.setValueAtTime(520 + pitchBoost, now);
+      osc1.frequency.exponentialRampToValueAtTime(780 + pitchBoost, now + 0.08);
+      osc2.frequency.setValueAtTime(780 + pitchBoost, now);
+      osc2.frequency.exponentialRampToValueAtTime(1040 + pitchBoost, now + 0.08);
+      osc1.connect(gain);
+      osc2.connect(gain);
+      osc1.start(now);
+      osc2.start(now + 0.01);
+      osc1.stop(now + 0.14);
+      osc2.stop(now + 0.12);
+    }
+
     function arenaSweep() {
       let rowCount = 1;
+      let linesCleared = 0;
       outer: for (let y = arena.length - 1; y > 0; y--) {
         for (let x = 0; x < arena[y].length; x++) if (arena[y][x] === 0) continue outer;
         for (let x = 0; x < arena[y].length; x++) if (arena[y][x]) createParticles(x, y, COLOR_INDEX[arena[y][x]]);
+        linesCleared++;
         const cleared = arena.splice(y, 1)[0].fill(0); arena.unshift(cleared); y++; player.score += rowCount * 10; rowCount *= 2;
       }
+      if (linesCleared > 0) playLineClearSound(linesCleared);
       updateStats();
     }
 
     function spawnGarbage() {
       arena.shift(); const row = new Array(arena[0].length).fill(8); row[Math.floor(Math.random() * row.length)] = 0; arena.push(row);
-      if (gameStarted && collide(arena, player)) finishGame();
+      if (gameStarted) {
+        let safety = 0;
+        // Garbage should push the active piece upward instead of causing sudden instant death.
+        while (collide(arena, player) && safety < player.matrix.length + 2) {
+          player.pos.y--;
+          safety++;
+        }
+        if (collide(arena, player) || isPieceAboveVisibleTop(player)) finishGame();
+      }
     }
 
     function reportRankingOnce() {
@@ -699,6 +747,7 @@
     }
 
     function startGame() {
+      initAudio();
       gameStarted = true; isGameOver = false; didCheckRanking = false; dropCounter = 0; lastTime = 0; garbageTimer = 0; garbageInterval = 15000;
       startScreen.style.display = "none"; document.getElementById("game-over-screen").style.display = "none"; document.getElementById("ranking-modal").style.display = "none";
       if (window.LeaderboardSystem && typeof window.LeaderboardSystem.getTopScores === "function") {

@@ -554,6 +554,7 @@
         let boardMetrics = null;
         let gameActive = false;
         let comboCount = 0;
+        let audioCtx = null;
 
         highScoreEl.innerText = highScore;
 
@@ -695,7 +696,10 @@
             container.appendChild(grid);
 
             // 클릭/터치 이벤트
-            container.addEventListener('pointerdown', (e) => startPieceDrag(e, index));
+            container.addEventListener('pointerdown', (e) => {
+                initAudio();
+                startPieceDrag(e, index);
+            });
 
             return container;
         }
@@ -951,6 +955,7 @@
                 // 콤보 증가
                 comboCount++;
                 triggerShake();
+                playClearSound(rowsToClear.length + colsToClear.length, comboCount);
 
                 // 이펙트 중심점 계산 (대충 화면 중앙이나 클리어된 줄 근처)
                 // 간단하게 화면 중앙에 콤보 표시
@@ -1009,6 +1014,43 @@
                 comboCount = 0;
             }
             return hadClear;
+        }
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                if (AC) audioCtx = new AC();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume().catch(() => {});
+            }
+        }
+
+        function playClearSound(linesCleared, combo) {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const gain = audioCtx.createGain();
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.exponentialRampToValueAtTime(0.13, now + 0.015);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+            gain.connect(audioCtx.destination);
+
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const pitchBoost = Math.min(220, linesCleared * 35 + combo * 12);
+            osc1.type = 'square';
+            osc1.frequency.setValueAtTime(420 + pitchBoost, now);
+            osc1.frequency.exponentialRampToValueAtTime(680 + pitchBoost, now + 0.09);
+            osc2.type = 'triangle';
+            osc2.frequency.setValueAtTime(760 + pitchBoost, now);
+            osc2.frequency.exponentialRampToValueAtTime(960 + pitchBoost, now + 0.08);
+
+            osc1.connect(gain);
+            osc2.connect(gain);
+            osc1.start(now);
+            osc2.start(now + 0.01);
+            osc1.stop(now + 0.16);
+            osc2.stop(now + 0.14);
         }
 
         // 이펙트 함수들
@@ -1181,6 +1223,7 @@
         }
 
         function startGame() {
+            initAudio();
             score = 0;
             scoreEl.innerText = 0;
             gameActive = true;

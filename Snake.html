@@ -380,9 +380,13 @@
         let highScore = localStorage.getItem('snakeHighScore') || 0;
         let gameActive = false;
         let lastTime = 0;
-        let speed = 150;
+        const START_SPEED = 180;
+        const MIN_SPEED = 100;
+        const SPEED_STEP = 1;
+        let speed = START_SPEED;
         let worms = [];
         let wormSpawnTimer = 0;
+        let moveAccumulator = 0;
 
         // Fixed Timestep Loop Variables
         let accumulator = 0;
@@ -424,15 +428,15 @@
             generateFoods();
             dx = 0; dy = 0;
             score = 0;
-            speed = 150;
+            speed = START_SPEED;
             worms = [];
             wormSpawnTimer = 0;
             document.getElementById('score').innerText = score;
             overlay.style.display = 'none';
             gameActive = true;
-            nextMove = { dx: 1, dy: 0 }; // Initial direction
             dx = 1; dy = 0;
             accumulator = 0;
+            moveAccumulator = 0;
             lastTime = 0;
             requestAnimationFrame(gameLoop);
         }
@@ -578,18 +582,20 @@
 
             if (!lastTime) lastTime = time;
             let deltaTime = time - lastTime;
+            lastTime = time;
 
             // Limit deltaTime to prevent spiraling
             if (deltaTime > 100) deltaTime = 100;
 
             accumulator += deltaTime;
+            moveAccumulator += deltaTime;
 
             // Fixed timestep update for consistent game logic
             while (accumulator >= step) {
-                if (time - lastTime >= speed) {
+                if (moveAccumulator >= speed) {
                     update(time);
                     draw();
-                    lastTime = time;
+                    moveAccumulator -= speed;
                 }
                 accumulator -= step;
             }
@@ -649,7 +655,7 @@
                         localStorage.setItem('snakeHighScore', highScore);
                         document.getElementById('highScore').innerText = highScore;
                     }
-                    speed = Math.max(70, speed - 2);
+                    speed = Math.max(MIN_SPEED, speed - SPEED_STEP);
                     foods.splice(i, 1);
                     generateSingleFood();
                     ateFood = true;
@@ -796,9 +802,11 @@
 
         // Controls
         const handleInput = (newDx, newDy) => {
-            if (newDx !== 0 && dx !== 0) return;
-            if (newDy !== 0 && dy !== 0) return;
-            dx = newDx; dy = newDy;
+            if (!gameActive) return;
+            if (newDx === dx && newDy === dy) return;
+            if (newDx === -dx && newDy === -dy) return;
+            dx = newDx;
+            dy = newDy;
         };
 
         window.addEventListener('keydown', e => {
