@@ -13,6 +13,11 @@
 
   const LOCAL_KEY = "hof_local_rankings_v1";
   const NAME_KEY = "hof_player_name";
+  const GLOBAL_VERSION_KEY = "main_app_version";
+  const AUTH_CACHE_KEY = "hof_auth_cache_v1";
+  const TOP3_CACHE_ROOT = "leaderboards_top3";
+  const TOP_SCORES_PERSIST_KEY = "hof_top_scores_cache_v1";
+  const TOP_SCORES_PERSIST_TTL = 24 * 60 * 60 * 1000;
   const REQUIRE_AUTH_FOR_WRITE = true;
 
   let firebaseReady = false;
@@ -23,6 +28,79 @@
   let authStateKnown = false;
   let currentUser = null;
   const authSubscribers = [];
+
+  function normalizeTitleWithoutVersion(title) {
+    return String(title || "").replace(/\s*v\d+(?:\.\d+)*/i, "").trim();
+  }
+
+  function applyGlobalVersionToPage(version) {
+    const v = String(version || "").trim();
+    if (!v) return;
+
+    const baseTitle = normalizeTitleWithoutVersion(document.title);
+    if (baseTitle) {
+      document.title = baseTitle + " v" + v;
+    }
+
+    try {
+      document.querySelectorAll(".version, .app-version, #game-version, #page-version").forEach((el) => {
+        el.textContent = "v" + v;
+      });
+
+      document.querySelectorAll("h1 span").forEach((el) => {
+        const txt = String(el.textContent || "").trim();
+        if (/^v\d+(?:\.\d+)*/i.test(txt)) {
+          el.textContent = "v" + v;
+        }
+      });
+    } catch (err) {
+      // no-op
+    }
+  }
+
+  function syncGlobalVersionFromIndex() {
+    try {
+      const cached = localStorage.getItem(GLOBAL_VERSION_KEY);
+      if (cached) applyGlobalVersionToPage(cached);
+    } catch (err) {
+      // no-op
+    }
+
+    fetch("index.html", { cache: "no-store" })
+      .then((res) => res.text())
+      .then((html) => {
+        const m = String(html || "").match(/<meta\s+name=["']app-version["']\s+content=["']([^"']+)["']/i);
+        const latest = m ? String(m[1]).trim() : "";
+        if (!latest) return;
+        try {
+          localStorage.setItem(GLOBAL_VERSION_KEY, latest);
+        } catch (err) {
+          // no-op
+        }
+        applyGlobalVersionToPage(latest);
+      })
+      .catch(() => {
+        // no-op
+      });
+  }
+
+  function readJSON(storageKey, fallbackValue) {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return fallbackValue;
+      return JSON.parse(raw);
+    } catch (err) {
+      return fallbackValue;
+    }
+  }
+
+  function writeJSON(storageKey, value) {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(value));
+    } catch (err) {
+      // no-op
+    }
+  }
 
   function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -97,6 +175,15 @@
           photoURL: currentUser.photoURL || ""
         }
       : null;
+    if (payload) {
+      writeJSON(AUTH_CACHE_KEY, { user: payload, ts: Date.now() });
+    } else {
+      try {
+        localStorage.removeItem(AUTH_CACHE_KEY);
+      } catch (err) {
+        // no-op
+      }
+    }
     authSubscribers.forEach((fn) => {
       try {
         fn(payload);
@@ -291,6 +378,14 @@
   function onAuthChange(callback) {
     if (typeof callback !== "function") return () => {};
     authSubscribers.push(callback);
+    const cachedAuth = readJSON(AUTH_CACHE_KEY, null);
+    if (cachedAuth && cachedAuth.user) {
+      try {
+        callback(cachedAuth.user);
+      } catch (err) {
+        // no-op
+      }
+    }
     ensureFirebase()
       .then((ready) => {
         if (!ready) {
@@ -393,9 +488,99 @@
     return await pruneLocalGame(gameId, keep);
   }
 
-  async function getTopScores(gameId, limit) {
+  async function waitForAuthState(timeoutMs) {
+    const timeout = Math.max(0, Number(timeoutMs) || 1200);
+    const started = Date.now();
+    while (!authStateKnown && Date.now() - started < timeout) {
+      await sleep(60);
+    }
+    return authStateKnown;
+  }
+
+  function getPersistedTopScoreCache() {
+    const cache = readJSON(TOP_SCORES_PERSIST_KEY, {});
+    return cache && typeof cache === "object" ? cache : {};
+  }
+
+  function setPersistedTopScoreCache(cache) {
+    writeJSON(TOP_SCORES_PERSIST_KEY, cache || {});
+  }
+
+  function getPersistedTopScores(gameId, limit) {
+    const cache = getPersistedTopScoreCache();
+    const entry = cache[gameId];
+    if (!entry || !Array.isArray(entry.rows)) return null;
+    if (Date.now() - Number(entry.ts || 0) > TOP_SCORES_PERSIST_TTL) return null;
+    return sortEntries(entry.rows).slice(0, Math.max(1, Number(limit) || 3));
+  }
+
+  function setPersistedTopScores(gameId, rows) {
+    const cache = getPersistedTopScoreCache();
+    cache[gameId] = {
+      ts: Date.now(),
+      rows: sortEntries(Array.isArray(rows) ? rows : []).slice(0, 3)
+    };
+    setPersistedTopScoreCache(cache);
+  }
+
+  function clearPersistedTopScores(gameId) {
+    const cache = getPersistedTopScoreCache();
+    if (gameId) {
+      delete cache[gameId];
+    } else {
+      Object.keys(cache).forEach((k) => delete cache[k]);
+    }
+    setPersistedTopScoreCache(cache);
+  }
+
+  function parseTop3CacheNode(node) {
+    if (!node) return [];
+    const rows = Array.isArray(node) ? node : Array.isArray(node.rows) ? node.rows : [];
+    const parsed = [];
+    rows.forEach((row, idx) => {
+      const score = normalizeScore(row && row.score);
+      if (score === null) return;
+      parsed.push({
+        id: row.id || "cache_" + idx,
+        name: sanitizeName(row.name),
+        score: score,
+        ts: Number(row.ts) || 0,
+        source: "firebase-cache"
+      });
+    });
+    return sortEntries(parsed).slice(0, 3);
+  }
+
+  async function readTop3CacheBundle(gameIds) {
+    const map = {};
+    const useFirebase = await ensureFirebase();
+    if (!useFirebase) return map;
+    try {
+      const snap = await window.firebase.database().ref(TOP3_CACHE_ROOT).once("value");
+      const raw = snap.val() || {};
+      gameIds.forEach((gameId) => {
+        const rows = parseTop3CacheNode(raw[gameId]);
+        if (rows.length) {
+          map[gameId] = rows;
+          setPersistedTopScores(gameId, rows);
+        }
+      });
+    } catch (err) {
+      // no-op
+    }
+    return map;
+  }
+
+  async function getTopScores(gameId, limit, options) {
     const scoreLimit = Math.max(1, Number(limit) || 3);
-    await pruneGameRankings(gameId, scoreLimit);
+    const opts = options || {};
+    const forceRefresh = Boolean(opts.forceRefresh);
+
+    if (!forceRefresh && scoreLimit <= 3) {
+      const persisted = getPersistedTopScores(gameId, scoreLimit);
+      if (persisted && persisted.length) return persisted;
+    }
+
     const useFirebase = await ensureFirebase();
 
     if (useFirebase) {
@@ -421,7 +606,9 @@
           });
         });
 
-        return sortEntries(arr).slice(0, scoreLimit);
+        const rows = sortEntries(arr).slice(0, scoreLimit);
+        if (scoreLimit <= 3 && rows.length) setPersistedTopScores(gameId, rows);
+        return rows;
       } catch (err) {
         // fallback to local
       }
@@ -429,7 +616,76 @@
 
     const store = getLocalStore();
     const arr = Array.isArray(store[gameId]) ? store[gameId] : [];
-    return sortEntries(arr).slice(0, scoreLimit);
+    const rows = sortEntries(arr).slice(0, scoreLimit);
+    if (scoreLimit <= 3 && rows.length) setPersistedTopScores(gameId, rows);
+    return rows;
+  }
+
+  async function getTopScoresBundle(gameIds, limit, options) {
+    const ids = Array.isArray(gameIds) ? gameIds.filter(Boolean) : [];
+    const scoreLimit = Math.max(1, Number(limit) || 3);
+    const opts = options || {};
+    const forceRefresh = Boolean(opts.forceRefresh);
+    const result = {};
+    const missing = [];
+    let mode = "none";
+
+    ids.forEach((gameId) => {
+      if (!forceRefresh && scoreLimit <= 3) {
+        const persisted = getPersistedTopScores(gameId, scoreLimit);
+        if (persisted && persisted.length) {
+          result[gameId] = persisted;
+          mode = "local-cache";
+          return;
+        }
+      }
+      missing.push(gameId);
+    });
+
+    if (missing.length && scoreLimit <= 3) {
+      const bundle = await readTop3CacheBundle(missing);
+      missing.slice().forEach((gameId) => {
+        if (bundle[gameId] && bundle[gameId].length) {
+          result[gameId] = bundle[gameId].slice(0, scoreLimit);
+        }
+      });
+      if (Object.keys(bundle).length) {
+        mode = mode === "local-cache" ? "bundle(top3-cache + local-cache)" : "bundle(top3-cache)";
+      }
+    }
+
+    const stillMissing = ids.filter((gameId) => !Array.isArray(result[gameId]));
+    if (stillMissing.length) {
+      await Promise.all(
+        stillMissing.map(async (gameId) => {
+          result[gameId] = await getTopScores(gameId, scoreLimit, { forceRefresh: true });
+        })
+      );
+      if (mode.indexOf("bundle") >= 0) mode = "bundle(top3-cache + fallback)";
+      else mode = "bundle";
+    }
+
+    result.__mode = mode;
+    return result;
+  }
+
+  async function refreshTop3CacheForGame(gameId) {
+    const useFirebase = await ensureFirebase();
+    if (!useFirebase) return;
+    try {
+      const rows = await getTopScores(gameId, 3, { forceRefresh: true });
+      setPersistedTopScores(gameId, rows);
+      await window.firebase.database().ref(TOP3_CACHE_ROOT + "/" + gameId).set({
+        updatedAt: Date.now(),
+        rows: rows.map((row) => ({
+          name: sanitizeName(row.name),
+          score: Number(row.score) || 0,
+          ts: Number(row.ts) || Date.now()
+        }))
+      });
+    } catch (err) {
+      // no-op
+    }
   }
 
   async function saveScore(gameId, name, score, extra) {
@@ -468,6 +724,7 @@
       try {
         await window.firebase.database().ref("leaderboards/" + gameId).push(payload);
         await pruneGameRankings(gameId, 3);
+        await refreshTop3CacheForGame(gameId);
         return Object.assign({ source: "firebase" }, payload);
       } catch (err) {
         // If Firebase is available, keep write policy strict and do not fallback to local.
@@ -486,6 +743,7 @@
     current.push(payload);
     store[gameId] = sortEntries(current).slice(0, 3);
     setLocalStore(store);
+    setPersistedTopScores(gameId, store[gameId]);
     return Object.assign({ source: "local" }, payload);
   }
 
@@ -651,7 +909,11 @@
     const normalized = normalizeScore(score);
     if (normalized === null) return false;
     await ensureFirebase();
-    if (!getCurrentUser()) return false;
+    await waitForAuthState(180);
+    if (!getCurrentUser()) {
+      console.log("[RANK] checkAndCelebrate skipped: not signed-in", { gameId: gameId, score: normalized });
+      return false;
+    }
 
     const lockKey = "hof_checked_" + gameId + "_" + normalized;
     if (sessionStorage.getItem(lockKey) === "1") return false;
@@ -660,9 +922,27 @@
     const top3 = await getTopScores(gameId, 3);
     const threshold = top3.length >= 3 ? top3[top3.length - 1].score : null;
     const qualifies = top3.length < 3 || normalized > Number(threshold);
+    console.log("[RANK] checkAndCelebrate", {
+      gameId: gameId,
+      score: normalized,
+      threshold: threshold,
+      qualifies: qualifies,
+      top3Count: top3.length,
+      user: getCurrentUser() ? "signed-in" : "signed-out"
+    });
     if (!qualifies) return false;
 
-    await openCelebrationDialog(gameId, normalized);
+    try {
+      await openCelebrationDialog(gameId, normalized);
+    } catch (err) {
+      console.log("[RANK] celebration/save failed", {
+        gameId: gameId,
+        score: normalized,
+        code: err && err.code ? err.code : "",
+        message: err && err.message ? err.message : String(err)
+      });
+      throw err;
+    }
     return true;
   }
 
@@ -677,6 +957,7 @@
     if (useFirebase) {
       try {
         await window.firebase.database().ref("leaderboards").remove();
+        await window.firebase.database().ref(TOP3_CACHE_ROOT).remove();
         result.firebaseCleared = true;
       } catch (err) {
         result.firebaseCleared = false;
@@ -700,6 +981,7 @@
       // no-op
     }
     result.localCleared = true;
+    clearPersistedTopScores();
 
     // Best-effort cookie cleanup for current domain/path.
     // HttpOnly cookies cannot be cleared from JavaScript.
@@ -735,6 +1017,7 @@
     GAME_META: GAME_META,
     ensureFirebase: ensureFirebase,
     getTopScores: getTopScores,
+    getTopScoresBundle: getTopScoresBundle,
     getCurrentUser: getCurrentUser,
     signInWithGoogle: signInWithGoogle,
     signOutUser: signOutUser,
@@ -747,4 +1030,6 @@
     canGoogleOAuthRunInCurrentBrowser: canGoogleOAuthRunInCurrentBrowser,
     detectEmbeddedBrowser: detectEmbeddedBrowser
   };
+
+  syncGlobalVersionFromIndex();
 })();

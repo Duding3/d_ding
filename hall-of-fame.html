@@ -1,385 +1,351 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
-
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>명예의 전당</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-    <style>
-        :root {
-            --bg: radial-gradient(circle at top, #1f2937 0%, #0f172a 60%, #020617 100%);
-            --card: rgba(255, 255, 255, 0.06);
-            --line: rgba(255, 255, 255, 0.15);
-            --text: #f8fafc;
-            --muted: #cbd5e1;
-            --gold: #f59e0b;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            min-height: 100vh;
-            background: var(--bg);
-            color: var(--text);
-            font-family: "Pretendard", "Segoe UI", sans-serif;
-            padding: 24px;
-        }
-
-        .topbar {
-            max-width: 1100px;
-            margin: 0 auto 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        h1 {
-            margin: 0;
-            font-size: clamp(1.4rem, 4vw, 2.2rem);
-            color: var(--gold);
-        }
-
-        .actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            text-decoration: none;
-            border: 1px solid var(--line);
-            color: var(--text);
-            background: rgba(255, 255, 255, 0.05);
-            padding: 10px 14px;
-            border-radius: 10px;
-            font-size: 0.95rem;
-            cursor: pointer;
-        }
-
-        .btn:hover {
-            background: rgba(255, 255, 255, 0.12);
-        }
-
-        .grid {
-            max-width: 1100px;
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-            gap: 14px;
-        }
-
-        .card {
-            background: var(--card);
-            border: 1px solid var(--line);
-            border-radius: 14px;
-            padding: 14px;
-            backdrop-filter: blur(8px);
-        }
-
-        .card h2 {
-            margin: 0 0 10px;
-            font-size: 1.05rem;
-            color: #fcd34d;
-        }
-
-        .rank-list {
-            margin: 0;
-            padding: 0;
-            list-style: none;
-            display: grid;
-            gap: 8px;
-        }
-
-        .rank-item {
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 10px;
-            padding: 8px 10px;
-            background: rgba(0, 0, 0, 0.18);
-            font-size: 0.92rem;
-        }
-
-        .rank-item strong {
-            color: #fde68a;
-        }
-
-        .muted {
-            color: var(--muted);
-        }
-
-        .admin-panel {
-            max-width: 1100px;
-            margin: 14px auto 0;
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .admin-panel input {
-            min-width: 220px;
-            flex: 1;
-            padding: 10px 12px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            background: rgba(255, 255, 255, 0.06);
-            color: #fff;
-        }
-
-        .admin-panel .danger-btn {
-            border: 1px solid rgba(239, 68, 68, 0.5);
-            background: rgba(239, 68, 68, 0.2);
-            color: #fecaca;
-        }
-
-        .admin-status {
-            max-width: 1100px;
-            margin: 8px auto 0;
-            color: var(--muted);
-            font-size: 0.9rem;
-            min-height: 1.2rem;
-        }
-    </style>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="firebase-config.js"></script>
-    <script src="leaderboard-system.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>명예의 전당</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <style>
+    :root {
+      --bg: radial-gradient(circle at top, #1f2937 0%, #0f172a 60%, #020617 100%);
+      --card: rgba(255, 255, 255, 0.06);
+      --line: rgba(255, 255, 255, 0.15);
+      --text: #f8fafc;
+      --muted: #cbd5e1;
+      --gold: #f59e0b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Pretendard", "Segoe UI", sans-serif;
+      padding: 24px;
+    }
+    .topbar {
+      max-width: 1100px;
+      margin: 0 auto 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    h1 { margin: 0; font-size: clamp(1.4rem, 4vw, 2.2rem); color: var(--gold); }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn {
+      text-decoration: none;
+      border: 1px solid var(--line);
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+    .btn:hover { background: rgba(255, 255, 255, 0.12); }
+    .grid {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 14px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      backdrop-filter: blur(8px);
+    }
+    .card h2 { margin: 0 0 10px; font-size: 1.05rem; color: #fcd34d; }
+    .rank-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+    .rank-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 8px 10px;
+      background: rgba(0, 0, 0, 0.18);
+      font-size: 0.92rem;
+    }
+    .rank-item strong { color: #fde68a; }
+    .muted { color: var(--muted); }
+    .admin-panel {
+      max-width: 1100px;
+      margin: 14px auto 0;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .admin-panel .danger-btn {
+      border: 1px solid rgba(239, 68, 68, 0.5);
+      background: rgba(239, 68, 68, 0.2);
+      color: #fecaca;
+    }
+    .admin-status {
+      max-width: 1100px;
+      margin: 8px auto 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+      min-height: 1.2rem;
+    }
+  </style>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="leaderboard-system.js"></script>
 </head>
-
 <body>
-    <div class="topbar">
-        <h1><i class="fas fa-crown"></i> 명예의 전당</h1>
-        <div class="actions">
-            <a class="btn" href="index.html"><i class="fas fa-arrow-left"></i> 메인으로</a>
-            <button class="btn" id="authBtn" disabled>로그인 확인 중...</button>
-            <button class="btn" id="refreshBtn"><i class="fas fa-sync-alt"></i> 새로고침</button>
-        </div>
+  <div class="topbar">
+    <h1><i class="fas fa-crown"></i> 명예의 전당</h1>
+    <div class="actions">
+      <a class="btn" href="index.html"><i class="fas fa-arrow-left"></i> 메인으로</a>
+      <button class="btn" id="authBtn" disabled>로그인 확인 중...</button>
+      <button class="btn" id="refreshBtn"><i class="fas fa-sync-alt"></i> 새로고침</button>
     </div>
-    <p class="admin-status" id="authStatus">로그인 상태 확인 중...</p>
+  </div>
+  <p class="admin-status" id="authStatus">로그인 상태 확인 중...</p>
 
-    <section class="grid" id="rankingGrid"></section>
-    <div class="admin-panel">
-        <button class="btn danger-btn" id="resetRankingBtn">랭킹 초기화</button>
-    </div>
-    <p class="admin-status" id="adminStatus"></p>
+  <section class="grid" id="rankingGrid"></section>
+  <div class="admin-panel">
+    <button class="btn danger-btn" id="resetRankingBtn">랭킹 초기화</button>
+  </div>
+  <p class="admin-status" id="adminStatus"></p>
 
-    <script>
-        const grid = document.getElementById("rankingGrid");
-        const resetRankingBtn = document.getElementById("resetRankingBtn");
-        const adminStatus = document.getElementById("adminStatus");
-        const authBtn = document.getElementById("authBtn");
-        const authStatus = document.getElementById("authStatus");
-        let autoRefreshHandle = null;
-        let cardsInitialized = false;
-        let initialLoadDone = false;
-        const FALLBACK_META = {
-            jump: { name: "슬라임 점프", unit: "m" },
-            tetris: { name: "테트리스", unit: "" },
-            snake: { name: "네온 스네이크", unit: "" },
-            memory: { name: "메모리 매치", unit: "Lv" },
-            blockBlast: { name: "블록블라스트", unit: "" },
-            catch: { name: "클라운 캐치", unit: "" },
-            stack: { name: "퍼펙트 타워", unit: "층" },
-            dodge: { name: "코스믹 닷지", unit: "s" },
-            dino: { name: "달려달려", unit: "" }
-        };
+  <script>
+    const grid = document.getElementById("rankingGrid");
+    const resetRankingBtn = document.getElementById("resetRankingBtn");
+    const adminStatus = document.getElementById("adminStatus");
+    const authBtn = document.getElementById("authBtn");
+    const authStatus = document.getElementById("authStatus");
+    let autoRefreshHandle = null;
+    let cardsInitialized = false;
+    let initialLoadDone = false;
+    let renderAllInFlight = null;
 
-        function renderCardsSkeleton(meta) {
-            grid.innerHTML = "";
-            const gameIds = Object.keys(meta);
+    const FALLBACK_META = {
+      jump: { name: "슬라임 점프", unit: "m" },
+      tetris: { name: "테트리스", unit: "" },
+      snake: { name: "스네이크", unit: "" },
+      memory: { name: "메모리 매치", unit: "Lv" },
+      blockBlast: { name: "블록블라스트", unit: "" },
+      catch: { name: "클라운 캐치", unit: "" },
+      stack: { name: "스택", unit: "층" },
+      dodge: { name: "닷지", unit: "s" },
+      dino: { name: "다이노", unit: "" }
+    };
 
-            for (const gameId of gameIds) {
-                const card = document.createElement("article");
-                card.className = "card";
-                card.dataset.gameId = gameId;
-                card.innerHTML = `<h2>${meta[gameId].name}</h2>`;
+    function renderCardsSkeleton(meta) {
+      grid.innerHTML = "";
+      const gameIds = Object.keys(meta);
+      for (const gameId of gameIds) {
+        const card = document.createElement("article");
+        card.className = "card";
+        card.dataset.gameId = gameId;
+        card.innerHTML = `<h2>${meta[gameId].name}</h2>`;
 
-                const ul = document.createElement("ol");
-                ul.className = "rank-list";
-                for (let i = 0; i < 3; i++) {
-                    const li = document.createElement("li");
-                    li.className = "rank-item";
-                    li.innerHTML = `<span><strong>${i + 1}위</strong> <span class="muted">불러오는 중...</span></span><span class="muted">-</span>`;
-                    ul.appendChild(li);
-                }
-                card.appendChild(ul);
-                grid.appendChild(card);
-            }
-            cardsInitialized = true;
+        const ul = document.createElement("ol");
+        ul.className = "rank-list";
+        for (let i = 0; i < 3; i++) {
+          const li = document.createElement("li");
+          li.className = "rank-item";
+          li.innerHTML = `<span><strong>${i + 1}위</strong> <span class="muted"></span></span><span class="muted">-</span>`;
+          ul.appendChild(li);
+        }
+        card.appendChild(ul);
+        grid.appendChild(card);
+      }
+      cardsInitialized = true;
+    }
+
+    function fillCardRows(gameId, gameMeta, top3) {
+      const card = grid.querySelector(`.card[data-game-id="${gameId}"]`);
+      if (!card) return;
+      const ul = card.querySelector(".rank-list");
+      if (!ul) return;
+
+      const unit = gameMeta.unit ? ` ${gameMeta.unit}` : "";
+      ul.innerHTML = "";
+      for (let i = 0; i < 3; i++) {
+        const row = top3[i];
+        const li = document.createElement("li");
+        li.className = "rank-item";
+        if (row) {
+          li.innerHTML = `<span><strong>${i + 1}위</strong> ${row.name}</span><span>${row.score}${unit}</span>`;
+        } else {
+          li.innerHTML = `<span><strong>${i + 1}위</strong> <span class="muted">기록 없음</span></span><span class="muted">-</span>`;
+        }
+        ul.appendChild(li);
+      }
+    }
+
+    async function warmupFirstLoad() {
+      if (initialLoadDone) return;
+      if (window.LeaderboardSystem && typeof window.LeaderboardSystem.ensureFirebase === "function") {
+        try {
+          await window.LeaderboardSystem.ensureFirebase();
+        } catch (e) {}
+      }
+      initialLoadDone = true;
+    }
+
+    async function renderAllCore(options) {
+      const opts = options || {};
+      const forceRefresh = Boolean(opts.forceRefresh);
+      const startedAt = performance.now();
+
+      await warmupFirstLoad();
+      const meta = (window.LeaderboardSystem && window.LeaderboardSystem.GAME_META) || FALLBACK_META;
+      const gameIds = Object.keys(meta);
+      if (!cardsInitialized) renderCardsSkeleton(meta);
+
+      console.log("[HOF] renderAll start", {
+        at: new Date().toISOString(),
+        pathname: location.pathname
+      });
+
+      let top3ByGame = {};
+      let mode = "single";
+      try {
+        if (window.LeaderboardSystem && typeof window.LeaderboardSystem.getTopScoresBundle === "function") {
+          top3ByGame = await window.LeaderboardSystem.getTopScoresBundle(gameIds, 3, { forceRefresh });
+          mode = top3ByGame && top3ByGame.__mode ? top3ByGame.__mode : "bundle";
+        } else if (window.LeaderboardSystem && typeof window.LeaderboardSystem.getTopScores === "function") {
+          await Promise.all(gameIds.map(async (gameId) => {
+            top3ByGame[gameId] = await window.LeaderboardSystem.getTopScores(gameId, 3, { forceRefresh });
+          }));
+          mode = "single";
         }
 
-        async function fillCard(gameId, gameMeta) {
-            const card = grid.querySelector(`.card[data-game-id="${gameId}"]`);
-            if (!card) return;
-            const ul = card.querySelector(".rank-list");
-            if (!ul) return;
-
-            let top3 = [];
-            if (window.LeaderboardSystem && typeof window.LeaderboardSystem.getTopScores === "function") {
-                top3 = await window.LeaderboardSystem.getTopScores(gameId, 3);
-            }
-            const unit = gameMeta.unit ? ` ${gameMeta.unit}` : "";
-            const previousRows = Array.from(ul.querySelectorAll(".rank-item")).map((node) => node.textContent || "");
-            const hasPreviousScore = previousRows.some((txt) => txt.includes("위") && !txt.includes("기록 없음") && !txt.includes("불러오는 중"));
-            if (hasPreviousScore && top3.length === 0) {
-                return;
-            }
-
-            ul.innerHTML = "";
-            for (let i = 0; i < 3; i++) {
-                const row = top3[i];
-                const li = document.createElement("li");
-                li.className = "rank-item";
-                if (row) {
-                    li.innerHTML = `<span><strong>${i + 1}위</strong> ${row.name}</span><span>${row.score}${unit}</span>`;
-                } else {
-                    li.innerHTML = `<span><strong>${i + 1}위</strong> <span class="muted">기록 없음</span></span><span class="muted">-</span>`;
-                }
-                ul.appendChild(li);
-            }
-        }
-
-        async function warmupFirstLoad() {
-            if (initialLoadDone) return;
-            if (window.LeaderboardSystem && typeof window.LeaderboardSystem.ensureFirebase === "function") {
-                try {
-                    await window.LeaderboardSystem.ensureFirebase();
-                } catch (e) {
-                    // no-op
-                }
-            }
-            initialLoadDone = true;
-        }
-
-        async function renderAll() {
-            await warmupFirstLoad();
-            const meta = (window.LeaderboardSystem && window.LeaderboardSystem.GAME_META) || FALLBACK_META;
-            const gameIds = Object.keys(meta);
-            if (!cardsInitialized) {
-                renderCardsSkeleton(meta);
-            }
-
-            for (const gameId of gameIds) {
-                try {
-                    await fillCard(gameId, meta[gameId]);
-                } catch (e) {
-                    const card = grid.querySelector(`.card[data-game-id="${gameId}"]`);
-                    if (!card) continue;
-                    const ul = card.querySelector(".rank-list");
-                    if (!ul) continue;
-                    if (!ul.children.length) {
-                        ul.innerHTML = `<li class="rank-item"><span><strong>오류</strong> <span class="muted">랭킹 로드 실패</span></span><span class="muted">-</span></li>`;
-                    }
-                }
-            }
-        }
-
-        document.getElementById("refreshBtn").addEventListener("click", renderAll);
-        if (window.LeaderboardSystem) {
-            window.LeaderboardSystem.onAuthChange((user) => {
-                authBtn.disabled = false;
-                if (user) {
-                    authBtn.textContent = `로그아웃 (${user.displayName || "Google"})`;
-                    authStatus.textContent = `로그인됨: ${user.displayName || "Google 사용자"}`;
-                } else {
-                    authBtn.textContent = "Google 로그인";
-                    authStatus.textContent = "로그인되지 않음";
-                }
-            });
-        } else if (authStatus) {
-            authStatus.textContent = "로그인 모듈 로드 실패";
-            authBtn.disabled = false;
-        }
-
-        authBtn.addEventListener("click", async () => {
-            if (!window.LeaderboardSystem) return;
-            authBtn.disabled = true;
-            try {
-                if (window.LeaderboardSystem.getCurrentUser()) {
-                    await window.LeaderboardSystem.signOutUser();
-                } else {
-                    await window.LeaderboardSystem.signInWithGoogle();
-                }
-            } catch (e) {
-                const code = e && e.code ? e.code : "";
-                if (code === "auth-unsupported-context" || code === "auth-insecure-context") {
-                    adminStatus.textContent = `현재 주소(${window.location.origin})에서는 로그인 불가: https 배포 주소 또는 localhost에서 접속하세요.`;
-                } else if (code === "auth-storage-unavailable") {
-                    adminStatus.textContent = "브라우저 저장소 제한으로 로그인할 수 없습니다. 시크릿모드/쿠키설정을 확인해주세요.";
-                } else {
-                    adminStatus.textContent = "Google 로그인 처리 중 오류가 발생했습니다.";
-                }
-            } finally {
-                authBtn.disabled = false;
-            }
+        console.log("[HOF] ranking fetch done", {
+          ms: Math.round(performance.now() - startedAt),
+          mode,
+          gameCount: gameIds.length
         });
-        resetRankingBtn.addEventListener("click", async () => {
-            if (!window.LeaderboardSystem || !window.LeaderboardSystem.getCurrentUser()) {
-                adminStatus.textContent = "랭킹 초기화는 Google 로그인 사용자만 가능합니다.";
-                return;
-            }
-
-            const pw = (window.prompt("초기화 비밀번호를 입력하세요") || "").trim();
-            if (pw !== "0512") {
-                adminStatus.textContent = "비밀번호가 올바르지 않습니다.";
-                return;
-            }
-
-            if (!window.LeaderboardSystem || typeof window.LeaderboardSystem.clearAllRankings !== "function") {
-                adminStatus.textContent = "랭킹 모듈 로드 실패: 페이지를 새로고침 해주세요.";
-                return;
-            }
-
-            if (!confirm("랭킹을 모두 초기화할까요?")) return;
-
-            resetRankingBtn.disabled = true;
-            adminStatus.textContent = "랭킹 초기화 중...";
-
-            try {
-                const result = await window.LeaderboardSystem.clearAllRankings();
-                if (result.firebaseCleared) {
-                    adminStatus.textContent = "서버 랭킹/로컬 데이터/쿠키 정리가 완료되었습니다.";
-                } else {
-                    adminStatus.textContent = "서버 랭킹 초기화는 실패했고, 로컬 데이터/쿠키는 정리되었습니다.";
-                }
-                await renderAll();
-            } catch (e) {
-                adminStatus.textContent = "초기화 중 오류가 발생했습니다.";
-            } finally {
-                resetRankingBtn.disabled = false;
-            }
+      } catch (e) {
+        console.log("[HOF] ranking fetch failed", {
+          ms: Math.round(performance.now() - startedAt),
+          message: e && e.message ? e.message : String(e)
         });
-        async function refreshWithStamp() {
-            await renderAll();
-            const now = new Date();
-            adminStatus.textContent = `자동 갱신: ${now.toLocaleTimeString("ko-KR")}`;
+      }
+
+      for (const gameId of gameIds) {
+        fillCardRows(gameId, meta[gameId], Array.isArray(top3ByGame[gameId]) ? top3ByGame[gameId] : []);
+      }
+
+      console.log("[HOF] renderAll done", {
+        ms: Math.round(performance.now() - startedAt),
+        gameCount: gameIds.length
+      });
+    }
+
+    async function renderAll(options) {
+      if (renderAllInFlight) return renderAllInFlight;
+      renderAllInFlight = renderAllCore(options);
+      try {
+        await renderAllInFlight;
+      } finally {
+        renderAllInFlight = null;
+      }
+    }
+
+    document.getElementById("refreshBtn").addEventListener("click", () => renderAll({ forceRefresh: true }));
+
+    if (window.LeaderboardSystem) {
+      window.LeaderboardSystem.onAuthChange((user) => {
+        authBtn.disabled = false;
+        if (user) {
+          authBtn.textContent = `로그아웃 (${user.displayName || "Google"})`;
+          authStatus.textContent = `로그인됨: ${user.displayName || "Google 사용자"}`;
+        } else {
+          authBtn.textContent = "Google 로그인";
+          authStatus.textContent = "로그인되지 않음";
         }
+      });
+    } else {
+      authStatus.textContent = "로그인 모듈 로드 실패";
+      authBtn.disabled = false;
+    }
 
-        function startAutoRefresh() {
-            if (autoRefreshHandle) clearInterval(autoRefreshHandle);
-            autoRefreshHandle = setInterval(refreshWithStamp, 10000);
+    authBtn.addEventListener("click", async () => {
+      if (!window.LeaderboardSystem) return;
+      authBtn.disabled = true;
+      try {
+        if (window.LeaderboardSystem.getCurrentUser()) {
+          await window.LeaderboardSystem.signOutUser();
+        } else {
+          await window.LeaderboardSystem.signInWithGoogle();
         }
+      } catch (e) {
+        const code = e && e.code ? e.code : "";
+        if (code === "auth-unsupported-context" || code === "auth-insecure-context") {
+          adminStatus.textContent = `현재 주소(${window.location.origin})에서는 로그인 불가: https 또는 localhost에서 접속하세요.`;
+        } else if (code === "auth-storage-unavailable") {
+          adminStatus.textContent = "브라우저 저장소 제한으로 로그인할 수 없습니다.";
+        } else {
+          adminStatus.textContent = "Google 로그인 처리 중 오류가 발생했습니다.";
+        }
+      } finally {
+        authBtn.disabled = false;
+      }
+    });
 
-        // Initial load when entering hall-of-fame
-        refreshWithStamp();
-        window.addEventListener("load", refreshWithStamp, { once: true });
-        startAutoRefresh();
+    resetRankingBtn.addEventListener("click", async () => {
+      if (!window.LeaderboardSystem || !window.LeaderboardSystem.getCurrentUser()) {
+        adminStatus.textContent = "랭킹 초기화는 Google 로그인 사용자만 가능합니다.";
+        return;
+      }
 
-        // Refresh again when returning from another tab/page
-        window.addEventListener("pageshow", refreshWithStamp);
-        document.addEventListener("visibilitychange", () => {
-            if (!document.hidden) refreshWithStamp();
-        });
-    </script>
+      const pw = (window.prompt("초기화 비밀번호를 입력하세요") || "").trim();
+      if (pw !== "0512") {
+        adminStatus.textContent = "비밀번호가 올바르지 않습니다.";
+        return;
+      }
+
+      if (!confirm("랭킹을 모두 초기화할까요?")) return;
+      resetRankingBtn.disabled = true;
+      adminStatus.textContent = "랭킹 초기화 중...";
+      try {
+        await window.LeaderboardSystem.clearAllRankings();
+        await renderAll({ forceRefresh: true });
+        adminStatus.textContent = "랭킹 초기화 완료";
+      } catch (e) {
+        adminStatus.textContent = "초기화 중 오류가 발생했습니다.";
+      } finally {
+        resetRankingBtn.disabled = false;
+      }
+    });
+
+    async function refreshWithStamp(forceRefresh) {
+      await renderAll({ forceRefresh: Boolean(forceRefresh) });
+      const now = new Date();
+      adminStatus.textContent = `자동 갱신: ${now.toLocaleTimeString("ko-KR")}`;
+    }
+
+    function startAutoRefresh() {
+      if (autoRefreshHandle) clearInterval(autoRefreshHandle);
+      autoRefreshHandle = setInterval(() => refreshWithStamp(true), 10000);
+    }
+
+    console.log("[HOF] initial enter - trigger first ranking load", {
+      at: new Date().toISOString(),
+      pathname: location.pathname
+    });
+    refreshWithStamp(false).then(() => refreshWithStamp(true));
+    window.addEventListener("load", () => refreshWithStamp(true), { once: true });
+    startAutoRefresh();
+
+    window.addEventListener("pageshow", (e) => {
+      if (e && e.persisted) refreshWithStamp(true);
+    });
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) refreshWithStamp(true);
+    });
+  </script>
 </body>
-
 </html>

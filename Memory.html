@@ -59,6 +59,7 @@
             display: flex;
             gap: calc(var(--unit) * 1);
             margin-bottom: calc(var(--unit) * 0.5);
+            justify-content: center;
         }
 
         .stat-box {
@@ -68,6 +69,8 @@
             padding: calc(var(--unit) * 0.3) calc(var(--unit) * 0.8);
             border-radius: 12px;
             text-align: center;
+            width: calc(var(--unit) * 4.6);
+            min-width: calc(var(--unit) * 4.6);
         }
 
         .stat-label {
@@ -79,15 +82,27 @@
         .stat-value {
             font-size: calc(var(--unit) * 0.8);
             font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            min-width: 4ch;
         }
 
         .grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 15px;
-            margin-top: calc(var(--unit) * 0.5);
-            perspective: 1000px;
-            padding: 10px;
+            margin-top: 0;
+            perspective: 1200px;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            align-content: start;
+        }
+
+        .grid-shell {
+            position: relative;
+            display: inline-block;
+            width: calc(var(--unit) * 12 + 45px);
+            height: calc(var(--unit) * 16 + 45px);
         }
 
         .card {
@@ -95,8 +110,11 @@
             height: calc(var(--unit) * 4);
             position: relative;
             transform-style: preserve-3d;
-            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.42s cubic-bezier(0.22, 0.61, 0.36, 1);
             cursor: pointer;
+            will-change: transform;
+            transform: translateZ(0);
+            contain: layout paint;
         }
 
         .card.flipped {
@@ -107,19 +125,22 @@
             position: absolute;
             width: 100%;
             height: 100%;
+            box-sizing: border-box;
             backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: calc(var(--unit) * 1.5);
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.16);
+            will-change: transform, opacity;
+            transform: translateZ(0);
         }
 
         .card-front {
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.02) 100%);
-            backdrop-filter: blur(5px);
         }
 
         .card-front::after {
@@ -178,10 +199,7 @@
 
         #overlay {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            inset: 0;
             background: rgba(0, 0, 0, 0.85);
             display: flex;
             flex-direction: column;
@@ -206,9 +224,48 @@
         }
 
         .msg-title {
-            font-size: 2rem;
+            font-size: clamp(1.25rem, 2.3vw, 1.7rem);
             color: var(--main-color);
             margin-bottom: 10px;
+            max-width: 85%;
+            line-height: 1.25;
+            text-align: center;
+            word-break: keep-all;
+        }
+
+        .overlay-ranking {
+            width: min(86%, calc(var(--unit) * 12));
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+            text-align: left;
+            display: none;
+        }
+
+        .overlay-ranking h3 {
+            margin: 0 0 8px;
+            font-size: 0.95rem;
+            color: #fcd34d;
+        }
+
+        .overlay-ranking-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: grid;
+            gap: 5px;
+            font-size: 0.9rem;
+        }
+
+        .overlay-ranking-list li {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 5px 8px;
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.2);
         }
 
         .refresh-btn {
@@ -273,6 +330,7 @@
             box-shadow: 0 0 10px rgba(244, 114, 182, 0.5);
         }
     </style>
+    <link rel="stylesheet" href="game-title-theme.css">
 </head>
 
 <body>
@@ -295,12 +353,22 @@
             </div>
         </div>
 
-        <div class="grid" id="grid"></div>
+        <div class="grid-shell">
+            <div class="grid" id="grid"></div>
 
-        <div id="overlay">
-            <h2 class="msg-title" id="overlay-msg" style="display: none;">준비?</h2>
-            <p id="final-stats" style="display: none;"></p>
-            <button class="start-btn" onclick="initGame()">게임 시작</button>
+            <div id="overlay">
+                <h2 class="msg-title" id="overlay-msg" style="display: none;">준비?</h2>
+                <p id="final-stats" style="display: none;"></p>
+                <div class="overlay-ranking" id="overlay-ranking">
+                    <h3>메모리 매치 TOP 3</h3>
+                    <ol id="overlay-ranking-list" class="overlay-ranking-list">
+                        <li><span><strong>1위</strong> 불러오는 중...</span><span>-</span></li>
+                        <li><span><strong>2위</strong> 불러오는 중...</span><span>-</span></li>
+                        <li><span><strong>3위</strong> 불러오는 중...</span><span>-</span></li>
+                    </ol>
+                </div>
+                <button class="start-btn" onclick="initGame()">게임 시작</button>
+            </div>
         </div>
         <div class="slider-area">
             <span class="slider-label">투명도</span>
@@ -317,6 +385,8 @@
         const overlay = document.getElementById('overlay');
         const overlayMsg = document.getElementById('overlay-msg');
         const finalStats = document.getElementById('final-stats');
+        const overlayRanking = document.getElementById('overlay-ranking');
+        const overlayRankingList = document.getElementById('overlay-ranking-list');
 
         let cards = [];
         let flippedCards = [];
@@ -343,6 +413,7 @@
             movesLeftEl.innerText = maxMoves;
             timeEl.innerText = '00:00';
             overlay.style.display = 'none';
+            overlayRanking.style.display = 'none';
 
             cards.forEach((emoji, index) => {
                 const card = document.createElement('div');
@@ -426,6 +497,7 @@
             overlayMsg.style.display = 'block';
             finalStats.innerText = `${moves}회 이동 | ${timeEl.innerText}`;
             finalStats.style.display = 'block';
+            overlayRanking.style.display = 'none';
 
             const startBtn = overlay.querySelector('.start-btn');
             startBtn.innerText = "다음 레벨";
@@ -435,14 +507,53 @@
             };
         }
 
-        function gameOver(reason) {
+        async function renderOverlayTop3(options) {
+            const opts = options || {};
+            const forceRefresh = Boolean(opts.forceRefresh);
+            if (!overlayRankingList) return;
+            overlayRankingList.innerHTML = [
+                '<li><span><strong>1위</strong> 불러오는 중...</span><span>-</span></li>',
+                '<li><span><strong>2위</strong> 불러오는 중...</span><span>-</span></li>',
+                '<li><span><strong>3위</strong> 불러오는 중...</span><span>-</span></li>'
+            ].join('');
+
+            let rows = [];
+            try {
+                if (window.LeaderboardSystem && typeof window.LeaderboardSystem.getTopScores === 'function') {
+                    rows = await window.LeaderboardSystem.getTopScores('memory', 3, { forceRefresh: forceRefresh });
+                }
+            } catch (e) {
+                rows = [];
+            }
+
+            overlayRankingList.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                const row = rows[i];
+                const li = document.createElement('li');
+                if (row) {
+                    li.innerHTML = `<span><strong>${i + 1}위</strong> ${row.name}</span><span>Lv ${row.score}</span>`;
+                } else {
+                    li.innerHTML = `<span><strong>${i + 1}위</strong> 기록 없음</span><span>-</span>`;
+                }
+                overlayRankingList.appendChild(li);
+            }
+        }
+
+        async function gameOver(reason) {
             clearInterval(timer);
             overlay.style.display = 'flex';
             overlayMsg.innerText = reason || "GAME OVER";
             overlayMsg.style.display = 'block';
             finalStats.innerText = `도달 레벨: ${level} | ${timeEl.innerText}`;
             finalStats.style.display = 'block';
-            window.LeaderboardSystem?.checkAndCelebrate('memory', level);
+            overlayRanking.style.display = 'block';
+            await renderOverlayTop3();
+            try {
+                await window.LeaderboardSystem?.checkAndCelebrate('memory', level);
+            } catch (e) {
+                // no-op
+            }
+            await renderOverlayTop3({ forceRefresh: true });
 
             const startBtn = overlay.querySelector('.start-btn');
             startBtn.innerText = "다시 시작";
@@ -456,6 +567,7 @@
 
         // Show start screen initially
         overlay.style.display = 'flex';
+        overlayRanking.style.display = 'none';
         const startBtn = overlay.querySelector('.start-btn');
         startBtn.onclick = () => initGame(true);
 
