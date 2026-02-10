@@ -18,6 +18,9 @@
   const TOP3_CACHE_ROOT = "leaderboards_top3";
   const TOP_SCORES_PERSIST_KEY = "hof_top_scores_cache_v1";
   const USER_PROFILE_ROOT = "userProfiles";
+  const NICKNAME_LIMIT_LOCAL_KEY = "hof_nickname_limit_local_v1";
+  const NICKNAME_COOLDOWN_MS = 30 * 1000;
+  const NICKNAME_DAILY_LIMIT = 2;
   const REQUIRE_AUTH_FOR_WRITE = true;
 
   let firebaseReady = false;
@@ -29,6 +32,14 @@
   let currentUser = null;
   const authSubscribers = [];
   const userNicknameCache = {};
+
+  function toDayKey(ts) {
+    const d = new Date(Number(ts) || Date.now());
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
 
   function normalizeTitleWithoutVersion(title) {
     return String(title || "").replace(/\s*v\d+(?:\.\d+)*/i, "").trim();
@@ -552,6 +563,48 @@
     return (name || "").toString().trim().slice(0, 12);
   }
 
+  function getLocalNicknameLimitStore() {
+    const raw = readJSON(NICKNAME_LIMIT_LOCAL_KEY, {});
+    return raw && typeof raw === "object" ? raw : {};
+  }
+
+  function setLocalNicknameLimitStore(store) {
+    writeJSON(NICKNAME_LIMIT_LOCAL_KEY, store || {});
+  }
+
+  function checkNicknameLimitMeta(limitMeta, nowTs) {
+    const now = Number(nowTs) || Date.now();
+    const dayKey = toDayKey(now);
+    const lastChangeAt = Number(limitMeta && limitMeta.lastChangeAt) || 0;
+    const metaDayKey = String((limitMeta && limitMeta.dayKey) || "");
+    const dayCountRaw = Number(limitMeta && limitMeta.dayCount) || 0;
+    const dayCount = metaDayKey === dayKey ? dayCountRaw : 0;
+
+    const elapsed = now - lastChangeAt;
+    if (lastChangeAt > 0 && elapsed < NICKNAME_COOLDOWN_MS) {
+      const err = new Error("NICKNAME_COOLDOWN");
+      err.code = "nickname-cooldown";
+      err.retryAfterSec = Math.ceil((NICKNAME_COOLDOWN_MS - elapsed) / 1000);
+      throw err;
+    }
+    if (dayCount >= NICKNAME_DAILY_LIMIT) {
+      const err = new Error("NICKNAME_DAILY_LIMIT");
+      err.code = "nickname-daily-limit";
+      err.limit = NICKNAME_DAILY_LIMIT;
+      throw err;
+    }
+
+    return {
+      dayKey,
+      dayCount,
+      next: {
+        dayKey,
+        dayCount: dayCount + 1,
+        lastChangeAt: now
+      }
+    };
+  }
+
   async function getServerNicknameByUid(uid) {
     const id = (uid || "").toString().trim();
     if (!id) return "";
@@ -599,23 +652,59 @@
     }
 
     const safeName = sanitizeName(normalized);
+    try {
+      const currentName = await getPreferredDisplayName(user);
+      if (sanitizeName(currentName) === safeName) return safeName;
+    } catch (err) {
+      // no-op
+    }
+    const now = Date.now();
+    const profileRef = window.firebase.database().ref(USER_PROFILE_ROOT + "/" + user.uid);
+    let serverLimitNext = null;
+    try {
+      const limitSnap = await profileRef.child("nicknameLimit").once("value");
+      const checked = checkNicknameLimitMeta(limitSnap.val(), now);
+      serverLimitNext = checked.next;
+    } catch (err) {
+      if (
+        err &&
+        (err.code === "nickname-cooldown" || err.code === "nickname-daily-limit")
+      ) {
+        throw err;
+      }
+      // Permission/network errors are handled by fallback path below.
+    }
+
     let wroteServerProfile = false;
     try {
-      await window.firebase.database().ref(USER_PROFILE_ROOT + "/" + user.uid).update({
+      const profileUpdate = {
         nickname: safeName,
         updatedAt: Date.now(),
         email: user.email || ""
-      });
+      };
+      if (serverLimitNext) profileUpdate.nicknameLimit = serverLimitNext;
+      await profileRef.update(profileUpdate);
       userNicknameCache[user.uid] = safeName;
       wroteServerProfile = true;
     } catch (err) {
-      // Fallback: if DB rules block profile path, keep nickname via Auth displayName.
+      // Fallback: if DB rules block profile path, enforce limits locally and keep nickname via Auth displayName.
       try {
+        const localStore = getLocalNicknameLimitStore();
+        const localMeta = localStore[user.uid] || {};
+        const localChecked = checkNicknameLimitMeta(localMeta, now);
         const authUser = window.firebase && window.firebase.auth ? window.firebase.auth().currentUser : null;
         if (authUser && typeof authUser.updateProfile === "function") {
           await authUser.updateProfile({ displayName: safeName });
         }
+        localStore[user.uid] = localChecked.next;
+        setLocalNicknameLimitStore(localStore);
       } catch (authErr) {
+        if (
+          authErr &&
+          (authErr.code === "nickname-cooldown" || authErr.code === "nickname-daily-limit")
+        ) {
+          throw authErr;
+        }
         const e = new Error("NICKNAME_SAVE_FAILED");
         e.code = (err && err.code) || (authErr && authErr.code) || "nickname-save-failed";
         throw e;
