@@ -380,8 +380,8 @@
         let highScore = localStorage.getItem('snakeHighScore') || 0;
         let gameActive = false;
         let lastTime = 0;
-        const START_SPEED = 180;
-        const MIN_SPEED = 100;
+        const START_SPEED = 195;
+        const MIN_SPEED = 110;
         const SPEED_STEP = 1;
         let speed = START_SPEED;
         let worms = [];
@@ -424,7 +424,8 @@
         initCanvas();
 
         function startGame() {
-            snake = [{ x: 10, y: 10 }];
+            const center = Math.floor(TILE_COUNT / 2);
+            snake = [{ x: center, y: center }];
             generateFoods();
             dx = 0; dy = 0;
             score = 0;
@@ -824,8 +825,7 @@
         const bindBtn = (id, fn) => {
             const el = document.getElementById(id);
             if (!el) return;
-            el.addEventListener('touchstart', (e) => { e.preventDefault(); fn(); });
-            el.onclick = fn;
+            el.addEventListener('pointerdown', (e) => { e.preventDefault(); fn(); });
         };
         bindBtn('btn-up', () => handleInput(0, -1));
         bindBtn('btn-down', () => handleInput(0, 1));
