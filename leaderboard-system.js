@@ -131,9 +131,103 @@
     };
   }
 
+  function getUserAgent() {
+    return (navigator.userAgent || "").toLowerCase();
+  }
+
+  function detectEmbeddedBrowser() {
+    const ua = getUserAgent();
+    const isKakao = ua.indexOf("kakaotalk") >= 0;
+    const isLine = ua.indexOf(" line/") >= 0 || ua.indexOf("line/") >= 0;
+    const isInstagram = ua.indexOf("instagram") >= 0;
+    const isFacebook = ua.indexOf("fban") >= 0 || ua.indexOf("fbav") >= 0;
+    const isNaverInApp = ua.indexOf("naver(inapp") >= 0;
+    const isAndroidWebView = ua.indexOf("wv") >= 0 && ua.indexOf("android") >= 0;
+    const isLikelyEmbedded = isKakao || isLine || isInstagram || isFacebook || isNaverInApp || isAndroidWebView;
+    const label = isKakao
+      ? "kakaotalk"
+      : isLine
+      ? "line"
+      : isInstagram
+      ? "instagram"
+      : isFacebook
+      ? "facebook"
+      : isNaverInApp
+      ? "naver-inapp"
+      : isAndroidWebView
+      ? "android-webview"
+      : "";
+    return { isLikelyEmbedded, label };
+  }
+
+  function canGoogleOAuthRunInCurrentBrowser() {
+    const embedded = detectEmbeddedBrowser();
+    return !embedded.isLikelyEmbedded;
+  }
+
+  function openInExternalBrowser(url) {
+    const target = (url || window.location.href || "").toString();
+    if (!target) return false;
+    const ua = getUserAgent();
+    const isAndroid = ua.indexOf("android") >= 0;
+    const isIOS = /iphone|ipad|ipod/.test(ua);
+
+    if (isAndroid && /^https?:\/\//i.test(target)) {
+      try {
+        const parsed = new URL(target);
+        const scheme = (parsed.protocol || "https:").replace(":", "");
+        const intentPath = parsed.host + parsed.pathname + parsed.search + parsed.hash;
+        const intentUrl = "intent://" + intentPath + "#Intent;scheme=" + scheme + ";package=com.android.chrome;end";
+        window.location.href = intentUrl;
+        setTimeout(() => {
+          window.location.href = parsed.href;
+        }, 700);
+        return true;
+      } catch (err) {
+        // fallback below
+      }
+    }
+
+    if (isIOS) {
+      try {
+        window.open(target, "_blank", "noopener,noreferrer");
+      } catch (err) {
+        // no-op
+      }
+      window.location.href = target;
+      return true;
+    }
+
+    try {
+      window.open(target, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      // no-op
+    }
+    window.location.href = target;
+    return true;
+  }
+
+  function isEmbeddedGooglePolicyError(err) {
+    const code = (err && err.code ? String(err.code) : "").toLowerCase();
+    const message = (err && err.message ? String(err.message) : "").toLowerCase();
+    if (code === "auth-embedded-browser-blocked") return true;
+    if (message.indexOf("disallowed_useragent") >= 0) return true;
+    if (message.indexOf("secure browser") >= 0) return true;
+    if (message.indexOf("embedded") >= 0 && message.indexOf("browser") >= 0) return true;
+    return false;
+  }
+
   async function signInWithGoogle() {
     await ensureFirebase();
     if (!window.firebase || !window.firebase.auth) throw new Error("Firebase Auth unavailable");
+    if (!canGoogleOAuthRunInCurrentBrowser()) {
+      const embedded = detectEmbeddedBrowser();
+      openInExternalBrowser(window.location.href);
+      const err = new Error("AUTH_EMBEDDED_BROWSER_BLOCKED");
+      err.code = "auth-embedded-browser-blocked";
+      err.browser = embedded.label || "embedded-browser";
+      throw err;
+    }
     if (window.location.protocol === "file:") {
       const err = new Error("AUTH_UNSUPPORTED_CONTEXT");
       err.code = "auth-unsupported-context";
@@ -170,6 +264,12 @@
       await auth.signInWithPopup(provider);
       return getCurrentUser();
     } catch (err) {
+      if (isEmbeddedGooglePolicyError(err)) {
+        openInExternalBrowser(window.location.href);
+        const blockedErr = new Error("AUTH_EMBEDDED_BROWSER_BLOCKED");
+        blockedErr.code = "auth-embedded-browser-blocked";
+        throw blockedErr;
+      }
       if (err && (err.code === "auth/popup-blocked" || err.code === "auth/cancelled-popup-request")) {
         try {
           await auth.signInWithRedirect(provider);
@@ -642,6 +742,9 @@
     pruneGameRankings: pruneGameRankings,
     saveScore: saveScore,
     checkAndCelebrate: checkAndCelebrate,
-    clearAllRankings: clearAllRankings
+    clearAllRankings: clearAllRankings,
+    openInExternalBrowser: openInExternalBrowser,
+    canGoogleOAuthRunInCurrentBrowser: canGoogleOAuthRunInCurrentBrowser,
+    detectEmbeddedBrowser: detectEmbeddedBrowser
   };
 })();
