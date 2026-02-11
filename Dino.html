@@ -355,6 +355,7 @@
             color: '#acacac',
             frameIdx: 0,
             frameTimer: 0,
+            isFallingIntoGap: false,
 
             draw() {
                 ctx.fillStyle = this.color;
@@ -407,7 +408,15 @@
 
                 this.y += this.dy * dt;
 
-                if (this.y + h < GROUND_Y || !hasGroundUnder) {
+                if (!hasGroundUnder && this.y + h >= GROUND_Y - 0.5 && this.dy >= 0) {
+                    this.isFallingIntoGap = true;
+                }
+
+                if (this.isFallingIntoGap) {
+                    this.dy += GRAVITY * dt;
+                    this.isJumping = true;
+                    if (this.y > canvas.height + 40 && !isGameOver) gameOver();
+                } else if (this.y + h < GROUND_Y || !hasGroundUnder) {
                     this.dy += GRAVITY * dt;
                     this.isJumping = true;
                 } else {
@@ -626,6 +635,7 @@
             dino.jumpsUsed = 0;
             dino.frameIdx = 0;
             dino.frameTimer = 0;
+            dino.isFallingIntoGap = false;
             gameOverScreen.style.display = 'none';
             isPlaying = true;
             scoreCounter = 0;
