@@ -324,13 +324,13 @@
 
         @media (max-width: 900px) {
             body {
-                padding-bottom: calc(220px + env(safe-area-inset-bottom, 0px));
+                padding-bottom: calc(300px + env(safe-area-inset-bottom, 0px));
             }
 
             .controls {
                 position: fixed;
                 left: 50%;
-                bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
+                bottom: calc(env(safe-area-inset-bottom, 0px) + 82px);
                 transform: translateX(-50%);
                 margin-top: 0;
                 padding: 14px 18px;
@@ -348,6 +348,16 @@
                 height: 74px;
                 border-radius: 16px;
                 font-size: 1.45rem;
+            }
+
+            .slider-area {
+                position: fixed;
+                left: 50%;
+                bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+                transform: translateX(-50%);
+                margin-top: 0;
+                width: min(92vw, 320px);
+                z-index: 31;
             }
         }
     </style>
@@ -380,8 +390,8 @@
             <div id="overlay">
                 <h2 id="msg" style="margin-bottom: 20px; font-size: 1.8rem; display: none;">준비?</h2>
                 <p id="finalScore" style="margin-bottom: 20px; font-size: 1.2rem; display: none;"></p>
-                <p style="margin: 0 0 14px; color: #9fdcff; font-size: 0.95rem; text-align: center;">
-                    PC: 방향키 / 모바일: 아래 버튼으로 이동해 먹이를 먹고 몸에 부딪히지 마세요.
+                <p style="margin: 0 0 14px; color: #9ca3af; font-size: 0.95rem; text-align: center;">
+                    이동하면서 먹이를 먹고<br>몸, 벽,적에 부딪히지 마세요
                 </p>
                 <button class="start-btn" onclick="startGame()">게임 시작</button>
             </div>
