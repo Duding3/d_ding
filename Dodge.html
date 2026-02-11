@@ -125,17 +125,36 @@
             padding: 12px 25px;
             background: var(--main-color);
             color: #0f172a;
-            border: none;
+            border: 1px solid rgba(224, 241, 255, 0.92);
             border-radius: 8px;
             font-size: 1.1rem;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 0 15px rgba(96, 165, 250, 0.4);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+            box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.34), 0 0 15px rgba(96, 165, 250, 0.4);
+            animation: dodgeStartPulse 1.65s ease-in-out infinite;
+        }
+
+        .start-btn:hover {
+            filter: brightness(1.05);
         }
 
         .start-btn:active {
-            transform: scale(0.95);
+            animation-play-state: paused;
+            transform: scale(0.97);
+        }
+
+        @keyframes dodgeStartPulse {
+            0%,
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.34), 0 0 15px rgba(96, 165, 250, 0.4);
+            }
+
+            50% {
+                transform: scale(1.06);
+                box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.56), 0 0 22px rgba(96, 165, 250, 0.66);
+            }
         }
 
         .controls {

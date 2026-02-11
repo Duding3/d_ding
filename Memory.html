@@ -243,12 +243,36 @@
             padding: 12px 30px;
             background: var(--main-color);
             color: #fff;
-            border: none;
+            border: 1px solid rgba(255, 224, 241, 0.92);
             border-radius: 10px;
             font-weight: 900;
             font-size: 1.1rem;
             cursor: pointer;
-            box-shadow: 0 0 15px rgba(244, 114, 182, 0.4);
+            box-shadow: 0 0 0 1px rgba(244, 114, 182, 0.34), 0 0 15px rgba(244, 114, 182, 0.42);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+            animation: memoryStartPulse 1.65s ease-in-out infinite;
+        }
+
+        .start-btn:hover {
+            filter: brightness(1.05);
+        }
+
+        .start-btn:active {
+            animation-play-state: paused;
+            transform: scale(0.97);
+        }
+
+        @keyframes memoryStartPulse {
+            0%,
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 1px rgba(244, 114, 182, 0.34), 0 0 15px rgba(244, 114, 182, 0.42);
+            }
+
+            50% {
+                transform: scale(1.06);
+                box-shadow: 0 0 0 1px rgba(244, 114, 182, 0.58), 0 0 22px rgba(244, 114, 182, 0.66);
+            }
         }
 
         .msg-title {
@@ -395,6 +419,9 @@
                         <li><span><strong>3위</strong> 불러오는 중...</span><span>-</span></li>
                     </ol>
                 </div>
+                <p style="margin: 0 0 12px; color: #b8f0ff; font-size: 0.95rem; text-align: center;">
+                    같은 카드 2장을 순서대로 뒤집어 모두 맞추면 클리어됩니다.
+                </p>
                 <button class="start-btn" onclick="initGame()">게임 시작</button>
             </div>
         </div>

@@ -280,6 +280,29 @@
       font-size: 0.95rem;
       cursor: pointer;
     }
+    .start-btn {
+      border: 1px solid rgba(220, 255, 244, 0.9);
+      animation: tetrisStartPulse 1.65s ease-in-out infinite;
+      box-shadow: 0 0 0 1px rgba(78, 204, 163, 0.34), 0 0 14px rgba(78, 204, 163, 0.36);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    }
+    .start-btn:hover {
+      filter: brightness(1.05);
+    }
+    .start-btn:active {
+      animation-play-state: paused;
+      transform: scale(0.97);
+    }
+    @keyframes tetrisStartPulse {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 1px rgba(78, 204, 163, 0.34), 0 0 14px rgba(78, 204, 163, 0.34);
+      }
+      50% {
+        transform: scale(1.06);
+        box-shadow: 0 0 0 1px rgba(78, 204, 163, 0.52), 0 0 22px rgba(78, 204, 163, 0.62);
+      }
+    }
     #ranking-input {
       width: min(280px, 85%);
       padding: 10px;

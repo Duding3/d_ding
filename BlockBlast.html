@@ -293,17 +293,36 @@
             padding: 15px 40px;
             background: var(--main-color);
             color: #1a1a2e;
-            border: none;
+            border: 1px solid rgba(255, 236, 204, 0.9);
             border-radius: 12px;
             font-weight: 900;
             font-size: 1.2rem;
             cursor: pointer;
-            box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);
-            transition: all 0.2s;
+            box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.34), 0 0 16px rgba(245, 158, 11, 0.4);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+            animation: blockBlastStartPulse 1.65s ease-in-out infinite;
         }
 
         .start-btn:hover {
-            transform: scale(1.05);
+            filter: brightness(1.05);
+        }
+
+        .start-btn:active {
+            animation-play-state: paused;
+            transform: scale(0.97);
+        }
+
+        @keyframes blockBlastStartPulse {
+            0%,
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.34), 0 0 16px rgba(245, 158, 11, 0.4);
+            }
+
+            50% {
+                transform: scale(1.06);
+                box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.55), 0 0 24px rgba(245, 158, 11, 0.66);
+            }
         }
 
         .slider-area {
