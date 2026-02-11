@@ -262,9 +262,9 @@
         const BASE_Y = CANVAS_HEIGHT - 32;
         const SWING_LIMIT = Math.PI / 3.1;
         const PHYSICS_STEP_MS = 1000 / 60;
-        const SETTLE_SPEED = 0.09;
-        const SETTLE_ANGULAR = 0.018;
-        const SETTLE_FRAMES = 6;
+        const SETTLE_SPEED = 0.16;
+        const SETTLE_ANGULAR = 0.035;
+        const SETTLE_FRAMES = 3;
         const LEAN_LIMIT = 55;
         const COLLAPSE_FRAMES = 7;
         const OUT_OF_BOUNDS_MARGIN = 30;
@@ -478,7 +478,7 @@
                 if (!b.isSettled) {
                     const stable = body.isSleeping || (body.speed < SETTLE_SPEED && Math.abs(body.angularSpeed) < SETTLE_ANGULAR);
                     b.settleFrames = stable ? b.settleFrames + 1 : 0;
-                    if (b.settleFrames > SETTLE_FRAMES) {
+                    if (b.settleFrames >= SETTLE_FRAMES) {
                         b.isSettled = true;
                         score += 1;
                         scoreEl.innerText = score;

@@ -397,6 +397,7 @@
 
     const COLORS = { I: "#00cfe8", O: "#ffd83d", T: "#b26cff", S: "#4ad66d", Z: "#ff5d73", J: "#3d7dff", L: "#ff9a3d", G: "#64748b" };
     const COLOR_INDEX = [null, COLORS.I, COLORS.O, COLORS.T, COLORS.S, COLORS.Z, COLORS.J, COLORS.L, COLORS.G];
+    const NEXT_PREVIEW_COUNT = 4;
     const SHAPES = {
       I: [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]], O: [[2,2],[2,2]],
       T: [[0,3,0],[3,3,3],[0,0,0]], S: [[0,4,4],[4,4,0],[0,0,0]], Z: [[5,5,0],[0,5,5],[0,0,0]],
@@ -523,10 +524,10 @@
       if (gameStarted) { drawMatrix(player.matrix, getGhostPosition(), context, true); drawMatrix(player.matrix, player.pos); }
       nextContext.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
       const outerPad = Math.max(2, nextCanvas.width * 0.04);
-      const boxGap = Math.max(2, nextCanvas.height * 0.04);
+      const boxGap = Math.max(2, nextCanvas.height * 0.03);
       const boxW = nextCanvas.width - outerPad * 2;
-      const boxH = (nextCanvas.height - outerPad * 2 - boxGap) / 2;
-      player.queue.slice(0, 2).forEach((item, i) => {
+      const boxH = (nextCanvas.height - outerPad * 2 - boxGap * (NEXT_PREVIEW_COUNT - 1)) / NEXT_PREVIEW_COUNT;
+      player.queue.slice(0, NEXT_PREVIEW_COUNT).forEach((item, i) => {
         const m = createPiece(item.type);
         const boxX = outerPad;
         const boxY = outerPad + i * (boxH + boxGap);
@@ -699,7 +700,7 @@
     }
 
     function playerReset() {
-      while (player.queue.length < 5) player.queue.push({ type: getNextType() });
+      while (player.queue.length < NEXT_PREVIEW_COUNT + 2) player.queue.push({ type: getNextType() });
       const next = player.queue.shift(); player.type = next.type; player.matrix = createPiece(next.type); player.rotation = 0;
       player.pos.y = -1; player.pos.x = (arena[0].length / 2 | 0) - (player.matrix[0].length / 2 | 0);
     }
@@ -793,7 +794,7 @@
     function applyUnit(unit) {
       const u = Math.max(9, Math.floor(unit)); document.documentElement.style.setProperty("--unit", `${u}px`);
       canvas.width = u * 12; canvas.height = u * 20; context.setTransform(u, 0, 0, u, 0, 0);
-      nextCanvas.width = u * 2.35; nextCanvas.height = u * 4.9; nextContext.setTransform(1, 0, 0, 1, 0, 0); nextContext.imageSmoothingEnabled = false;
+      nextCanvas.width = u * 2.35; nextCanvas.height = u * 8.9; nextContext.setTransform(1, 0, 0, 1, 0, 0); nextContext.imageSmoothingEnabled = false;
     }
 
     function resizeGame() {

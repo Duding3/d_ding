@@ -102,14 +102,17 @@
             display: grid;
             grid-template-areas:
                 ". up ."
-                "left down right";
-            gap: 10px;
+                "left center right"
+                ". down .";
+            gap: 12px;
             margin-top: 10px;
+            align-items: center;
+            justify-items: center;
         }
 
         .ctrl-btn {
-            width: 56px;
-            height: 56px;
+            width: 62px;
+            height: 62px;
             background: var(--card-bg);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: #ccc;
@@ -147,6 +150,15 @@
 
         #btn-right {
             grid-area: right;
+        }
+
+        .ctrl-center {
+            grid-area: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.12);
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
         }
 
         #overlay {
@@ -309,6 +321,35 @@
         #save-rank-btn:hover {
             opacity: 0.9;
         }
+
+        @media (max-width: 900px) {
+            body {
+                padding-bottom: calc(220px + env(safe-area-inset-bottom, 0px));
+            }
+
+            .controls {
+                position: fixed;
+                left: 50%;
+                bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
+                transform: translateX(-50%);
+                margin-top: 0;
+                padding: 14px 18px;
+                border-radius: 20px;
+                background: rgba(26, 26, 46, 0.78);
+                border: 1px solid rgba(74, 222, 128, 0.28);
+                box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+                z-index: 30;
+                backdrop-filter: blur(8px);
+                -webkit-backdrop-filter: blur(8px);
+            }
+
+            .ctrl-btn {
+                width: 74px;
+                height: 74px;
+                border-radius: 16px;
+                font-size: 1.45rem;
+            }
+        }
     </style>
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -353,6 +394,7 @@
         <div class="controls">
             <div class="ctrl-btn" id="btn-up">▲</div>
             <div class="ctrl-btn" id="btn-left">◀</div>
+            <div class="ctrl-center" aria-hidden="true"></div>
             <div class="ctrl-btn" id="btn-down">▼</div>
             <div class="ctrl-btn" id="btn-right">▶</div>
         </div>
@@ -399,6 +441,7 @@
             const wrapper = document.getElementById('game-wrapper');
             const headerH = document.querySelector('.game-header')?.offsetHeight || 0;
             const controlsH = document.querySelector('.controls')?.offsetHeight || 0;
+            const isMobilePad = window.matchMedia('(max-width: 900px)').matches;
             const sliderH = document.querySelector('.slider-area')?.offsetHeight || 0;
             const bodyStyle = window.getComputedStyle(document.body);
             const wrapperStyle = wrapper ? window.getComputedStyle(wrapper) : null;
@@ -406,7 +449,7 @@
                 (parseFloat(bodyStyle.paddingTop) || 0) +
                 (parseFloat(bodyStyle.paddingBottom) || 0);
             const wrapperGap = wrapperStyle ? parseFloat(wrapperStyle.gap) || 0 : 0;
-            const reservedHeight = headerH + controlsH + sliderH + bodyPadY + wrapperGap * 4 + 24;
+            const reservedHeight = headerH + (isMobilePad ? 0 : controlsH) + sliderH + bodyPadY + wrapperGap * 4 + 24;
 
             const desiredByWidth = Math.min(window.innerWidth - 12, 450);
             const desiredByHeight = window.innerHeight - reservedHeight;

@@ -452,14 +452,21 @@
         let accumulator = 0;
         const step = 1000 / 60; // 60 FPS (16.67ms)
 
-        // 배경 구역 정의 (산 -> 물속 -> 하늘 -> 우주)
-        // 배경 구역 정의 (산 -> 물속 -> 하늘 -> 우주)
+        // 배경 구역 정의
         const ZONES = [
-            { name: 'mountain', minY: 0, maxY: 5000, colors: ['#87CEEB', '#E0F7FA'] }, // Blue Sky (Contrast with Green Mountains)
-            { name: 'underwater', minY: 5000, maxY: 8000, colors: ['#4fc3f7', '#0288d1'] }, // Lighter Ocean (Contrast with Seaweed)
-            { name: 'sky', minY: 8000, maxY: 11000, colors: ['#4facfe', '#00f2fe'] }, // Bright Sky
-            { name: 'space', minY: 11000, maxY: Infinity, colors: ['#0f2027', '#203a43', '#2c5364'] } // Space Dark
+            { name: 'mountain', minY: 0, maxY: 5000, colors: ['#87CEEB', '#E0F7FA'] },
+            { name: 'underwater', minY: 5000, maxY: 8000, colors: ['#4fc3f7', '#0288d1'] },
+            { name: 'sky', minY: 8000, maxY: 11000, colors: ['#4facfe', '#00f2fe'] },
+            { name: 'space', minY: 11000, maxY: 14000, colors: ['#0f2027', '#203a43'] },
+            { name: 'snow', minY: 14000, maxY: 17000, colors: ['#dbeafe', '#93c5fd'] },
+            { name: 'neonCity', minY: 17000, maxY: 20000, colors: ['#111827', '#0f172a'] },
+            { name: 'volcano', minY: 20000, maxY: 23000, colors: ['#3b0a0a', '#7f1d1d'] },
+            { name: 'dream', minY: 23000, maxY: Infinity, colors: ['#fbcfe8', '#f9a8d4'] }
         ];
+
+        let platformBursts = [];
+        let volcanoFireballs = [];
+        let volcanoSpawnTimer = 0;
 
         function init() {
             // 발판 먼저 생성
@@ -477,7 +484,8 @@
                 width: PLAYER_SIZE,
                 height: PLAYER_SIZE,
                 onGround: true,
-                landingSquish: 0 // For bouncy landing effect
+                landingSquish: 0, // For bouncy landing effect
+                teleportCooldown: 0
             }
 
                 ;
@@ -487,6 +495,9 @@
             chargeTime = 0;
             isCharging = false;
             highestLandedY = platforms[0].y; // 초기 바닥
+            platformBursts = [];
+            volcanoFireballs = [];
+            volcanoSpawnTimer = 0;
 
             camera = {
                 y: 0
@@ -526,21 +537,35 @@
         function addPlatform(worldY) {
             const isMoving = Math.random() < 0.25; // 25% 확률로 이동 발판
 
-            // Special Types (Gated by Height - 5000m+)
             let type = 'static';
+            const zone = getZoneForHeight(worldY);
+            const rand = Math.random();
 
-            // 특수 발판은 5000m 이상부터 등장
-            if (worldY > 5000) {
-                if (isMoving) type = 'moving';
-                else {
-                    const rand = Math.random();
-                    if (rand < 0.1) type = 'red'; // 10% Red (Vanish)
-                    else if (rand < 0.2) type = 'shiny'; // 10% Shiny (Trigger Move)
-                    else if (rand < 0.35) type = 'jumppad'; // 15% Jump Pad (High Jump)
-                }
-            } else {
-                if (isMoving) type = 'moving';
-                else if (Math.random() < 0.15) type = 'jumppad'; // 15% Jump Pad even in early game
+            if (isMoving) {
+                type = 'moving';
+            } else if (zone.name === 'space') {
+                if (rand < 0.16) type = 'spaceBlink';
+                else if (rand < 0.28) type = 'jumppad';
+            } else if (zone.name === 'snow') {
+                if (rand < 0.22) type = 'ice';
+                else if (rand < 0.34) type = 'jumppad';
+            } else if (zone.name === 'neonCity') {
+                if (rand < 0.22) type = 'neonPhase';
+                else if (rand < 0.32) type = 'shiny';
+                else if (rand < 0.44) type = 'jumppad';
+            } else if (zone.name === 'volcano') {
+                if (rand < 0.14) type = 'red';
+                else if (rand < 0.28) type = 'jumppad';
+            } else if (zone.name === 'dream') {
+                if (rand < 0.2) type = 'error';
+                else if (rand < 0.3) type = 'shiny';
+                else if (rand < 0.44) type = 'jumppad';
+            } else if (worldY > 5000) {
+                if (rand < 0.1) type = 'red';
+                else if (rand < 0.2) type = 'shiny';
+                else if (rand < 0.35) type = 'jumppad';
+            } else if (rand < 0.15) {
+                type = 'jumppad';
             }
 
             const width = 40 + Math.random() * 40;  // Reduced from 60-120 to 40-80
@@ -551,14 +576,16 @@
                 y: canvas.height - worldY,
                 width: width,
                 height: PLATFORM_HEIGHT,
-                height: PLATFORM_HEIGHT,
-                type: type,
                 type: type,
                 moveSpeed: (type === 'moving') ? (3.0 + Math.random() * 3.0) * (Math.random() < 0.5 ? 1 : -1) : 0, // Faster: 3.0 ~ 6.0
                 originalX: x,
                 decayTimer: 0,
                 maxDecay: 60, // 1 second approx
-                isTriggered: false // For Shiny
+                isTriggered: false,
+                markedForDeletion: false,
+                phaseOffset: Math.random() * Math.PI * 2,
+                blinkTimer: 0,
+                blinkFuse: 120 + Math.floor(Math.random() * 120)
             });
         }
 
@@ -570,6 +597,103 @@
             }
 
             return ZONES[ZONES.length - 1];
+        }
+
+        function isPlatformActive(p) {
+            if (!p || p.markedForDeletion) return false;
+            if (p.type === 'neonPhase') {
+                const t = Date.now() * 0.006 + p.phaseOffset;
+                return Math.sin(t) > -0.25;
+            }
+            return true;
+        }
+
+        function createPlatformBurst(p) {
+            const cx = p.x + p.width / 2;
+            const cy = p.y + p.height / 2;
+            const color = p.type === 'spaceBlink' ? '#f8fafc' : '#f59e0b';
+            for (let i = 0; i < 14; i++) {
+                platformBursts.push({
+                    x: cx,
+                    y: cy,
+                    vx: (Math.random() - 0.5) * 4.2,
+                    vy: (Math.random() - 0.5) * 4.2,
+                    life: 1,
+                    color
+                });
+            }
+        }
+
+        function updatePlatformBursts() {
+            for (let i = platformBursts.length - 1; i >= 0; i--) {
+                const p = platformBursts[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.06;
+                p.life -= 0.04;
+                if (p.life <= 0) platformBursts.splice(i, 1);
+            }
+        }
+
+        function drawPlatformBursts() {
+            for (const p of platformBursts) {
+                const sy = p.y + camera.y;
+                if (sy < -20 || sy > canvas.height + 20) continue;
+                ctx.globalAlpha = Math.max(0, p.life);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x - 2, sy - 2, 4, 4);
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        function updateVolcanoEffects() {
+            const currentZone = getZoneForHeight(Math.max(0, -player.y));
+            if (currentZone.name === 'volcano') {
+                volcanoSpawnTimer++;
+                if (volcanoSpawnTimer > 24 && Math.random() < 0.12) {
+                    volcanoSpawnTimer = 0;
+                    volcanoFireballs.push({
+                        x: 60 + Math.random() * (canvas.width - 120),
+                        y: canvas.height + 10,
+                        vx: (Math.random() - 0.5) * 1.8,
+                        vy: -(6 + Math.random() * 3.5),
+                        r: 5 + Math.random() * 6,
+                        life: 80 + Math.floor(Math.random() * 30)
+                    });
+                }
+            }
+
+            for (let i = volcanoFireballs.length - 1; i >= 0; i--) {
+                const f = volcanoFireballs[i];
+                f.x += f.vx;
+                f.y += f.vy;
+                f.vy += 0.16;
+                f.life--;
+                if (f.life <= 0 || f.y > canvas.height + 40) volcanoFireballs.splice(i, 1);
+            }
+        }
+
+        function findTeleportTarget(fromPlatform) {
+            const candidates = platforms.filter((p) =>
+                p !== fromPlatform &&
+                !p.markedForDeletion &&
+                p.type !== 'ground' &&
+                p.type !== 'error' &&
+                isPlatformActive(p)
+            );
+            let best = null;
+            let bestDist = Infinity;
+            for (const p of candidates) {
+                const dx = Math.abs((p.x + p.width / 2) - (fromPlatform.x + fromPlatform.width / 2));
+                const dy = Math.abs(p.y - fromPlatform.y);
+                if (dx > 170 || dy > 220) continue;
+                const dist = dx + dy;
+                if (dist < bestDist) {
+                    bestDist = dist;
+                    best = p;
+                }
+            }
+            return best;
         }
 
         function interpolateColor(color1, color2, factor) {
@@ -826,7 +950,7 @@
                     platformColor = p.type === 'moving' ? '#8b5a2b' : '#654321';
                 }
 
-                else if (zone.name === 'ocean') {
+                else if (zone.name === 'underwater') {
                     platformColor = p.type === 'moving' ? '#0891b2' : '#0e7490';
                 }
 
@@ -834,8 +958,16 @@
                     platformColor = p.type === 'moving' ? '#f0abfc' : '#e879f9';
                 }
 
-                else {
+                else if (zone.name === 'space') {
                     platformColor = p.type === 'moving' ? '#a855f7' : '#7c3aed';
+                } else if (zone.name === 'snow') {
+                    platformColor = p.type === 'moving' ? '#7dd3fc' : '#bfdbfe';
+                } else if (zone.name === 'neonCity') {
+                    platformColor = p.type === 'moving' ? '#22d3ee' : '#a78bfa';
+                } else if (zone.name === 'volcano') {
+                    platformColor = p.type === 'moving' ? '#fb7185' : '#dc2626';
+                } else {
+                    platformColor = p.type === 'moving' ? '#f9a8d4' : '#f472b6';
                 }
 
                 // 발판 그림자
@@ -855,6 +987,25 @@
                     grad.addColorStop(0, '#fb923c');
                     grad.addColorStop(1, '#f97316');
                     ctx.fillStyle = grad;
+                } else if (p.type === 'ice') {
+                    const iceGrad = ctx.createLinearGradient(p.x, screenY, p.x, screenY + p.height);
+                    iceGrad.addColorStop(0, '#ecfeff');
+                    iceGrad.addColorStop(0.55, '#bfdbfe');
+                    iceGrad.addColorStop(1, '#93c5fd');
+                    ctx.fillStyle = iceGrad;
+                } else if (p.type === 'neonPhase') {
+                    if (!isPlatformActive(p)) {
+                        ctx.fillStyle = 'rgba(45, 212, 191, 0.16)';
+                    } else {
+                        ctx.fillStyle = '#14b8a6';
+                    }
+                } else if (p.type === 'spaceBlink') {
+                    const fuse = Math.max(1, p.blinkFuse || 120);
+                    const left = Math.max(0, fuse - (p.blinkTimer || 0));
+                    if (left < 45 && Math.floor(Date.now() / 80) % 2 === 0) ctx.fillStyle = '#fca5a5';
+                    else ctx.fillStyle = '#cbd5e1';
+                } else if (p.type === 'error') {
+                    ctx.fillStyle = '#f9a8d4';
                 }
 
                 ctx.beginPath();
@@ -866,6 +1017,17 @@
                 ctx.beginPath();
                 ctx.roundRect(p.x, screenY, p.width, p.height / 2, 5);
                 ctx.fill();
+
+                if (p.type === 'ice') {
+                    ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+                    ctx.lineWidth = 1.2;
+                    ctx.beginPath();
+                    ctx.moveTo(p.x + 6, screenY + 4);
+                    ctx.lineTo(p.x + p.width - 6, screenY + p.height - 4);
+                    ctx.moveTo(p.x + p.width * 0.3, screenY + 3);
+                    ctx.lineTo(p.x + p.width * 0.45, screenY + p.height - 3);
+                    ctx.stroke();
+                }
 
                 // Shiny Glow
                 if (p.type === 'shiny') {
@@ -889,6 +1051,19 @@
                     ctx.lineTo(p.x + p.width / 2 + 10, screenY + p.height / 2);
                     ctx.lineTo(p.x + p.width / 2, screenY + p.height / 2 + 4);
                     ctx.fill();
+                }
+
+                if (p.type === 'neonPhase') {
+                    ctx.strokeStyle = isPlatformActive(p) ? '#5eead4' : 'rgba(94,234,212,0.25)';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(p.x + 1, screenY + 1, p.width - 2, p.height - 2);
+                }
+
+                if (p.type === 'error') {
+                    ctx.fillStyle = '#7f1d1d';
+                    ctx.font = 'bold 10px Segoe UI';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('ERROR', p.x + p.width / 2, screenY + p.height - 4);
                 }
 
                 // Jump Pad - Spring icon
@@ -1136,6 +1311,7 @@
             let landedOnPlatform = null;
 
             platforms.forEach(p => {
+                if (!isPlatformActive(p)) return;
 
                 // 충돌 체크 (아래로 떨어질 때만 - vy >= 0)
                 if (player.vy >= 0) {
@@ -1179,9 +1355,31 @@
                             p.moveSpeed = (0.5 + Math.random() * 1.5) * (Math.random() < 0.5 ? 1 : -1);
                         }
 
+                        // Ice slide
+                        if (p.type === 'ice') {
+                            if (Math.abs(player.vx) < 1.1) {
+                                player.vx = (Math.random() < 0.5 ? -1 : 1) * 2.1;
+                            } else {
+                                player.vx *= 1.08;
+                            }
+                        }
+
                         // Red Trigger (Start Decay)
                         if (p.type === 'red' && p.decayTimer === 0) {
                             p.decayTimer = 1; // Start counting
+                        }
+
+                        // Dream teleport pad
+                        if (p.type === 'error' && (!player.teleportCooldown || player.teleportCooldown <= 0)) {
+                            const target = findTeleportTarget(p);
+                            if (target) {
+                                player.x = target.x + target.width / 2 - player.width / 2;
+                                player.y = target.y - player.height - 4;
+                                player.vy = -7;
+                                player.onGround = false;
+                                player.teleportCooldown = 32;
+                                createPlatformBurst(p);
+                            }
                         }
                     }
                 }
@@ -1211,6 +1409,14 @@
                         p.markedForDeletion = true;
                     }
                 }
+
+                if (p.type === 'spaceBlink' && !p.markedForDeletion) {
+                    p.blinkTimer++;
+                    if (p.blinkTimer >= p.blinkFuse) {
+                        p.markedForDeletion = true;
+                        createPlatformBurst(p);
+                    }
+                }
             });
 
             // Remove decayed platforms
@@ -1226,6 +1432,10 @@
                 player.vx *= 0.98;
                 if (Math.abs(player.vx) < 0.1) player.vx = 0;
             }
+            if (player.teleportCooldown && player.teleportCooldown > 0) player.teleportCooldown--;
+
+            updatePlatformBursts();
+            updateVolcanoEffects();
 
             // 높이 계산
             const currentHeight = Math.max(0, -(player.y - (canvas.height - 80)));
@@ -1359,6 +1569,10 @@
             else if (currentZone.name === 'underwater') drawOceanScene();
             else if (currentZone.name === 'sky') drawSkyScene();
             else if (currentZone.name === 'space') drawSpaceScene();
+            else if (currentZone.name === 'snow') drawSnowScene();
+            else if (currentZone.name === 'neonCity') drawNeonCityScene();
+            else if (currentZone.name === 'volcano') drawVolcanoScene();
+            else if (currentZone.name === 'dream') drawDreamScene();
         }
 
         function drawMountainScene() {
@@ -1476,6 +1690,93 @@
             drawSpaceDecorations();
         }
 
+        function drawSnowScene() {
+            const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            grad.addColorStop(0, '#e0f2fe');
+            grad.addColorStop(1, '#bfdbfe');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#ffffff';
+            for (let i = 0; i < 45; i++) {
+                const x = (i * 47 + Date.now() * 0.03) % canvas.width;
+                const y = (i * 97 + Date.now() * 0.05) % canvas.height;
+                const r = 1 + (i % 3);
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function drawNeonCityScene() {
+            const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            grad.addColorStop(0, '#0b1020');
+            grad.addColorStop(1, '#111827');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < 10; i++) {
+                const w = 24 + (i % 4) * 8;
+                const h = 120 + (i % 5) * 35;
+                const x = i * 42;
+                const y = canvas.height - h;
+                ctx.fillStyle = 'rgba(30,41,59,0.95)';
+                ctx.fillRect(x, y, w, h);
+                ctx.strokeStyle = i % 2 === 0 ? '#22d3ee' : '#a78bfa';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x, y, w, h);
+            }
+        }
+
+        function drawVolcanoScene() {
+            const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            grad.addColorStop(0, '#2a0b0b');
+            grad.addColorStop(1, '#7f1d1d');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#3f1a1a';
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height);
+            ctx.lineTo(90, canvas.height - 170);
+            ctx.lineTo(180, canvas.height);
+            ctx.lineTo(270, canvas.height - 150);
+            ctx.lineTo(canvas.width, canvas.height);
+            ctx.fill();
+
+            for (const f of volcanoFireballs) {
+                const g = ctx.createRadialGradient(f.x, f.y, 1, f.x, f.y, f.r + 5);
+                g.addColorStop(0, '#fde047');
+                g.addColorStop(0.55, '#fb923c');
+                g.addColorStop(1, 'rgba(239,68,68,0)');
+                ctx.fillStyle = g;
+                ctx.beginPath();
+                ctx.arc(f.x, f.y, f.r + 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#f97316';
+                ctx.beginPath();
+                ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function drawDreamScene() {
+            const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            grad.addColorStop(0, '#fbcfe8');
+            grad.addColorStop(1, '#f472b6');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            for (let i = 0; i < 18; i++) {
+                const x = (i * 53 + Date.now() * 0.02) % canvas.width;
+                const y = (i * 71 + Math.sin(Date.now() * 0.001 + i) * 25) % canvas.height;
+                ctx.beginPath();
+                ctx.arc(x, y, 10 + (i % 3) * 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height); // Prevent ghosting
             drawBackground();
@@ -1484,6 +1785,7 @@
             // Canvas layering: Background -> Platforms -> Water -> Slime -> Score
 
             drawPlatforms();
+            drawPlatformBursts();
             drawWater(); // Draw water before slime
             drawSlime();
             // drawScore(); // DOM HUD used
