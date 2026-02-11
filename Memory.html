@@ -185,8 +185,8 @@
         }
 
         .card.matched {
-            transform: rotateY(180deg);
-            /* Explicitly keep flipped */
+            transform: translateZ(0);
+            -webkit-transform: translateZ(0);
             animation: matchPop 0.5s ease-out forwards;
             pointer-events: none;
             /* Ensure matched cards stay visible and highlighted */
@@ -199,10 +199,10 @@
             box-shadow: 0 0 15px var(--main-color);
             border-color: var(--main-color);
             background: linear-gradient(135deg, rgba(244, 114, 182, 0.4) 0%, rgba(244, 114, 182, 0.2) 100%);
+            transform: translateZ(0) !important;
+            -webkit-transform: translateZ(0) !important;
             visibility: visible !important;
             opacity: 1 !important;
-            backface-visibility: visible !important;
-            -webkit-backface-visibility: visible !important;
         }
 
         .card.matched .card-front {
@@ -212,15 +212,15 @@
 
         @keyframes matchPop {
             0% {
-                transform: rotateY(180deg) scale(1);
+                transform: translateZ(0) scale(1);
             }
 
             50% {
-                transform: rotateY(180deg) scale(1.1);
+                transform: translateZ(0) scale(1.1);
             }
 
             100% {
-                transform: rotateY(180deg) scale(1);
+                transform: translateZ(0) scale(1);
                 opacity: 1;
             }
         }
@@ -428,6 +428,7 @@
         let timeRemaining = 0;
         let hasEnded = false;
         let isLock = false;
+        let audioCtx = null;
 
         function formatTime(totalSeconds) {
             const safe = Math.max(0, totalSeconds);
@@ -436,7 +437,72 @@
             return `${mins}:${secs}`;
         }
 
+        function initAudio() {
+            if (!audioCtx) {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                if (AC) audioCtx = new AC();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+        }
+
+        function playFlipSound() {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const gain = audioCtx.createGain();
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.exponentialRampToValueAtTime(0.045, now + 0.008);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.11);
+            gain.connect(audioCtx.destination);
+
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(1650, now);
+            filter.Q.setValueAtTime(0.7, now);
+            filter.connect(gain);
+
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            osc1.type = 'sawtooth';
+            osc2.type = 'triangle';
+            osc1.frequency.setValueAtTime(980, now);
+            osc1.frequency.exponentialRampToValueAtTime(260, now + 0.1);
+            osc2.frequency.setValueAtTime(620, now + 0.004);
+            osc2.frequency.exponentialRampToValueAtTime(210, now + 0.1);
+            osc1.connect(filter);
+            osc2.connect(filter);
+            osc1.start(now);
+            osc2.start(now + 0.004);
+            osc1.stop(now + 0.11);
+            osc2.stop(now + 0.105);
+        }
+
+        function playMatchSound() {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const gain = audioCtx.createGain();
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.exponentialRampToValueAtTime(0.1, now + 0.015);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
+            gain.connect(audioCtx.destination);
+
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            osc1.type = 'triangle';
+            osc2.type = 'sine';
+            osc1.frequency.setValueAtTime(880, now);
+            osc1.frequency.setValueAtTime(1174, now + 0.09);
+            osc2.frequency.setValueAtTime(1320, now + 0.02);
+            osc2.frequency.setValueAtTime(1568, now + 0.12);
+            osc1.connect(gain);
+            osc2.connect(gain);
+            osc1.start(now);
+            osc2.start(now + 0.02);
+            osc1.stop(now + 0.18);
+            osc2.stop(now + 0.2);
+        }
+
         function initGame(resetLevel = false) {
+            initAudio();
             if (resetLevel) level = 1;
             if (timeLabelEl) timeLabelEl.innerText = '남은 시간';
             maxMoves = Math.max(10, 30 - (level - 1) * 3);
@@ -504,7 +570,9 @@
         function flipCard(card) {
             if (isLock || card.classList.contains('flipped') || card.classList.contains('matched')) return;
 
+            initAudio();
             card.classList.add('flipped');
+            playFlipSound();
             flippedCards.push(card);
 
             if (flippedCards.length === 2) {
@@ -529,6 +597,7 @@
             if (c1.dataset.emoji === c2.dataset.emoji) {
                 c1.classList.add('matched');
                 c2.classList.add('matched');
+                playMatchSound();
                 matchedPairs++;
                 flippedCards = [];
                 isLock = false;

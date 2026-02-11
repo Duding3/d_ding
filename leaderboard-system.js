@@ -20,7 +20,7 @@
   const USER_PROFILE_ROOT = "userProfiles";
   const NICKNAME_LIMIT_LOCAL_KEY = "hof_nickname_limit_local_v1";
   const NICKNAME_COOLDOWN_MS = 30 * 1000;
-  const NICKNAME_DAILY_LIMIT = 2;
+  const NICKNAME_DAILY_LIMIT = 3;
   const REQUIRE_AUTH_FOR_WRITE = true;
 
   let firebaseReady = false;
@@ -407,7 +407,18 @@
         initAuth();
         if (authStateKnown && authSubscribers.includes(callback)) {
           callback(getCurrentUser());
+          return;
         }
+        // Fallback: avoid indefinite "checking login state" UI when auth callback is delayed/missed.
+        waitForAuthState(2500)
+          .then((known) => {
+            if (!authSubscribers.includes(callback)) return;
+            if (known) callback(getCurrentUser());
+            else callback(getCurrentUser() || null);
+          })
+          .catch(() => {
+            if (authSubscribers.includes(callback)) callback(getCurrentUser() || null);
+          });
       })
       .catch(() => {
         if (authSubscribers.includes(callback)) callback(null);
@@ -454,7 +465,7 @@
     bar.style.gap = "8px";
     bar.style.padding = "6px 8px";
     bar.style.borderRadius = "12px";
-    bar.style.background = "rgba(10, 14, 28, 0.72)";
+    bar.style.background = "rgba(10, 14, 28, 0.56)";
     bar.style.backdropFilter = "blur(8px)";
     bar.style.border = "1px solid rgba(255, 255, 255, 0.18)";
 
@@ -471,7 +482,7 @@
     authBtn.type = "button";
     authBtn.textContent = "Google 로그인";
     authBtn.style.border = "1px solid rgba(255,255,255,0.25)";
-    authBtn.style.background = "rgba(255,255,255,0.10)";
+    authBtn.style.background = "rgba(255,255,255,0.07)";
     authBtn.style.color = "#fff";
     authBtn.style.padding = "8px 10px";
     authBtn.style.borderRadius = "10px";
@@ -483,7 +494,7 @@
     homeBtn.type = "button";
     homeBtn.textContent = "홈";
     homeBtn.style.border = "1px solid rgba(255,255,255,0.25)";
-    homeBtn.style.background = "rgba(255,255,255,0.10)";
+    homeBtn.style.background = "rgba(255,255,255,0.07)";
     homeBtn.style.color = "#fff";
     homeBtn.style.padding = "8px 10px";
     homeBtn.style.borderRadius = "10px";

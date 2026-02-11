@@ -446,6 +446,7 @@
         let isCharging = false;
         let chargeTime = 0;
         let highestLandedY = 0; // 안전한 착지 지점 (카메라 제한용)
+        let audioCtx = null;
 
         // Fixed Timestep Loop Variables
         let lastTime = 0;
@@ -467,6 +468,62 @@
         let platformBursts = [];
         let volcanoFireballs = [];
         let volcanoSpawnTimer = 0;
+
+        function initAudio() {
+            if (!audioCtx) {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                if (AC) audioCtx = new AC();
+            }
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+        }
+
+        function playJumpSound() {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const gain = audioCtx.createGain();
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.exponentialRampToValueAtTime(0.1, now + 0.015);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+            gain.connect(audioCtx.destination);
+
+            const osc = audioCtx.createOscillator();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(260, now);
+            osc.frequency.exponentialRampToValueAtTime(460, now + 0.12);
+            osc.connect(gain);
+            osc.start(now);
+            osc.stop(now + 0.16);
+        }
+
+        function playJumpPadSound() {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+            const gain = audioCtx.createGain();
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.exponentialRampToValueAtTime(0.09, now + 0.018);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+            gain.connect(audioCtx.destination);
+
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(1800, now);
+            filter.Q.setValueAtTime(0.8, now);
+            osc1.type = 'sawtooth';
+            osc2.type = 'triangle';
+            osc1.frequency.setValueAtTime(1200, now);
+            osc1.frequency.exponentialRampToValueAtTime(320, now + 0.2);
+            osc2.frequency.setValueAtTime(820, now + 0.004);
+            osc2.frequency.exponentialRampToValueAtTime(240, now + 0.2);
+            osc1.connect(gain);
+            osc2.connect(filter);
+            filter.connect(gain);
+            osc1.start(now);
+            osc2.start(now + 0.005);
+            osc1.stop(now + 0.22);
+            osc2.stop(now + 0.21);
+        }
 
         function init() {
             // 발판 먼저 생성
@@ -1347,6 +1404,7 @@
                         if (p.type === 'jumppad') {
                             player.vy = -18; // Super jump! (normal jump is -12)
                             player.onGround = false; // Immediately launch
+                            playJumpPadSound();
                         }
 
                         // Shiny Trigger
@@ -1825,10 +1883,12 @@
             player.vy = MIN_JUMP + (MAX_JUMP - MIN_JUMP) * chargePercent;
             player.onGround = false;
             chargeTime = 0;
+            playJumpSound();
             // chargeBar reset removed
         }
 
         function startGame() {
+            initAudio();
             startScreen.style.display = 'none';
             gameOverScreen.style.display = 'none';
             gameStarted = true;
@@ -1840,6 +1900,7 @@
         }
 
         function restartGame() {
+            initAudio();
             gameOverScreen.style.display = 'none';
             gameOver = false;
             init();
@@ -1879,6 +1940,7 @@
 
         // 키보드 이벤트
         document.addEventListener('keydown', (e) => {
+            initAudio();
             // 방향키로 페이지 스크롤 방지
             if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.code)) {
                 e.preventDefault();
@@ -1920,6 +1982,7 @@
 
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
+            initAudio();
 
             if (!gameStarted) {
                 startGame();
@@ -1942,6 +2005,7 @@
 
         function handleMobileStart(e) {
             e.preventDefault();
+            initAudio();
             if (!gameStarted) startGame();
             else if (gameOver) restartGame();
         }
