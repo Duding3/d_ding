@@ -116,6 +116,7 @@
             height: calc(var(--unit) * 4);
             position: relative;
             transform-style: preserve-3d;
+            -webkit-transform-style: preserve-3d;
             transition: transform 0.42s cubic-bezier(0.22, 0.61, 0.36, 1);
             cursor: pointer;
             will-change: transform;
@@ -124,7 +125,8 @@
         }
 
         .card.flipped {
-            transform: rotateY(180deg);
+            transform: translateZ(0) rotateY(180deg);
+            -webkit-transform: translateZ(0) rotateY(180deg);
         }
 
         .card-face {
@@ -143,6 +145,7 @@
             box-shadow: 0 3px 10px rgba(0, 0, 0, 0.16);
             will-change: transform, opacity;
             transform: translateZ(0);
+            -webkit-transform: translateZ(0);
         }
 
         .card-front {
@@ -158,7 +161,8 @@
 
         .card-back {
             background: rgba(255, 255, 255, 0.1);
-            transform: rotateY(180deg);
+            transform: rotateY(180deg) translateZ(0.1px);
+            -webkit-transform: rotateY(180deg) translateZ(0.1px);
             background: linear-gradient(135deg, rgba(244, 114, 182, 0.2) 0%, rgba(244, 114, 182, 0.05) 100%);
         }
 
@@ -442,7 +446,7 @@
 
             cards.forEach((emoji, index) => {
                 const card = document.createElement('div');
-                card.className = 'card flipped'; // Start as flipped
+                card.className = 'card';
                 card.dataset.emoji = emoji;
                 card.innerHTML = `
                     <div class="card-face card-front"></div>
@@ -454,9 +458,12 @@
 
             clearInterval(timer);
 
-            // Preview phase
+            // Preview phase: apply flipped on next frame for stable first render on mobile.
+            const allCards = Array.from(grid.querySelectorAll('.card'));
+            requestAnimationFrame(() => {
+                allCards.forEach(c => c.classList.add('flipped'));
+            });
             setTimeout(() => {
-                const allCards = document.querySelectorAll('.card');
                 allCards.forEach(c => c.classList.remove('flipped'));
                 isLock = false; // Unlock interactions
 

@@ -572,10 +572,38 @@
       osc2.stop(now + 0.12);
     }
 
+    function playPlaceSound(matrix) {
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+      const blockCount = matrix.reduce((sum, row) => sum + row.reduce((acc, v) => acc + (v ? 1 : 0), 0), 0);
+      const density = Math.max(1, Math.min(6, blockCount || 1));
+
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.055 + density * 0.01, now + 0.005);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.07);
+
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = "lowpass";
+      filter.frequency.setValueAtTime(820, now);
+      filter.Q.setValueAtTime(0.7, now);
+
+      const osc = audioCtx.createOscillator();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(145 + density * 4, now);
+      osc.frequency.exponentialRampToValueAtTime(84, now + 0.07);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.08);
+    }
+
     function arenaSweep() {
       let rowCount = 1;
       let linesCleared = 0;
-      outer: for (let y = arena.length - 1; y > 0; y--) {
+      outer: for (let y = arena.length - 1; y >= 0; y--) {
         for (let x = 0; x < arena[y].length; x++) if (arena[y][x] === 0) continue outer;
         for (let x = 0; x < arena[y].length; x++) if (arena[y][x]) createParticles(x, y, COLOR_INDEX[arena[y][x]]);
         linesCleared++;
@@ -594,7 +622,9 @@
           player.pos.y--;
           safety++;
         }
-        if (collide(arena, player) || isPieceAboveVisibleTop(player)) finishGame();
+        // Only end the game if the piece cannot be placed at all after garbage push.
+        // Being temporarily above the visible top is allowed until the next lock check.
+        if (collide(arena, player)) finishGame();
       }
     }
 
@@ -683,6 +713,7 @@
           dropCounter = 0;
           return;
         }
+        playPlaceSound(player.matrix);
         merge(arena, player);
         playerReset();
         arenaSweep();
@@ -714,6 +745,7 @@
         dropCounter = 0;
         return;
       }
+      playPlaceSound(player.matrix);
       merge(arena, player);
       playerReset();
       arenaSweep();
