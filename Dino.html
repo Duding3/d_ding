@@ -800,7 +800,7 @@
                     ? 'bird'
                     : (Math.random() < 0.5 ? 'cactusLarge' : 'cactusSmall')
             );
-            follow.x = startX + span + gap;
+            follow.x = getSafeObstacleSpawnX(startX + span + gap);
             obstacles.push(follow);
         }
 
@@ -829,6 +829,22 @@
                 if (xRight > gap.x && xLeft < gap.x + gap.width) return false;
             }
             return true;
+        }
+
+        function getMinRunwayAfterGap() {
+            return Math.max(180, 165 + gameSpeed * 11);
+        }
+
+        function getSafeObstacleSpawnX(baseX) {
+            let safeX = baseX;
+            const minRunway = getMinRunwayAfterGap();
+            for (const gap of groundGaps) {
+                const gapEnd = gap.x + gap.width;
+                if (gapEnd < safeX) {
+                    safeX = Math.max(safeX, gapEnd + minRunway);
+                }
+            }
+            return safeX;
         }
 
         function spawnGroundGap(dt) {
@@ -876,19 +892,28 @@
                 const canSpawnDuck = score > 170;
                 const canSpawnDouble = score > 260;
                 const spawnSpecial = specialObstacleCooldown <= 0 && (canSpawnDuck || canSpawnDouble) && roll > 0.45;
+                const spawnX = getSafeObstacleSpawnX(canvas.width);
                 if (spawnSpecial) {
                     if (nextSpecialType === 'duckGate' && canSpawnDuck) {
-                        obstacles.push(new Obstacle('duckGate'));
+                        const obs = new Obstacle('duckGate');
+                        obs.x = spawnX;
+                        obstacles.push(obs);
                         nextSpecialType = canSpawnDouble ? 'doubleJumpWall' : 'duckGate';
                     } else if (canSpawnDouble) {
-                        obstacles.push(new Obstacle('doubleJumpWall'));
+                        const obs = new Obstacle('doubleJumpWall');
+                        obs.x = spawnX;
+                        obstacles.push(obs);
                         nextSpecialType = canSpawnDuck ? 'duckGate' : 'doubleJumpWall';
                     } else {
-                        obstacles.push(new Obstacle('duckGate'));
+                        const obs = new Obstacle('duckGate');
+                        obs.x = spawnX;
+                        obstacles.push(obs);
                     }
                     specialObstacleCooldown = Math.max(520, 900 - gameSpeed * 14);
                 } else {
-                    obstacles.push(new Obstacle(pickRandomObstacleType()));
+                    const obs = new Obstacle(pickRandomObstacleType());
+                    obs.x = spawnX;
+                    obstacles.push(obs);
                 }
                 spawnCounter = 0;
             }
